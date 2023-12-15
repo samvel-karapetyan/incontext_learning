@@ -11,7 +11,7 @@ defaults:
   - scheduler: warmup_cosine_annealing
   - trainer: default
   - loggers: [aim]
-  - callbacks: [lr_monitor]
+  - callbacks: [lr_monitor, model_checkpoint]
   - override hydra/job_logging: custom
   - _self_
 
