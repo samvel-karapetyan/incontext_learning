@@ -12,3 +12,4 @@ chardet==5.2.0
 transformers==4.35.2
 aim==3.17.5
 wandb==0.16.1
+notebook==7.0.6
