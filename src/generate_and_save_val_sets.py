@@ -30,11 +30,18 @@ def generate_and_save_val_sets(config: DictConfig):
     tokens_data = load_tokens_data(config)
 
     # Create tokens generators
-    tokens_generator = TokenGenerator(tokens_data=tokens_data,
-                                      are_spurious_tokens_fixed=config.are_spurious_tokens_fixed,
-                                      are_class_tokens_fixed=config.are_class_tokens_fixed)
+    tokens_generator_params = dict(tokens_data=tokens_data,
+                                   are_spurious_tokens_fixed=config.are_spurious_tokens_fixed,
+                                   are_class_tokens_fixed=config.are_class_tokens_fixed)
 
-    spurious_tokens_generator, class_tokens_generator = tokens_generator()
+    token_generation_modes = ["opposite", "random"]
+    tokens_generators = {}
+    for mode in token_generation_modes:
+        spurious_tokens_generator, class_tokens_generator = TokenGenerator(**tokens_generator_params,
+                                                                           token_generation_mode=mode)()
+        tokens_generators.update({f"{mode}_spurious": spurious_tokens_generator,
+                                  f"{mode}_class": class_tokens_generator})
+
 
     # Prepare save paths for each validation set
     save_paths = prepare_save_paths(datamodule, config)
@@ -47,17 +54,16 @@ def generate_and_save_val_sets(config: DictConfig):
         for i in range(batch_size):
             global_i = batch_idx * batch_size + i
             input_seq, spurious_labels, class_labels, image_indices = [batch[x][i] for x in range(4)]
-            spurious_tokens = next(spurious_tokens_generator)
-            class_tokens = next(class_tokens_generator)
 
             # Stack relevant data for saving
             instance = np.stack([image_indices, spurious_labels, class_labels], axis=1)
 
+            # Generate tokens
+            tokens = {f"{name}_tokens": next(token_generator) for name, token_generator in tokens_generators.items()}
+
             # Save data as a compressed numpy file
             np.savez(os.path.join(save_path, f"{global_i}.npz"),
-                     spurious_tokens=spurious_tokens,
-                     class_tokens=class_tokens,
-                     instance=instance)
+                     instance=instance, **tokens)
 
 
 def load_tokens_data(config: DictConfig) -> dict:

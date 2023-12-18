@@ -37,32 +37,46 @@ def compute_encodings_avg_norm_and_generate_tokens(config: DictConfig) -> None:
     log.info(f"Average norm: {avg_norm}")
 
     # Generate random fixed tokens
-    random_fixed_tokens = generate_random_fixed_tokens(avg_norm.item(), len(enc))
+    fixed_tokens = generate_fixed_tokens(avg_norm.item(), len(enc))
 
     # Save the average norm and tokens
     save_dir = os.path.join(config.data_path, "avg_norms")
     os.makedirs(save_dir, exist_ok=True)
     save_path = os.path.join(save_dir, f"{config.encoding_extractor}_l2.npz")
 
-    np.savez(save_path, avg_norm=np.array(avg_norm), token_len=np.array(len(enc)), **random_fixed_tokens)
+    np.savez(save_path, avg_norm=np.array(avg_norm), token_len=np.array(len(enc)), **fixed_tokens)
 
 
-def generate_random_fixed_tokens(norm: float, token_len: int) -> dict:
+def generate_fixed_tokens(norm: float, token_len: int) -> dict:
     """
-    Generate random fixed tokens based on a given norm and token length.
+    Generate fixed tokens based on a given norm and token length.
 
     Parameters:
     - norm (float): Norm to scale the random tokens.
     - token_len (int): Length of each token.
 
     Returns:
-    - dict: Dictionary containing two types of random fixed tokens.
+    - dict: Dictionary containing two types of random and two types of opposite fixed tokens.
     """
+    # Generating random tokens
     tokens = np.random.randn(4, token_len).astype(np.float32)
     # Normalize and scale each token array
     tokens = (tokens / np.linalg.norm(tokens, axis=1, keepdims=True)) * norm
     # Split into two types of tokens
-    return {
-        "fixed_class_tokens": tokens[:2],
-        "fixed_spurious_tokens": tokens[2:]
+    random_tokens = {
+        "random_class_tokens": tokens[:2],
+        "random_spurious_tokens": tokens[2:]
     }
+
+    # Generating opposite tokens
+    first_rows = np.random.randn(2, token_len).astype(np.float32)
+    tokens = np.vstack((first_rows, -first_rows))
+    # Normalize and scale each token array
+    tokens = (tokens / np.linalg.norm(tokens, axis=1, keepdims=True)) * norm
+    # Split into two types of tokens
+    opposite_tokens = {
+        "opposite_class_tokens": tokens[::2],
+        "opposite_spurious_tokens": tokens[1::2]
+    }
+
+    return dict(**random_tokens, **opposite_tokens)

@@ -8,7 +8,7 @@ network:
     n_embd: 768
     n_layer: 6
     n_head: 8
-    n_inner: 2048
+    n_inner: 3072  # Adjusted as per convention: 4 * n_embd
     resid_pdrop: 0.0
     embd_pdrop: 0.0
     attn_pdrop: 0.0
