@@ -33,6 +33,9 @@ class INaturalistEmbContextsDataModule(pl.LightningDataModule):
         minority_group_proportion (float): Proportion of the minority group per class.
         are_spurious_tokens_fixed (bool): Flag indicating whether to use fixed spurious tokens.
         are_class_tokens_fixed (bool): Flag indicating whether to use fixed class tokens.
+        token_generation_mode (str): Mode of token generation. Accepts 'random' or 'opposite'.
+                                     'random' generates tokens with normal distribution,
+                                     and 'opposite' generates a pair of tokens where the second is the negative of the first.
         include_spurious (bool): Determines whether spurious tokens are included in the dataset instances.
     """
     class ValSets(Enum):
@@ -60,6 +63,7 @@ class INaturalistEmbContextsDataModule(pl.LightningDataModule):
                  minority_group_proportion,
                  are_spurious_tokens_fixed,
                  are_class_tokens_fixed,
+                 token_generation_mode,
                  include_spurious,
                  *args, **kwargs):
         super(INaturalistEmbContextsDataModule, self).__init__()
@@ -74,6 +78,7 @@ class INaturalistEmbContextsDataModule(pl.LightningDataModule):
         self._minority_group_proportion = minority_group_proportion
         self._are_spurious_tokens_fixed = are_spurious_tokens_fixed
         self._are_class_tokens_fixed = are_class_tokens_fixed
+        self._token_generation_mode = token_generation_mode
         self._include_spurious = include_spurious
 
         # Initializing dataset lengths for different splits
@@ -97,9 +102,11 @@ class INaturalistEmbContextsDataModule(pl.LightningDataModule):
         self._train_set = INaturalistEmbContextsDataset(self._dataset_path, self._encoding_extractor,
                                                         self._inner_train_len,
                                                         "inner_train", "inner_train",
-                                                        self._context_class_size, self._minority_group_proportion,
+                                                        self._context_class_size,
+                                                        self._minority_group_proportion,
                                                         self._are_spurious_tokens_fixed,
                                                         self._are_class_tokens_fixed,
+                                                        self._token_generation_mode,
                                                         self._include_spurious)
 
         saved_data_path = self._saved_val_sets_path and os.path.join(self._saved_val_sets_path,
@@ -107,9 +114,11 @@ class INaturalistEmbContextsDataModule(pl.LightningDataModule):
         self._inner_val_set = INaturalistEmbContextsDataset(self._dataset_path, self._encoding_extractor,
                                                             self._inner_val_len,
                                                             "inner_val", "inner_val",
-                                                            self._context_class_size, self._minority_group_proportion,
+                                                            self._context_class_size,
+                                                            self._minority_group_proportion,
                                                             self._are_spurious_tokens_fixed,
                                                             self._are_class_tokens_fixed,
+                                                            self._token_generation_mode,
                                                             self._include_spurious,
                                                             saved_data_path=saved_data_path)
 
@@ -121,6 +130,7 @@ class INaturalistEmbContextsDataModule(pl.LightningDataModule):
                                                             self._context_class_size, self._minority_group_proportion,
                                                             self._are_spurious_tokens_fixed,
                                                             self._are_class_tokens_fixed,
+                                                            self._token_generation_mode,
                                                             self._include_spurious,
                                                             saved_data_path=saved_data_path)
 
@@ -133,6 +143,7 @@ class INaturalistEmbContextsDataModule(pl.LightningDataModule):
                                                                   self._minority_group_proportion,
                                                                   self._are_spurious_tokens_fixed,
                                                                   self._are_class_tokens_fixed,
+                                                                  self._token_generation_mode,
                                                                   self._include_spurious,
                                                                   saved_data_path=saved_data_path)
 

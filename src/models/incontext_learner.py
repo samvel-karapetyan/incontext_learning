@@ -1,3 +1,4 @@
+import torch
 import torch.nn as nn
 import torchmetrics
 
@@ -53,7 +54,7 @@ class InContextLearner(LightningModule):
         """
         out = self._network(inputs_embeds=input_embeds).last_hidden_state
 
-        pred_embeddings = out[:, ::3, ] if self._with_spurious_token else out[:, ::2, ]
+        pred_embeddings = out[:, 1::3] if self._with_spurious_token else out[:, ::2]
 
         pred_y = self._fc(pred_embeddings)
 
@@ -72,13 +73,14 @@ class InContextLearner(LightningModule):
         """
         input_seq, spurious_labels, class_labels, image_indices = batch
 
-        pred_y = self.forward(input_seq).squeeze()
+        pred_y_logit = self.forward(input_seq).squeeze()
 
-        loss = self._loss_fn(pred_y, class_labels.float())
+        loss = self._loss_fn(pred_y_logit, class_labels.float())
 
+        pred_y = nn.functional.sigmoid(pred_y_logit)
         last_pred_y, last_class_labels = pred_y[:, -1], class_labels[:, -1]
 
-        self.accuracy[set_name].update(last_pred_y.cpu(), last_class_labels.cpu())
+        self.accuracy[set_name].update(last_pred_y, last_class_labels)
         self.accuracy_minority[set_name].update(pred_y, class_labels, spurious_labels)
         self.accuracy_majority[set_name].update(pred_y, class_labels, spurious_labels)
 

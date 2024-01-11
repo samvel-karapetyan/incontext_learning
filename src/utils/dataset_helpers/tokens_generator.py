@@ -2,7 +2,7 @@ import numpy as np
 
 
 class TokenGenerator:
-    def __init__(self, tokens_data, are_spurious_tokens_fixed, are_class_tokens_fixed):
+    def __init__(self, tokens_data, are_spurious_tokens_fixed, are_class_tokens_fixed, token_generation_mode):
         """
         Initialize the TokenGenerator with token data and configuration flags.
 
@@ -11,10 +11,14 @@ class TokenGenerator:
                             'avg_norm', 'fixed_spurious_tokens', and 'fixed_class_tokens'.
         are_spurious_tokens_fixed (bool): Flag indicating whether to use fixed spurious tokens.
         are_class_tokens_fixed (bool): Flag indicating whether to use fixed class tokens.
+        token_generation_mode (str): Mode of token generation. Accepts 'random' or 'opposite'.
+                                     'random' generates tokens with normal distribution,
+                                     and 'opposite' generates a pair of tokens where the second is the negative of the first.
         """
         self.tokens_data = tokens_data
         self.are_spurious_tokens_fixed = are_spurious_tokens_fixed
         self.are_class_tokens_fixed = are_class_tokens_fixed
+        self.token_generation_mode = token_generation_mode
 
     def __call__(self):
         """
@@ -35,7 +39,12 @@ class TokenGenerator:
             Generates tokens with a normal distribution and normalizes them based on 'avg_norm'.
             """
             while True:
-                tokens = np.random.randn(2, self.tokens_data["token_len"]).astype(np.float32)
+                if self.token_generation_mode == "random":
+                    tokens = np.random.randn(2, self.tokens_data["token_len"]).astype(np.float32)
+                else:
+                    first_row = np.random.randn(1, self.tokens_data["token_len"]).astype(np.float32)
+                    tokens = np.vstack((first_row, -first_row))
+
                 tokens = (tokens / np.linalg.norm(tokens, axis=1, keepdims=True)) * self.tokens_data["avg_norm"]
                 yield tokens
 
@@ -44,15 +53,14 @@ class TokenGenerator:
             A generator function that yields the same fixed spurious tokens continuously.
             """
             while True:
-                yield self.tokens_data["fixed_spurious_tokens"]
+                yield self.tokens_data[f"{self.token_generation_mode}_spurious_tokens"]
 
         def fixed_class_tokens_generator():
             """
             A generator function that yields the same fixed class tokens continuously.
             """
             while True:
-                yield self.tokens_data["fixed_class_tokens"]
-
+                yield self.tokens_data[f"{self.token_generation_mode}_class_tokens"]
         # Choose the appropriate generators based on the flags
         spurious_tokens_generator = (fixed_spurious_tokens_generator
                                      if self.are_spurious_tokens_fixed

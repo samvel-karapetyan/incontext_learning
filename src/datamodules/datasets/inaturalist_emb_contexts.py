@@ -25,6 +25,9 @@ class INaturalistEmbContextsDataset(Dataset):
         minority_group_proportion (float): The proportion of the minority group in the context per class.
         are_spurious_tokens_fixed (bool): Flag indicating whether to use fixed spurious tokens.
         are_class_tokens_fixed (bool): Flag indicating whether to use fixed class tokens.
+        token_generation_mode (str): Mode of token generation. Accepts 'random' or 'opposite'.
+                                     'random' generates tokens with normal distribution,
+                                     and 'opposite' generates a pair of tokens where the second is the negative of the first.
         include_spurious (bool): Determines whether spurious tokens are included in the dataset instances.
         saved_data_path (str or None): Path for loading data; if None, new data is generated.
     """
@@ -39,6 +42,7 @@ class INaturalistEmbContextsDataset(Dataset):
                  minority_group_proportion,
                  are_spurious_tokens_fixed,
                  are_class_tokens_fixed,
+                 token_generation_mode,
                  include_spurious,
                  saved_data_path=None):
         super(INaturalistEmbContextsDataset, self).__init__()
@@ -69,10 +73,12 @@ class INaturalistEmbContextsDataset(Dataset):
 
         tokens_generator = TokenGenerator(tokens_data=tokens_data,
                                           are_spurious_tokens_fixed=are_spurious_tokens_fixed,
-                                          are_class_tokens_fixed=are_class_tokens_fixed)
+                                          are_class_tokens_fixed=are_class_tokens_fixed,
+                                          token_generation_mode=token_generation_mode)
 
         self._spurious_tokens_generator, self._class_tokens_generator = tokens_generator()
 
+        self._token_generation_mode = token_generation_mode
         self._saved_data_path = saved_data_path
 
     def __getitem__(self, idx):
@@ -94,8 +100,8 @@ class INaturalistEmbContextsDataset(Dataset):
             context_of_ids, query_of_ids = self._construct_context_and_query_of_ids()
         else:
             data = np.load(os.path.join(self._saved_data_path, f"{idx}.npz"))
-            spurious_tokens = data["spurious_tokens"]
-            class_tokens = data["class_tokens"]
+            spurious_tokens = data[f"{self._token_generation_mode}_spurious_tokens"]
+            class_tokens = data[f"{self._token_generation_mode}_class_tokens"]
             instance = data["instance"]
             context_of_ids = [tuple(x) for x in instance[:-1]]
             query_of_ids = tuple(instance[-1])
