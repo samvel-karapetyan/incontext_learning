@@ -8,3 +8,6 @@ max_steps: 1000000
 max_epochs: 1
 val_check_interval: 1000
 log_every_n_steps: 50
+
+gradient_clip_val: 0 # default
+gradient_clip_algorithm: norm # default
