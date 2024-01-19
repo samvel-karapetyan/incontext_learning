@@ -4,6 +4,8 @@ print_config: True
 ignore_warnings: False
 
 
+spurious_setting: sum # Options: 'separate_token'(x,c) , 'no_spurious'(x), 'sum'(x+c)
+
 defaults:
   - datamodule: inaturalist_emb_contexts
   - model: incontext_learner_gptj

@@ -28,7 +28,8 @@ class INaturalistEmbContextsDataset(Dataset):
         token_generation_mode (str): Mode of token generation. Accepts 'random' or 'opposite'.
                                      'random' generates tokens with normal distribution,
                                      and 'opposite' generates a pair of tokens where the second is the negative of the first.
-        include_spurious (bool): Determines whether spurious tokens are included in the dataset instances.
+        spurious_setting (str): Determines the handling mode of spurious tokens in the dataset instances.
+                                Options include 'separate_token'(x,c) , 'no_spurious'(x), 'sum'(x+c)
         saved_data_path (str or None): Path for loading data; if None, new data is generated.
     """
 
@@ -43,7 +44,7 @@ class INaturalistEmbContextsDataset(Dataset):
                  are_spurious_tokens_fixed,
                  are_class_tokens_fixed,
                  token_generation_mode,
-                 include_spurious,
+                 spurious_setting,
                  saved_data_path=None):
         super(INaturalistEmbContextsDataset, self).__init__()
 
@@ -57,7 +58,7 @@ class INaturalistEmbContextsDataset(Dataset):
         # Dataset parameters
         self._context_class_size = context_class_size
         self._minority_group_proportion = minority_group_proportion
-        self._include_spurious = include_spurious
+        self._spurious_setting = spurious_setting
 
         # Unique categories in the dataset
         if class1_split == class2_split:
@@ -238,11 +239,16 @@ class INaturalistEmbContextsDataset(Dataset):
             image_enc = np.load(os.path.join(self._encodings_path, f"{image_id}.npy"))
             class_token = class_tokens[class_label]
 
-            if self._include_spurious:
+            if self._spurious_setting == 'separate_token':
                 spurious_token = spurious_tokens[spurious_label]
                 input_seq += [image_enc, spurious_token, class_token]
-            else:
+            elif self._spurious_setting == 'sum':
+                spurious_token = spurious_tokens[spurious_label]
+                input_seq += [image_enc + spurious_token, class_token]
+            elif self._spurious_setting == 'no_spurious':
                 input_seq += [image_enc, class_token]
+            else:
+                raise ValueError(f"Invalid spurious setting: '{self._spurious_setting}'. Expected 'separate_token', 'sum', or 'no_spurious'.")
 
         input_seq.pop()  # removing the label of query from input sequence
 
