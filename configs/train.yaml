@@ -17,6 +17,6 @@ defaults:
 
 hydra:
   run:
-    dir: ${oc.env:OUTPUT_DIR}/runs/${name}/${now:%Y-%m-%d_%H-%M-%S}
+    dir: ${oc.env:OUTPUT_DIR}/runs/${name}/${now:%Y-%m-%d_%H-%M-%S} # IMPORTANT: Directory name AUTO-UPDATED with 'aim' logger's HASH when 'aim' is ENABLED
   job:
     chdir: True

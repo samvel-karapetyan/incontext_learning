@@ -3,7 +3,7 @@ import logging
 from hydra.utils import instantiate
 from omegaconf import DictConfig
 
-from src.utils import log_hyperparameters
+from src.utils import log_hyperparameters, setup_aim_logger
 
 log = logging.getLogger(__name__)
 
@@ -29,7 +29,11 @@ def train(config: DictConfig):
     if "loggers" in config:
         for name, lg_conf in config.loggers.items():
             log.info(f"Instantiating logger <{lg_conf._target_}>")
-            loggers.append(instantiate(lg_conf))
+            logger = instantiate(lg_conf)
+            loggers.append(logger)
+
+            if name == 'aim':
+                setup_aim_logger(logger)
 
     log.info(f"Instantiating trainer <{config.trainer._target_}>")
     trainer = instantiate(config.trainer, callbacks=callbacks, logger=loggers, _convert_="partial")
