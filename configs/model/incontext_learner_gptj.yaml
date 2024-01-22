@@ -16,5 +16,5 @@ network:
 loss_fn:
   _target_: src.utils.custom_loss_functions.ContextBNEWithLogits
   keep_n: 101
-with_spurious_token: ${datamodule.include_spurious}
+spurious_setting: ${spurious_setting}  # Use the global value of 'spurious_setting'
 val_sets: [inner, outer, inner_outer]

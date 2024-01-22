@@ -20,4 +20,4 @@ token_generation_mode: opposite  # c,-c  y,-y
 batch_size: 32
 num_workers: 4
 
-include_spurious: True
+spurious_setting: ${spurious_setting}  # Use the global value of 'spurious_setting'

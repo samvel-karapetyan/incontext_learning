@@ -3,6 +3,7 @@ seed: 0
 print_config: True
 ignore_warnings: False
 
+spurious_setting: sum # Set to fulfill datamodule requirements; actual value irrelevant for this script.
 
 defaults:
   - datamodule: inaturalist_emb_contexts

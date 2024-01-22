@@ -1,4 +1,3 @@
-import torch
 import torch.nn as nn
 import torchmetrics
 
@@ -13,7 +12,7 @@ class InContextLearner(LightningModule):
     A PyTorch Lightning module for in-context learning.
     """
 
-    def __init__(self, network, loss_fn, val_sets, with_spurious_token, optimizer_conf, scheduler_conf):
+    def __init__(self, network, loss_fn, val_sets, spurious_setting, optimizer_conf, scheduler_conf):
         """
         Initializes the InContextLearner module with a network, loss function, validation sets, optimizer, and scheduler configurations.
 
@@ -21,14 +20,15 @@ class InContextLearner(LightningModule):
             network: The neural network to be used.
             loss_fn: The loss function for training.
             val_sets: A list of validation dataset names.
-            with_spurious_token (bool): Determines whether the network expects data with spurious tokens.
+            spurious_setting (str): Determines the handling mode of spurious tokens in the dataset instances.
+                                    Options include 'separate_token'(x,c) , 'no_spurious'(x), 'sum'(x+c)
             optimizer_conf: Configuration dictionary for the optimizer.
             scheduler_conf: Configuration dictionary for the scheduler.
         """
         super(InContextLearner, self).__init__()
 
         self._network = network
-        self._with_spurious_token = with_spurious_token
+        self._with_spurious_token = (spurious_setting == 'separate_token')
 
         self._optimizer_conf = optimizer_conf
         self._scheduler_conf = scheduler_conf

@@ -36,7 +36,8 @@ class INaturalistEmbContextsDataModule(pl.LightningDataModule):
         token_generation_mode (str): Mode of token generation. Accepts 'random' or 'opposite'.
                                      'random' generates tokens with normal distribution,
                                      and 'opposite' generates a pair of tokens where the second is the negative of the first.
-        include_spurious (bool): Determines whether spurious tokens are included in the dataset instances.
+        spurious_setting (str): Determines the handling mode of spurious tokens in the dataset instances.
+                                Options include 'separate_token'(x,c) , 'no_spurious'(x), 'sum'(x+c)
     """
     class ValSets(Enum):
         """
@@ -64,7 +65,7 @@ class INaturalistEmbContextsDataModule(pl.LightningDataModule):
                  are_spurious_tokens_fixed,
                  are_class_tokens_fixed,
                  token_generation_mode,
-                 include_spurious,
+                 spurious_setting,
                  *args, **kwargs):
         super(INaturalistEmbContextsDataModule, self).__init__()
 
@@ -79,7 +80,7 @@ class INaturalistEmbContextsDataModule(pl.LightningDataModule):
         self._are_spurious_tokens_fixed = are_spurious_tokens_fixed
         self._are_class_tokens_fixed = are_class_tokens_fixed
         self._token_generation_mode = token_generation_mode
-        self._include_spurious = include_spurious
+        self._spurious_setting = spurious_setting
 
         # Initializing dataset lengths for different splits
         self._inner_train_len = inner_train_len
@@ -107,7 +108,7 @@ class INaturalistEmbContextsDataModule(pl.LightningDataModule):
                                                         self._are_spurious_tokens_fixed,
                                                         self._are_class_tokens_fixed,
                                                         self._token_generation_mode,
-                                                        self._include_spurious)
+                                                        self._spurious_setting)
 
         saved_data_path = self._saved_val_sets_path and os.path.join(self._saved_val_sets_path,
                                                                      self.ValSets.INNER.value)
@@ -119,7 +120,7 @@ class INaturalistEmbContextsDataModule(pl.LightningDataModule):
                                                             self._are_spurious_tokens_fixed,
                                                             self._are_class_tokens_fixed,
                                                             self._token_generation_mode,
-                                                            self._include_spurious,
+                                                            self._spurious_setting,
                                                             saved_data_path=saved_data_path)
 
         saved_data_path = self._saved_val_sets_path and os.path.join(self._saved_val_sets_path,
@@ -131,7 +132,7 @@ class INaturalistEmbContextsDataModule(pl.LightningDataModule):
                                                             self._are_spurious_tokens_fixed,
                                                             self._are_class_tokens_fixed,
                                                             self._token_generation_mode,
-                                                            self._include_spurious,
+                                                            self._spurious_setting,
                                                             saved_data_path=saved_data_path)
 
         saved_data_path = self._saved_val_sets_path and os.path.join(self._saved_val_sets_path,
@@ -144,7 +145,7 @@ class INaturalistEmbContextsDataModule(pl.LightningDataModule):
                                                                   self._are_spurious_tokens_fixed,
                                                                   self._are_class_tokens_fixed,
                                                                   self._token_generation_mode,
-                                                                  self._include_spurious,
+                                                                  self._spurious_setting,
                                                                   saved_data_path=saved_data_path)
 
     def train_dataloader(self):
