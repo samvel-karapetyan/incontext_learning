@@ -103,7 +103,7 @@ class InContextLearner(LightningModule):
         """
         return self._step(batch, "train")
 
-    def validation_step(self, batch, batch_idx, dataloader_idx):
+    def validation_step(self, batch, batch_idx, dataloader_idx=0):
         """
         The validation step. Processes a single batch during validation.
 

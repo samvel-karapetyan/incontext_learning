@@ -3,8 +3,10 @@ seed: 0
 print_config: True
 ignore_warnings: False
 
-data_path: ${oc.env:DATA_ROOD_DIR}/inaturalist2017
+dataset: inaturalist2017
+data_path: ${oc.env:DATA_ROOD_DIR}/${dataset}
 encoding_extractor: dinov2_vitb14
+split: null # e.g. for waterbirds you can set 'val'
 
 hydra:
   run:

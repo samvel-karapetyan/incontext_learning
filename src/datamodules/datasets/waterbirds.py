@@ -1,4 +1,6 @@
 import logging
+import os.path
+
 import numpy as np
 
 from wilds.datasets.waterbirds_dataset import WaterbirdsDataset
@@ -14,7 +16,7 @@ class CustomizedWaterbirdsDataset(WaterbirdsDataset):
     functionalities and modifications.
     """
 
-    def __init__(self, root_dir, *args, **kwargs):
+    def __init__(self, root_dir, data_type="img", encoding_extractor=None, *args, **kwargs):
         """
         Initializes the CustomizedWaterbirdsDataset instance.
 
@@ -23,6 +25,8 @@ class CustomizedWaterbirdsDataset(WaterbirdsDataset):
         """
         super().__init__(root_dir=root_dir, *args, **kwargs)
         self._root_dir = root_dir
+        self._data_type = data_type
+        self._encoding_extractor = encoding_extractor
 
     def __getitem__(self, idx):
         """
@@ -38,6 +42,16 @@ class CustomizedWaterbirdsDataset(WaterbirdsDataset):
         x, y, c = x, y, metadata[0]
 
         return x, y, c, idx
+
+    def get_input(self, idx):
+        if self._data_type == "img":
+            return super().get_input(idx)
+        elif self._data_type == "encoding":
+            split_dict = {value: key for key, value in self.split_dict.items()}
+            set_name = split_dict[self.split_array[idx]]
+            emb_path = os.path.join(self._root_dir, "waterbirds", self._encoding_extractor, set_name, f"{idx}.npy")
+            x = np.load(emb_path)
+            return x
 
     def get_subset(self, split, frac=1.0, transform=None):
         """

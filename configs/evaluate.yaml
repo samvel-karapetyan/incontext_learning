@@ -4,12 +4,12 @@ print_config: True
 ignore_warnings: False
 
 
-spurious_setting: separate_token # Options: 'separate_token'(x,c) , 'no_spurious'(x), 'sum'(x+c)
-aim_hash: cfaeecd30a3a466f95a1d789
+spurious_setting: no_spurious # Options: 'separate_token'(x,c) , 'no_spurious'(x), 'sum'(x+c)
+aim_hash: 2309f9f15c1341af8f61734f
 checkpoint_path: ${oc.env:OUTPUT_DIR}/runs/train/${aim_hash}/checkpoints/last.ckpt
 
 defaults:
-  - datamodule: inaturalist_emb_contexts
+  - datamodule: waterbirds_emb_contexts
   - model: incontext_learner_gptj
   - trainer: default
   - override hydra/job_logging: custom
