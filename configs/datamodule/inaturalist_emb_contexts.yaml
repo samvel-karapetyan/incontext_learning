@@ -1,7 +1,7 @@
 _target_: src.datamodules.INaturalistEmbContextsDataModule
 name: inaturalist_emb_contexts
 
-context_class_size: 5
+context_class_size: 50
 minority_group_proportion: 0.1
 
 dataset_path: ${oc.env:DATA_ROOD_DIR}/inaturalist2017
