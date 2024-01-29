@@ -1,0 +1,22 @@
+name: evaluate
+seed: 0
+print_config: True
+ignore_warnings: False
+
+
+spurious_setting: separate_token # Options: 'separate_token'(x,c) , 'no_spurious'(x), 'sum'(x+c)
+aim_hash: cfaeecd30a3a466f95a1d789
+checkpoint_path: ${oc.env:OUTPUT_DIR}/runs/train/${aim_hash}/checkpoints/last.ckpt
+
+defaults:
+  - datamodule: inaturalist_emb_contexts
+  - model: incontext_learner_gptj
+  - trainer: default
+  - override hydra/job_logging: custom
+  - _self_
+
+hydra:
+  run:
+    dir: ${oc.env:OUTPUT_DIR}/runs/${name}/${now:%Y-%m-%d_%H-%M-%S} # IMPORTANT: Directory name AUTO-UPDATED with 'aim' logger's HASH when 'aim' is ENABLED
+  job:
+    chdir: True
