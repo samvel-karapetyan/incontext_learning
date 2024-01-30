@@ -67,7 +67,8 @@ class MinorityMajorityAccuracy(torchmetrics.Metric):
         Returns:
         list: A list containing the selected group indices based on the group type.
         """
-        counts = Counter(tensor.tolist())  # Count the occurrences of each group
+        counts = Counter({k: 0 for k in range(4)})
+        counts.update(tensor.tolist())  # Count the occurrences of each group
 
         if group_type == 'majority':
             target_occurrence = max(counts.values())  # Maximum occurrence for majority
