@@ -14,8 +14,10 @@ are_spurious_tokens_fixed: ${datamodule.are_spurious_tokens_fixed}
 are_class_tokens_fixed: ${datamodule.are_class_tokens_fixed}
 dataset_path: ${datamodule.dataset_path}
 encoding_extractor: ${datamodule.encoding_extractor}
+context_class_size: ${datamodule.context_class_size}
+minority_group_proportion: ${datamodule.minority_group_proportion}
 
-save_path: ${dataset_path}/context_val_sets/${encoding_extractor}
+save_path: ${dataset_path}/context_val_sets_${context_class_size}_${minority_group_proportion}/${encoding_extractor}
 
 hydra:
   run:

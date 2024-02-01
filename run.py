@@ -17,7 +17,8 @@ def main(config: DictConfig) -> None:
                      extract_encodings,
                      compute_encodings_avg_norm_and_generate_tokens,
                      generate_and_save_val_sets,
-                     train)
+                     train,
+                     evaluate)
 
     seed_everything(config.seed)
 
@@ -39,6 +40,9 @@ def main(config: DictConfig) -> None:
 
     if config.name == "train":
         return train(config)
+
+    if config.name == "evaluate":
+        return evaluate(config)
 
 
 if __name__ == '__main__':

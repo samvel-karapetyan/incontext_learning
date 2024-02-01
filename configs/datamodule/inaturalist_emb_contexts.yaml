@@ -1,12 +1,12 @@
 _target_: src.datamodules.INaturalistEmbContextsDataModule
 name: inaturalist_emb_contexts
 
-dataset_path: ${oc.env:DATA_ROOD_DIR}/inaturalist2017
-encoding_extractor: dinov2_vitb14
-saved_val_sets_path: ${datamodule.dataset_path}/context_val_sets/${datamodule.encoding_extractor}
-
 context_class_size: 50
 minority_group_proportion: 0.1
+
+dataset_path: ${oc.env:DATA_ROOD_DIR}/inaturalist2017
+encoding_extractor: dinov2_vitb14
+saved_val_sets_path: ${datamodule.dataset_path}/context_val_sets_${datamodule.context_class_size}_${datamodule.minority_group_proportion}/${datamodule.encoding_extractor}
 
 inner_train_len: ${trainer.max_steps}
 inner_val_len: 1024 # 2^n, because CombinedDataloader removes the last non-full batch

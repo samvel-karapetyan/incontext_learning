@@ -12,7 +12,7 @@ class InContextLearner(LightningModule):
     A PyTorch Lightning module for in-context learning.
     """
 
-    def __init__(self, network, loss_fn, val_sets, spurious_setting, optimizer_conf, scheduler_conf):
+    def __init__(self, network, loss_fn, val_sets, spurious_setting, optimizer_conf=None, scheduler_conf=None):
         """
         Initializes the InContextLearner module with a network, loss function, validation sets, optimizer, and scheduler configurations.
 
