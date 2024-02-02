@@ -36,6 +36,9 @@ class INaturalistEmbContextsDataModule(pl.LightningDataModule):
         token_generation_mode (str): Mode of token generation. Accepts 'random' or 'opposite'.
                                      'random' generates tokens with normal distribution,
                                      and 'opposite' generates a pair of tokens where the second is the negative of the first.
+        rotate_encodings (bool): Determines if image encodings are rotated in training set. True enables rotation
+                                 based on class labels, while False bypasses rotation.
+        n_rotation_matrices (int): Specifies the number of rotation matrices to generate and store.
         spurious_setting (str): Determines the handling mode of spurious tokens in the dataset instances.
                                 Options include 'separate_token'(x,c) , 'no_spurious'(x), 'sum'(x+c)
     """
@@ -66,6 +69,8 @@ class INaturalistEmbContextsDataModule(pl.LightningDataModule):
                  are_class_tokens_fixed,
                  token_generation_mode,
                  spurious_setting,
+                 rotate_encodings,
+                 n_rotation_matrices,
                  *args, **kwargs):
         super(INaturalistEmbContextsDataModule, self).__init__()
 
@@ -81,6 +86,8 @@ class INaturalistEmbContextsDataModule(pl.LightningDataModule):
         self._are_class_tokens_fixed = are_class_tokens_fixed
         self._token_generation_mode = token_generation_mode
         self._spurious_setting = spurious_setting
+        self._rotate_encodings = rotate_encodings
+        self._n_rotation_matrices = n_rotation_matrices
 
         # Initializing dataset lengths for different splits
         self._inner_train_len = inner_train_len
@@ -94,21 +101,24 @@ class INaturalistEmbContextsDataModule(pl.LightningDataModule):
         self._outer_val_set = None
         self._inner_outer_val_set = None
 
-    def setup(self, *args, **kwargs):
+    def setup(self, stage="fit", *args, **kwargs):
         """
         Sets up the dataset splits for training, validation, and testing.
         Initializes the inner train and inner, outer, inner-outer validation datasets.
         """
         # Creating dataset instances for each split using class attributes
-        self._train_set = INaturalistEmbContextsDataset(self._dataset_path, self._encoding_extractor,
-                                                        self._inner_train_len,
-                                                        "inner_train", "inner_train",
-                                                        self._context_class_size,
-                                                        self._minority_group_proportion,
-                                                        self._are_spurious_tokens_fixed,
-                                                        self._are_class_tokens_fixed,
-                                                        self._token_generation_mode,
-                                                        self._spurious_setting)
+        if stage == "fit":
+            self._train_set = INaturalistEmbContextsDataset(self._dataset_path, self._encoding_extractor,
+                                                            self._inner_train_len,
+                                                            "inner_train", "inner_train",
+                                                            self._context_class_size,
+                                                            self._minority_group_proportion,
+                                                            self._are_spurious_tokens_fixed,
+                                                            self._are_class_tokens_fixed,
+                                                            self._token_generation_mode,
+                                                            self._spurious_setting,
+                                                            rotate_encodings=self._rotate_encodings,
+                                                            n_rotation_matrices=self._n_rotation_matrices)
 
         saved_data_path = self._saved_val_sets_path and os.path.join(self._saved_val_sets_path,
                                                                      self.ValSets.INNER.value)
