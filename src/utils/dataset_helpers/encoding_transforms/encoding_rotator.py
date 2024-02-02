@@ -47,18 +47,18 @@ class EncodingRotator:
 
     def __call__(self, image_enc, class_label):
         """
-                Applies a rotation transformation to an encoding vector based on the given class label.
+        Applies a rotation transformation to an encoding vector based on the given class label.
 
-                This method rotates an encoding vector using one of the two sampled rotation matrices
-                associated with the instance. The choice of matrix is determined by the class label.
+        This method rotates an encoding vector using one of the two sampled rotation matrices
+        associated with the instance. The choice of matrix is determined by the class label.
 
-                Args:
-                    image_enc (numpy.ndarray): The encoding vector to be rotated. This vector should match the dimensionality
-                                               of the rotation matrices.
-                    class_label (int): The class label determining which rotation matrix to use. Expected to be 0 or 1,
-                                       corresponding to the two sampled matrices.
+        Args:
+            image_enc (numpy.ndarray): The encoding vector to be rotated. This vector should match the dimensionality
+                                       of the rotation matrices.
+            class_label (int): The class label determining which rotation matrix to use. Expected to be 0 or 1,
+                               corresponding to the two sampled matrices.
 
-                Returns:
-                    numpy.ndarray: The rotated encoding vector, having the same type and shape as the input vector.
-                """
+        Returns:
+            numpy.ndarray: The rotated encoding vector, having the same type and shape as the input vector.
+        """
         return np.dot(image_enc, self._rotation_matrices[class_label].T).astype(image_enc.dtype)
