@@ -10,55 +10,39 @@ log = logging.getLogger(__name__)
 
 class EncodingRotator:
     """
-        A class that applies rotation to encoding vectors based on a class label.
+    A class that applies random rotation to encoding vectors or matricesl.
 
-        This class uses a set of predefined rotation matrices to transform encoding vectors.
-        These rotation matrices are generated and stored statically to optimize performance,
-        avoiding the computational cost of generating them for each instance initialization.
+    This class uses a set of predefined rotation matrices to transform encoding vectors or matrices.
+    These rotation matrices are generated at initialization and stored to optimize performance,
+    avoiding the computational cost of generating them for each rotation operation.
     """
 
-    rotation_matrices = []
-
-    @staticmethod
-    def generate_rotation_matrices(n_matrices, emb_size):
+    def __init__(self, n_matrices, emb_size):
         """
-        Generates and stores a specified number of rotation matrices of a given size.
+        Initializes an instance, creating a specified number of rotation matrices.
 
-        This static method populates the `rotation_matrices` static list with randomly generated
-        orthogonal matrices, which are used to rotate encoding vectors. It utilizes the
-        special orthogonal group SO(n) to ensure the matrices are proper rotation matrices.
+        This constructor generates a list of rotation matrices using the special orthogonal
+        group SO(n), ensuring they are proper rotation matrices.
 
         Args:
             n_matrices (int): The number of rotation matrices to generate.
             emb_size (int): The dimensionality of the rotation matrices and the encoding vectors they will transform.
         """
         log.info(f"Generating {n_matrices} rotation matrices")
-        EncodingRotator.rotation_matrices = [special_ortho_group.rvs(emb_size) for _ in tqdm(range(n_matrices))]
+        self.rotation_matrices = [special_ortho_group.rvs(emb_size) for _ in tqdm(range(n_matrices))]
 
-    def __init__(self):
+    def __call__(self, image_enc):
         """
-        Initializes an instance of EncodingRotator, sampling two rotation matrices from the static list.
+        Applies a random rotation transformation to an encoding vector or matrix.
 
-        This constructor samples two distinct rotation matrices from the pre-generated static list
-        of rotation matrices. These matrices are then used to rotate encoding vectors based on their
-        class label.
-        """
-        self._rotation_matrices = random.sample(EncodingRotator.rotation_matrices, 2)
-
-    def __call__(self, image_enc, class_label):
-        """
-        Applies a rotation transformation to an encoding vector based on the given class label.
-
-        This method rotates an encoding vector using one of the two sampled rotation matrices
-        associated with the instance. The choice of matrix is determined by the class label.
+        This method rotates an encoding vector or matrix using a randomly selected rotation matrix
+        from the instance's pre-generated list.
 
         Args:
-            image_enc (numpy.ndarray): The encoding vector to be rotated. This vector should match the dimensionality
-                                       of the rotation matrices.
-            class_label (int): The class label determining which rotation matrix to use. Expected to be 0 or 1,
-                               corresponding to the two sampled matrices.
-
+            image_enc (numpy.ndarray): The encoding vector or matrix to be rotated. This vector should match the
+                                       dimensionality of the rotation matrices.
         Returns:
-            numpy.ndarray: The rotated encoding vector, having the same type and shape as the input vector.
+            numpy.ndarray: The rotated encoding vector or matrix, having the same type and shape as the input.
         """
-        return np.dot(image_enc, self._rotation_matrices[class_label].T).astype(image_enc.dtype)
+        rotation_matrix = random.choice(self.rotation_matrices)
+        return np.dot(image_enc, rotation_matrix).astype(image_enc.dtype)

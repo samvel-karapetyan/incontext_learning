@@ -88,10 +88,10 @@ class INaturalistEmbContextsDataset(Dataset):
         self._token_generation_mode = token_generation_mode
         self._saved_data_path = saved_data_path
 
-        self._rotate_encodings = rotate_encodings
-
         if rotate_encodings:
-            EncodingRotator.generate_rotation_matrices(n_rotation_matrices, tokens_data["token_len"].item())
+            self._img_encoding_transform = EncodingRotator(n_rotation_matrices, tokens_data["token_len"].item())
+        else:
+            self._img_encoding_transform = IdentityTransform()
 
     def __getitem__(self, idx):
         """
@@ -234,8 +234,6 @@ class INaturalistEmbContextsDataset(Dataset):
         Returns:
             np.ndarray: The transformed image encodings.
         """
-        encoding_transform = EncodingRotator() if self._rotate_encodings else IdentityTransform()
-
         img_encodings, labels = [], []
         for image_id, spurious_label, class_label in (context_of_ids + [query_of_ids]):
             img_encodings.append(np.load(os.path.join(self._encodings_path, f"{image_id}.npy")))
@@ -243,7 +241,7 @@ class INaturalistEmbContextsDataset(Dataset):
         img_encodings, labels = np.stack(img_encodings), np.array(labels)
 
         for label in np.unique(labels):
-            img_encodings[labels == label] = encoding_transform(img_encodings[labels == label], label)
+            img_encodings[labels == label] = self._img_encoding_transform(img_encodings[labels == label])
 
         return img_encodings
 
