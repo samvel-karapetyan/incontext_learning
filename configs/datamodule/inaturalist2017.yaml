@@ -1,7 +1,7 @@
 _target_: src.datamodules.INaturalist2017DataModule
 name: inaturalist2017
 
-dataset_path: ${oc.env:DATA_ROOD_DIR}/inaturalist2017
+dataset_path: ${oc.env:DATA_ROOT_DIR}/inaturalist2017
 min_images_per_category: 500
 resize_size: 256
 crop_size: 224
