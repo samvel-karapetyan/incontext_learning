@@ -3,7 +3,7 @@ seed: 0
 print_config: True
 ignore_warnings: False
 
-data_path: ${oc.env:DATA_ROOD_DIR}/inaturalist2017
+data_path: ${oc.env:DATA_ROOT_DIR}/inaturalist2017
 encoding_extractor: dinov2_vitb14
 
 hydra:
