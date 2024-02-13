@@ -33,6 +33,7 @@ class INaturalistEmbContextsDataset(Dataset):
                                 Options include 'separate_token'(x,c) , 'no_spurious'(x), 'sum'(x+c)
         rotate_encodings (bool): Determines if image encodings are rotated. True enables rotation
                                  based on class labels, while False bypasses rotation.
+        class_dependant_rotate (bool):  Flag decides whether image embedding rotations are class-specific.
         n_rotation_matrices (int): Specifies the number of rotation matrices to generate and store.
         saved_data_path (str or None): Path for loading data; if None, new data is generated.
     """
@@ -51,6 +52,7 @@ class INaturalistEmbContextsDataset(Dataset):
                  spurious_setting,
                  rotate_encodings=False,
                  n_rotation_matrices=None,
+                 class_dependant_rotate=None,
                  saved_data_path=None):
         super(INaturalistEmbContextsDataset, self).__init__()
 
@@ -90,8 +92,10 @@ class INaturalistEmbContextsDataset(Dataset):
 
         if rotate_encodings:
             self._img_encoding_transform = EncodingRotator(n_rotation_matrices, tokens_data["token_len"].item())
+            self._class_dependant_rotate = class_dependant_rotate
         else:
             self._img_encoding_transform = IdentityTransform()
+            self._class_dependant_rotate = False
 
     def __getitem__(self, idx):
         """
@@ -240,8 +244,11 @@ class INaturalistEmbContextsDataset(Dataset):
             labels.append(class_label)
         img_encodings, labels = np.stack(img_encodings), np.array(labels)
 
-        for label in np.unique(labels):
-            img_encodings[labels == label] = self._img_encoding_transform(img_encodings[labels == label])
+        if self._class_dependant_rotate:
+            for label in np.unique(labels):
+                img_encodings[labels == label] = self._img_encoding_transform(img_encodings[labels == label])
+        else:
+            img_encodings = self._img_encoding_transform(img_encodings)
 
         return img_encodings
 

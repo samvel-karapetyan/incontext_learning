@@ -39,6 +39,7 @@ class INaturalistEmbContextsDataModule(pl.LightningDataModule):
         rotate_encodings (bool): Determines if image encodings are rotated in training set. True enables rotation
                                  based on class labels, while False bypasses rotation.
         n_rotation_matrices (int): Specifies the number of rotation matrices to generate and store.
+        class_dependant_rotate (bool):  Flag decides whether image embedding rotations are class-specific
         spurious_setting (str): Determines the handling mode of spurious tokens in the dataset instances.
                                 Options include 'separate_token'(x,c) , 'no_spurious'(x), 'sum'(x+c)
     """
@@ -71,6 +72,7 @@ class INaturalistEmbContextsDataModule(pl.LightningDataModule):
                  spurious_setting,
                  rotate_encodings,
                  n_rotation_matrices,
+                 class_dependant_rotate,
                  *args, **kwargs):
         super(INaturalistEmbContextsDataModule, self).__init__()
 
@@ -88,6 +90,7 @@ class INaturalistEmbContextsDataModule(pl.LightningDataModule):
         self._spurious_setting = spurious_setting
         self._rotate_encodings = rotate_encodings
         self._n_rotation_matrices = n_rotation_matrices
+        self._class_dependant_rotate = class_dependant_rotate
 
         # Initializing dataset lengths for different splits
         self._inner_train_len = inner_train_len
@@ -118,7 +121,8 @@ class INaturalistEmbContextsDataModule(pl.LightningDataModule):
                                                             self._token_generation_mode,
                                                             self._spurious_setting,
                                                             rotate_encodings=self._rotate_encodings,
-                                                            n_rotation_matrices=self._n_rotation_matrices)
+                                                            n_rotation_matrices=self._n_rotation_matrices,
+                                                            class_dependant_rotate=self._class_dependant_rotate)
 
         saved_data_path = self._saved_val_sets_path and os.path.join(self._saved_val_sets_path,
                                                                      self.ValSets.INNER.value)
