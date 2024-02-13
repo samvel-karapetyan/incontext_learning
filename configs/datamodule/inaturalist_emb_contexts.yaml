@@ -21,3 +21,7 @@ batch_size: 32
 num_workers: 4
 
 spurious_setting: ${spurious_setting}  # Use the global value of 'spurious_setting'
+
+rotate_encodings: True
+n_rotation_matrices: 100
+class_dependant_rotate: True
