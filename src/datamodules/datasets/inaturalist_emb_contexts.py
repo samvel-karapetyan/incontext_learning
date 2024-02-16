@@ -56,8 +56,11 @@ class INaturalistEmbContextsDataset(Dataset):
                  saved_data_path=None):
         super(INaturalistEmbContextsDataset, self).__init__()
 
-        # Paths for encodings and data files
-        self._encodings_path = os.path.join(dataset_path, encoding_extractor)
+        # Prepare encodings and data files
+        encodings_data = np.load(os.path.join(dataset_path, encoding_extractor, "combined.npz"))
+        self._encodings = encodings_data["encodings"]
+        self._encodings_indices_map = encodings_data["indices_map"]
+
         self._dataframe = pd.read_csv(os.path.join(dataset_path, "prepared_data.csv"))
         self._dataframe = self._dataframe[self._dataframe['split'].isin([class1_split, class2_split])]
 
@@ -240,7 +243,7 @@ class INaturalistEmbContextsDataset(Dataset):
         """
         img_encodings, labels = [], []
         for image_id, spurious_label, class_label in (context_of_ids + [query_of_ids]):
-            img_encodings.append(np.load(os.path.join(self._encodings_path, f"{image_id}.npy")))
+            img_encodings.append(self._encodings[self._encodings_indices_map[image_id]])
             labels.append(class_label)
         img_encodings, labels = np.stack(img_encodings), np.array(labels)
 
