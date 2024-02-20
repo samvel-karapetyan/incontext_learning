@@ -11,7 +11,11 @@ def evaluate(config: DictConfig):
     log.info(f"Instantiating model <{config.model._target_}>")
     model_class = get_class(config.model._target_)
     del config.model._target_  # Remove _target_ key before instantiation
-    model = model_class.load_from_checkpoint(config.checkpoint_path, **instantiate(config.model))
+
+    model = model_class.load_from_checkpoint(config.checkpoint_path, **instantiate(config.model), map_location='cpu')
+    # Specify map_location='cpu' to initially load the model on the CPU, overriding the default behavior of loading
+    # it on the GPU it was trained on. This provides flexibility for the model to be moved to a GPU as per the
+    # configuration settings of the trainer.
 
     # Instantiate data module from configuration
     log.info(f"Instantiating datamodule <{config.datamodule._target_}>")
