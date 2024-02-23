@@ -172,7 +172,7 @@ class WaterbirdsEmbContextsDataset(Dataset):
             random_items = np.random.choice(all_group_items, group_count, replace=False)
             context_indices = np.concatenate([context_indices, random_items])
 
-        query_group = np.random.randint(1, 4)
+        query_group = np.random.randint(0, 4)
         query_idx = np.random.choice(np.where(self._val_groups == query_group)[0])
 
         np.random.shuffle(context_indices)
