@@ -11,7 +11,7 @@ defaults:
   - _self_
 
 device: cuda:0 # The device to be used for computation.
-save_path: ${oc.env:DATA_ROOD_DIR}/${datamodule.name}/${encoding_extractor.name} # The path where the extracted encodings will be saved.
+save_path: ${oc.env:DATA_ROOT_DIR}/${datamodule.name}/${encoding_extractor.name} # The path where the extracted encodings will be saved.
 
 hydra:
   run:

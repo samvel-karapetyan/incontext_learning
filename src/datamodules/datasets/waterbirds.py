@@ -28,6 +28,16 @@ class CustomizedWaterbirdsDataset(WaterbirdsDataset):
         self._data_type = data_type
         self._encoding_extractor = encoding_extractor
 
+        if data_type == "encoding":
+            # Prepare encodings and data files
+            self._encodings_data = {}
+            for split in self.DEFAULT_SPLITS:
+                self._encodings_data[split] = {}
+
+                encodings_data = np.load(os.path.join(root_dir, "waterbirds", encoding_extractor, split, "combined.npz"))
+                self._encodings_data[split]["encodings"] = encodings_data["encodings"]
+                self._encodings_data[split]["indices_map"] = encodings_data["indices_map"]
+
     def __getitem__(self, idx):
         """
         Retrieves the item at the given index from the dataset.
@@ -49,8 +59,18 @@ class CustomizedWaterbirdsDataset(WaterbirdsDataset):
         elif self._data_type == "encoding":
             split_dict = {value: key for key, value in self.split_dict.items()}
             set_name = split_dict[self.split_array[idx]]
-            emb_path = os.path.join(self._root_dir, "waterbirds", self._encoding_extractor, set_name, f"{idx}.npy")
-            x = np.load(emb_path)
+
+            # Retrieve the set information from the encodings data
+            set_info = self._encodings_data[set_name]
+
+            # Get the index map for the current set
+            index_map = set_info["indices_map"]
+
+            # Find the actual index in the encodings using the index map
+            actual_index = index_map[idx]
+
+            # Finally, access the encoding using the actual index
+            x = set_info["encodings"][actual_index]
             return x
 
     def get_subset(self, split, frac=1.0, transform=None):

@@ -6,6 +6,7 @@ import random
 
 from torch.utils.data import Dataset
 from src.utils.dataset_helpers import TokenGenerator
+from src.utils.dataset_helpers.encoding_transforms import EncodingRotator, IdentityTransform
 
 log = logging.getLogger(__name__)
 
@@ -30,6 +31,10 @@ class INaturalistEmbContextsDataset(Dataset):
                                      and 'opposite' generates a pair of tokens where the second is the negative of the first.
         spurious_setting (str): Determines the handling mode of spurious tokens in the dataset instances.
                                 Options include 'separate_token'(x,c) , 'no_spurious'(x), 'sum'(x+c)
+        rotate_encodings (bool): Determines if image encodings are rotated. True enables rotation
+                                 based on class labels, while False bypasses rotation.
+        class_dependant_rotate (bool):  Flag decides whether image embedding rotations are class-specific.
+        n_rotation_matrices (int): Specifies the number of rotation matrices to generate and store.
         saved_data_path (str or None): Path for loading data; if None, new data is generated.
     """
 
@@ -45,11 +50,17 @@ class INaturalistEmbContextsDataset(Dataset):
                  are_class_tokens_fixed,
                  token_generation_mode,
                  spurious_setting,
+                 rotate_encodings=False,
+                 n_rotation_matrices=None,
+                 class_dependant_rotate=None,
                  saved_data_path=None):
         super(INaturalistEmbContextsDataset, self).__init__()
 
-        # Paths for encodings and data files
-        self._encodings_path = os.path.join(dataset_path, encoding_extractor)
+        # Prepare encodings and data files
+        encodings_data = np.load(os.path.join(dataset_path, encoding_extractor, "combined.npz"))
+        self._encodings = encodings_data["encodings"]
+        self._encodings_indices_map = encodings_data["indices_map"]
+
         self._dataframe = pd.read_csv(os.path.join(dataset_path, "prepared_data.csv"))
         self._dataframe = self._dataframe[self._dataframe['split'].isin([class1_split, class2_split])]
 
@@ -81,6 +92,13 @@ class INaturalistEmbContextsDataset(Dataset):
 
         self._token_generation_mode = token_generation_mode
         self._saved_data_path = saved_data_path
+
+        if rotate_encodings:
+            self._img_encoding_transform = EncodingRotator(n_rotation_matrices, tokens_data["token_len"].item())
+            self._class_dependant_rotate = class_dependant_rotate
+        else:
+            self._img_encoding_transform = IdentityTransform()
+            self._class_dependant_rotate = False
 
     def __getitem__(self, idx):
         """
@@ -212,6 +230,31 @@ class INaturalistEmbContextsDataset(Dataset):
 
         return context, query
 
+    def _prepare_image_encodings(self, context_of_ids, query_of_ids):
+        """
+        Transforms image encodings based on their labels using the appropriate encoding transformer.
+
+        Args:
+            context_of_ids (list): List of tuples for the context images containing IDs, spurious labels, and class labels.
+            query_of_ids (tuple): Tuple for the query image containing ID, spurious label, and class label.
+
+        Returns:
+            np.ndarray: The transformed image encodings.
+        """
+        img_encodings, labels = [], []
+        for image_id, spurious_label, class_label in (context_of_ids + [query_of_ids]):
+            img_encodings.append(self._encodings[self._encodings_indices_map[image_id]])
+            labels.append(class_label)
+        img_encodings, labels = np.stack(img_encodings), np.array(labels)
+
+        if self._class_dependant_rotate:
+            for label in np.unique(labels):
+                img_encodings[labels == label] = self._img_encoding_transform(img_encodings[labels == label])
+        else:
+            img_encodings = self._img_encoding_transform(img_encodings)
+
+        return img_encodings
+
     def _process_and_combine_encodings(self, context_of_ids, query_of_ids, spurious_tokens, class_tokens):
         """
         Processes and combines image encodings with spurious and class tokens for the given context and query IDs.
@@ -219,8 +262,8 @@ class INaturalistEmbContextsDataset(Dataset):
         Args:
             context_of_ids (list): List of tuples containing image IDs, spurious labels, and class labels for the context images.
             query_of_ids (tuple): Tuple containing image ID, spurious label, and class label for the query image.
-            spurious_tokens (dict): Dictionary mapping spurious labels to tokens.
-            class_tokens (dict): Dictionary mapping class labels to tokens.
+            spurious_tokens (np.ndarray): numpy array mapping spurious labels to tokens.
+            class_tokens (np.ndarray): numpy array mapping class labels to tokens.
 
         Returns:
             tuple: A tuple containing the stacked input sequence of image encodings and tokens,
@@ -231,12 +274,13 @@ class INaturalistEmbContextsDataset(Dataset):
         spurious_labels = []
         class_labels = []
 
-        for image_id, spurious_label, class_label in (context_of_ids + [query_of_ids]):
+        img_encodings = self._prepare_image_encodings(context_of_ids, query_of_ids)
+
+        for image_enc, (image_id, spurious_label, class_label) in zip(img_encodings, (context_of_ids + [query_of_ids])):
             image_indices.append(image_id)
             spurious_labels.append(spurious_label)
             class_labels.append(class_label)
 
-            image_enc = np.load(os.path.join(self._encodings_path, f"{image_id}.npy"))
             class_token = class_tokens[class_label]
 
             if self._spurious_setting == 'separate_token':

@@ -21,12 +21,12 @@ class WaterbirdsEmbContextsDataModule(pl.LightningDataModule):
     Attributes:
         root_dir (str): Path to the dataset.
         encoding_extractor (str): Name of the encoding extractor.
-        data_length (int):
+        data_length (int): Length of the dataset.
         saved_val_set_path (str or None): Path for loading validation set; if None, new data is generated.
         batch_size (int): Batch size for data loaders.
         num_workers (int): Number of workers for data loaders.
         context_class_size (int): Size of each class in context.
-        group_proportions:
+        group_proportions(list): Proportions of groups
         are_spurious_tokens_fixed (bool): Flag indicating whether to use fixed spurious tokens.
         are_class_tokens_fixed (bool): Flag indicating whether to use fixed class tokens.
         spurious_setting (str): Determines the handling mode of spurious tokens in the dataset instances.
