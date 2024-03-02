@@ -1,6 +1,5 @@
 import logging
 import os
-import torch
 import numpy as np
 import random
 
@@ -45,18 +44,14 @@ class WaterbirdsEmbContextsDataset(Dataset):
                  saved_data_path=None):
         super(WaterbirdsEmbContextsDataset, self).__init__()
 
-        self._dataset = WaterbirdsDataset(root_dir, data_type="encoding", encoding_extractor=encoding_extractor)
-        groups = np.stack([(2 * y + c) for _, y, c, _ in self._dataset])
+        dataset = WaterbirdsDataset(root_dir, data_type="encoding", encoding_extractor=encoding_extractor)
+        groups = np.stack([(2 * y + c) for _, y, c, _ in dataset])
 
-        self._train_set = self._dataset.get_subset("train")
-        self._val_set = self._dataset.get_subset("val")
+        self._train_set = dataset.get_subset("train")
+        self._val_set = dataset.get_subset("val")
 
         self._train_groups = groups[self._train_set.indices]
         self._val_groups = groups[self._val_set.indices]
-
-        # Paths for encodings
-        self._train_encodings_dir = os.path.join(root_dir, "waterbirds", encoding_extractor, "train")
-        self._val_encodings_dir = os.path.join(root_dir, "waterbirds", encoding_extractor, "val")
 
         self._data_length = data_length
 
@@ -211,7 +206,7 @@ class WaterbirdsEmbContextsDataset(Dataset):
             spurious_labels.append(spurious_label)
             class_labels.append(class_label)
 
-            image_enc, *_ = self._dataset[image_id]
+            image_enc, *_ = self._val_set[image_id] if image_id == query_of_ids[0] else self._train_set[image_id]
             class_token = class_tokens[class_label]
 
             if self._spurious_setting == 'separate_token':
