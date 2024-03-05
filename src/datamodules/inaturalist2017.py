@@ -35,19 +35,40 @@ class INaturalist2017DataModule:
                  batch_size,
                  num_workers,
                  *args, **kwargs):
-        # Initialize the INaturalist2017Dataset
-        self._dataset = INaturalist2017Dataset(dataset_path,
-                                               min_images_per_category,
-                                               resize_size,
-                                               crop_size,
-                                               fully_outer_supercategories,
-                                               fully_inner_supercategories,
-                                               outer_classes_size,
-                                               inner_val_size)
+        self.dataset_path = dataset_path
+        self.min_images_per_category = min_images_per_category
+        self.resize_size = resize_size
+        self.crop_size = crop_size
+        self.fully_outer_supercategories = fully_outer_supercategories
+        self.fully_inner_supercategories = fully_inner_supercategories
+        self.outer_classes_size = outer_classes_size
+        self.inner_val_size = inner_val_size
+
+        self.with_subsets = False
 
         # Store batch size and number of workers for data loading
         self._batch_size = batch_size
         self._num_workers = num_workers
+
+        self._dataset = None
+
+    def prepare_data(self):
+        """
+        Prepares the iNaturalist 2017 dataset for use with the DataLoader.
+
+        This method initializes the INaturalist2017Dataset with the specified configuration, including resizing and
+        cropping of images, as well as assigning categories to 'inner' and 'outer' splits based on supercategory
+        specifications. This setup is crucial for creating a DataLoader that facilitates efficient data loading and
+        preprocessing for model training and validation.
+        """
+        self._dataset = INaturalist2017Dataset(self.dataset_path,
+                                               self.min_images_per_category,
+                                               self.resize_size,
+                                               self.crop_size,
+                                               self.fully_outer_supercategories,
+                                               self.fully_inner_supercategories,
+                                               self.outer_classes_size,
+                                               self.inner_val_size)
 
     def get_dataloader(self):
         """

@@ -1,2 +1,4 @@
 from src.datamodules.datasets.inaturalist2017 import INaturalist2017Dataset
 from src.datamodules.datasets.inaturalist_emb_contexts import INaturalistEmbContextsDataset
+from src.datamodules.datasets.waterbirds import CustomizedWaterbirdsDataset as WaterbirdsDataset
+from src.datamodules.datasets.waterbirds_emb_contexts import WaterbirdsEmbContextsDataset

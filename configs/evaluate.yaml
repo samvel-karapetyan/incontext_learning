@@ -9,7 +9,7 @@ aim_hash: cfaeecd30a3a466f95a1d789
 checkpoint_path: ${oc.env:OUTPUT_DIR}/runs/train/${aim_hash}/checkpoints/last.ckpt
 
 defaults:
-  - datamodule: inaturalist_emb_contexts
+  - datamodule: inaturalist_emb_contexts # Options: 'inaturalist_emb_contexts', 'waterbirds_emb_contexts'
   - model: incontext_learner_gptj
   - trainer: default
   - override hydra/job_logging: custom

@@ -22,6 +22,9 @@ def compute_encodings_avg_norm_and_generate_tokens(config: DictConfig) -> None:
     """
     # Construct the path to the directory with encoding files
     encodings_path = os.path.join(config.data_path, config.encoding_extractor)
+    if config.split:
+        encodings_path = os.path.join(encodings_path, config.split)
+
     norms: List[float] = []  # List to store norms of each encoding
 
     # Process each file in the encodings directory
