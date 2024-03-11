@@ -43,7 +43,7 @@ def extract_encodings(config: DictConfig):
             encoding_extractor_and_savers[subset_name] = encoding_extractor_and_saver
 
         # Process each batch from the dataloader, extract encodings.
-        for (images, _, _, indices), _, dataloader_idx in tqdm(iter(dataloader), desc="Processing Images"):
+        for (images, indices), _, dataloader_idx in tqdm(iter(dataloader), desc="Processing Images"):
             subset_name = subset_names[dataloader_idx]
             encoding_extractor_and_savers[subset_name].extract_encodings(images.to(config.device), indices)
 

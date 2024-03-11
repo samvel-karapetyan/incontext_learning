@@ -16,7 +16,7 @@ class CustomizedWaterbirdsDataset(WaterbirdsDataset):
     functionalities and modifications.
     """
 
-    def __init__(self, root_dir, data_type="img", encoding_extractor=None, *args, **kwargs):
+    def __init__(self, root_dir, data_type="img", encoding_extractor=None, return_labels=False, *args, **kwargs):
         """
         Initializes the CustomizedWaterbirdsDataset instance.
 
@@ -27,6 +27,7 @@ class CustomizedWaterbirdsDataset(WaterbirdsDataset):
         self._root_dir = root_dir
         self._data_type = data_type
         self._encoding_extractor = encoding_extractor
+        self._return_labels = return_labels
 
         if data_type == "encoding":
             # Prepare encodings and data files
@@ -51,7 +52,10 @@ class CustomizedWaterbirdsDataset(WaterbirdsDataset):
         x, y, metadata = super().__getitem__(idx)
         x, y, c = x, y, metadata[0]
 
-        return x, y, c, idx
+        if self._return_labels:
+            return x, y, c, idx
+        else:
+            return x, idx
 
     def get_input(self, idx):
         if self._data_type == "img":
