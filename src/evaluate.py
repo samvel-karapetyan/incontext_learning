@@ -1,7 +1,13 @@
 import logging
+import numpy as np
+import matplotlib
+import matplotlib.pyplot as plt
 
 from hydra.utils import instantiate, get_class
 from omegaconf import DictConfig
+from collections.abc import Iterable
+
+matplotlib.use('Agg')
 
 log = logging.getLogger(__name__)
 
@@ -17,35 +23,50 @@ def evaluate(config: DictConfig):
     # it on the GPU it was trained on. This provides flexibility for the model to be moved to a GPU as per the
     # configuration settings of the trainer.
 
-    # Instantiate data module from configuration
-    log.info(f"Instantiating datamodule <{config.datamodule._target_}>")
-    datamodule = instantiate(config.datamodule)
-
     # Instantiate trainer from configuration
     log.info(f"Instantiating trainer <{config.trainer._target_}>")
     trainer = instantiate(config.trainer)
 
-    # Validate model using trainer and datamodule
-    results = trainer.validate(model, datamodule=datamodule)
+    if isinstance(config.datamodule.context_class_size, Iterable):
+        val_sets = [f"val_{x}" for x in config.datamodule.val_sets] if config.datamodule.val_sets else ['val']
+        combined_results = {set_name: [] for set_name in val_sets}
 
-    if config.datamodule.name == "inaturalist_emb_contexts":
-        # Mapping of set names to their respective dataloader indices
-        dataloaders = {
-            "val_inner": 0,
-            "val_outer": 1,
-            "val_inner_outer": 2
-        }
+        context_class_sizes = list(config.datamodule.context_class_size)
+        for context_class_size in context_class_sizes:
+            config.datamodule.context_class_size = context_class_size
+            # Instantiate data module from configuration
+            log.info(f"Instantiating datamodule <{config.datamodule._target_}>")
+            datamodule = instantiate(config.datamodule)
 
-        # Initialize an empty string to store result summaries
-        result_summaries = ""
+            # Validate model using trainer and datamodule
+            results = trainer.validate(model, datamodule=datamodule)
+            for i, result in enumerate(results):
+                set_name = val_sets[i]
+                result = {key.split(f"{set_name}_")[-1].split("/")[0]: val for key, val in result.items()}
+                combined_results[set_name].append(result)
 
-        # Iterate over each set and accumulate results in a formatted string
-        for set_name in ["val_inner", "val_inner_outer", "val_outer"]:
-            dataloader_idx = dataloaders[set_name]
-            res = results[dataloader_idx]
-            result_summaries += f"{res[f'{set_name}_accuracy_minority/dataloader_idx_{dataloader_idx}']:.2f}|"
-            result_summaries += f"{res[f'{set_name}_accuracy_majority/dataloader_idx_{dataloader_idx}']:.2f}|"
-            result_summaries += f"{res[f'{set_name}_accuracy/dataloader_idx_{dataloader_idx}']:.2f}\n"
+        x = context_class_sizes
+        for set_name, results in combined_results.items():
+            fig, axs = plt.subplots(1, 3, figsize=(10, 4))
+            results = {metric_name: [res[metric_name]
+                                     for res in results] for metric_name in results[0]
+                       if "accuracy" in metric_name}
 
-        # Print the accumulated result summaries
-        print(result_summaries)
+            min_value = 1.0
+            max_value = 0
+            for (metric_name, result), ax in zip(results.items(), axs):
+                ax.plot(x, result)
+                ax.scatter(x, result)
+                ax.set_title(metric_name)
+                ax.set_xticks(x)
+                ax.axhline(y=1.0, color='gray', linestyle='--')
+
+                min_value = np.min(result + [min_value])
+                max_value = np.max(result + [max_value])
+
+            for ax in axs:
+                ax.set_ylim(min_value - 0.005, max_value + 0.005)
+
+            plt.tight_layout(rect=[0, 0, 1, 0.9])  # Adjust subplots to fit into the figure area.
+            plt.suptitle(f"{config.datamodule.name}, {set_name} | {config.spurious_setting} | {config.aim_hash}", fontsize=16)
+            plt.savefig(f"{set_name}.png")
