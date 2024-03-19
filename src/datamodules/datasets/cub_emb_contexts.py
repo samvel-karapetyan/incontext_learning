@@ -1,26 +1,26 @@
 import logging
 import os
+import pandas as pd
 import numpy as np
 import random
 
 from torch.utils.data import Dataset
 from src.utils.dataset_helpers import TokenGenerator
-from src.datamodules.datasets.waterbirds import CustomizedWaterbirdsDataset as WaterbirdsDataset
 
 log = logging.getLogger(__name__)
 
 
-class WaterbirdsEmbContextsDataset(Dataset):
+class CUBEmbContextsDataset(Dataset):
     """
-    A dataset class for the Waterbirds dataset, which handles embeddings and contextual data.
+    A dataset class for the Caltech-UCSD Birds (CUB) 200-2011 dataset, which handles embeddings and contextual data.
     This class supports either generating new data dynamically or loading pre-existing data from a specified path.
 
     Attributes:
-        root_dir (str): The root directory of the dataset.
+        dataset_path (str): The path to the dataset directory.
         encoding_extractor (str): The name of the encoding extractor used.
         data_length (int): The length of the dataset.
         context_class_size (int): The size of each class in the context.
-        group_proportions:
+        minority_group_proportion (float): The proportion of the minority group in the context per class.
         are_spurious_tokens_fixed (bool): Flag indicating whether to use fixed spurious tokens.
         are_class_tokens_fixed (bool): Flag indicating whether to use fixed class tokens.
         token_generation_mode (str): Mode of token generation. Accepts 'random' or 'opposite'.
@@ -32,38 +32,44 @@ class WaterbirdsEmbContextsDataset(Dataset):
     """
 
     def __init__(self,
-                 root_dir,
+                 dataset_path,
                  encoding_extractor,
                  data_length,
                  context_class_size,
-                 group_proportions,
+                 minority_group_proportion,
                  are_spurious_tokens_fixed,
                  are_class_tokens_fixed,
                  token_generation_mode,
                  spurious_setting,
                  saved_data_path=None):
-        super(WaterbirdsEmbContextsDataset, self).__init__()
+        super(CUBEmbContextsDataset, self).__init__()
 
-        dataset = WaterbirdsDataset(root_dir,
-                                    data_type="encoding",
-                                    encoding_extractor=encoding_extractor,
-                                    return_labels=True)
-        groups = np.stack([(2 * y + c) for _, y, c, _ in dataset])
+        # Prepare encodings and data files
+        encodings_data = np.load(os.path.join(dataset_path, encoding_extractor, "combined.npz"))
+        self._encodings = encodings_data["encodings"]
+        self._encodings_indices_map = encodings_data["indices_map"]
 
-        self._train_set = dataset.get_subset("train")
-        self._val_set = dataset.get_subset("val")
+        self._dataframe = pd.read_csv(os.path.join(dataset_path, 'image_class_labels.txt'), sep=' ',
+                                      header=None, names=['image_id', 'category'])
 
-        self._train_groups = groups[self._train_set.indices]
-        self._val_groups = groups[self._val_set.indices]
+        # Calculate the value counts of categories that appear more than context_class_size times
+        valid_categories = self._dataframe['category'].value_counts()[lambda x: x > context_class_size].index
+
+        # Filter the dataframe to only include rows with those categories
+        self._dataframe = self._dataframe[self._dataframe['category'].isin(valid_categories)]
 
         self._data_length = data_length
 
         # Dataset parameters
         self._context_class_size = context_class_size
-        self._group_proportions = group_proportions
+        self._minority_group_proportion = minority_group_proportion
+        self._spurious_setting = spurious_setting
+
+        self._categories = self._dataframe["category"].unique()
 
         # Loading tokens data
-        tokens_data = np.load(os.path.join(root_dir, "inaturalist2017", "avg_norms", f"{encoding_extractor}_l2.npz"), mmap_mode="r")
+        tokens_data = np.load(os.path.join(dataset_path, "..", "inaturalist2017",
+                                           "avg_norms", f"{encoding_extractor}_l2.npz"), mmap_mode="r")
         # Convert tokens_data to a dictionary to resolve "Bad CRC-32" error in multi-worker mode.
         tokens_data = {k: tokens_data[k] for k in tokens_data.keys()}
 
@@ -76,8 +82,6 @@ class WaterbirdsEmbContextsDataset(Dataset):
 
         self._token_generation_mode = token_generation_mode
         self._saved_data_path = saved_data_path
-
-        self._spurious_setting = spurious_setting
 
     def __getitem__(self, idx):
         """
@@ -161,29 +165,72 @@ class WaterbirdsEmbContextsDataset(Dataset):
         """
 
         # Using the class's dataframe
-        context_len = 2 * self._context_class_size
-        group_counts = [int(context_len * p) for p in self._group_proportions]
+        df = self._dataframe
 
-        context_indices = np.array([], dtype=np.int64)
-        for i, group_count in enumerate(group_counts):
-            all_group_items = np.where(self._train_groups == i)[0]
-            random_items = np.random.choice(all_group_items, group_count, replace=False)
-            context_indices = np.concatenate([context_indices, random_items])
+        # Randomly selecting two categories
+        if isinstance(self._categories, tuple):  # in case of inner_val-outer set
+            category1, category2 = (np.random.choice(x, size=1)[0] for x in self._categories)
+        else:
+            category1, category2 = np.random.choice(self._categories, size=2, replace=False)
 
-        query_group = np.random.randint(0, 4)
-        query_idx = np.random.choice(np.where(self._val_groups == query_group)[0])
+        # Sampling examples from each category
+        cat1_indices = df.loc[df["category"] == category1, "image_id"].sample(self._context_class_size).tolist()
+        cat2_indices = df.loc[df["category"] == category2, "image_id"].sample(self._context_class_size + 1).tolist()
 
-        np.random.shuffle(context_indices)
+        # Shuffling class and spurious labels
+        class_labels, spurious_labels = [0, 1], [0, 1]
+        random.shuffle(class_labels)
+        random.shuffle(spurious_labels)
+        cat1_class_label, cat2_class_label = class_labels
+        spurious_label1, spurious_label2 = spurious_labels
 
-        context_labels = np.array([self._train_set[idx][1] for idx in context_indices])
-        context_spurious_labels = np.array([self._train_set[idx][2] for idx in context_indices])
-        query_label = self._val_set[query_idx][1]
-        query_spurious_label = self._val_set[query_idx][2]
+        # Generating spurious labels for each category
+        cat1_spurious_labels = self._generate_spurious_labels(spurious_label1, spurious_label2,
+                                                              self._context_class_size,
+                                                              self._minority_group_proportion)
+        cat2_spurious_labels = self._generate_spurious_labels(spurious_label2, spurious_label1,
+                                                              self._context_class_size,
+                                                              self._minority_group_proportion, extra_token=True)
 
-        context = list(zip(context_indices, context_spurious_labels, context_labels))
-        query = (query_idx, query_spurious_label, query_label)
+        # Preparing query example
+        query_image_id = cat2_indices.pop()
+        query_spurious_label = cat2_spurious_labels.pop()
+
+        # Ensure the class labels are replicated to match the number of indices
+        cat1_class_labels = [cat1_class_label] * len(cat1_indices)
+        cat2_class_labels = [cat2_class_label] * len(cat2_indices)
+
+        # Pair indices with their respective labels
+        cat1_examples = list(zip(cat1_indices, cat1_spurious_labels, cat1_class_labels))
+        cat2_examples = list(zip(cat2_indices, cat2_spurious_labels, cat2_class_labels))
+
+        # Combine and shuffle the examples from both categories
+        context = cat1_examples + cat2_examples
+        random.shuffle(context)
+
+        # Create a query tuple
+        query = (query_image_id, query_spurious_label, cat2_class_label)
 
         return context, query
+
+    def _prepare_image_encodings(self, context_of_ids, query_of_ids):
+        """
+        Transforms image encodings based on their labels using the appropriate encoding transformer.
+
+        Args:
+            context_of_ids (list): List of tuples for the context images containing IDs, spurious labels, and class labels.
+            query_of_ids (tuple): Tuple for the query image containing ID, spurious label, and class label.
+
+        Returns:
+            np.ndarray: The transformed image encodings.
+        """
+        img_encodings, labels = [], []
+        for image_id, spurious_label, class_label in (context_of_ids + [query_of_ids]):
+            img_encodings.append(self._encodings[self._encodings_indices_map[image_id]])
+            labels.append(class_label)
+        img_encodings, labels = np.stack(img_encodings), np.array(labels)
+
+        return img_encodings
 
     def _process_and_combine_encodings(self, context_of_ids, query_of_ids, spurious_tokens, class_tokens):
         """
@@ -192,8 +239,8 @@ class WaterbirdsEmbContextsDataset(Dataset):
         Args:
             context_of_ids (list): List of tuples containing image IDs, spurious labels, and class labels for the context images.
             query_of_ids (tuple): Tuple containing image ID, spurious label, and class label for the query image.
-            spurious_tokens (dict): Dictionary mapping spurious labels to tokens.
-            class_tokens (dict): Dictionary mapping class labels to tokens.
+            spurious_tokens (np.ndarray): numpy array mapping spurious labels to tokens.
+            class_tokens (np.ndarray): numpy array mapping class labels to tokens.
 
         Returns:
             tuple: A tuple containing the stacked input sequence of image encodings and tokens,
@@ -204,12 +251,13 @@ class WaterbirdsEmbContextsDataset(Dataset):
         spurious_labels = []
         class_labels = []
 
-        for image_id, spurious_label, class_label in (context_of_ids + [query_of_ids]):
+        img_encodings = self._prepare_image_encodings(context_of_ids, query_of_ids)
+
+        for image_enc, (image_id, spurious_label, class_label) in zip(img_encodings, (context_of_ids + [query_of_ids])):
             image_indices.append(image_id)
             spurious_labels.append(spurious_label)
             class_labels.append(class_label)
 
-            image_enc, *_ = self._val_set[image_id] if image_id == query_of_ids[0] else self._train_set[image_id]
             class_token = class_tokens[class_label]
 
             if self._spurious_setting == 'separate_token':
@@ -221,7 +269,8 @@ class WaterbirdsEmbContextsDataset(Dataset):
             elif self._spurious_setting == 'no_spurious':
                 input_seq += [image_enc, class_token]
             else:
-                raise ValueError(f"Invalid spurious setting: '{self._spurious_setting}'. Expected 'separate_token', 'sum', or 'no_spurious'.")
+                raise ValueError(
+                    f"Invalid spurious setting: '{self._spurious_setting}'. Expected 'separate_token', 'sum', or 'no_spurious'.")
 
         input_seq.pop()  # removing the label of query from input sequence
 
