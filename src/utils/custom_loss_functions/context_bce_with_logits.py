@@ -3,27 +3,39 @@ import torch.nn as nn
 
 class ContextBNEWithLogits(nn.Module):
     """
-    A custom PyTorch loss module that applies Binary Cross-Entropy (BCE) with logits loss to the last 'n' elements
-    of the predictions and targets tensors. This is useful for cases where only a subset of the context (the last 'n' elements)
-    in a sequence is relevant for the loss calculation.
+    A custom PyTorch module that computes a weighted Binary Cross-Entropy (BCE) with logits loss, giving
+    differential weighting to the last element of the input tensors.
+
+    Args:
+        last_weight (float): The weight to be applied to the loss of the last element in the sequence, with
+            the remaining elements receiving a computed weight such that the average weight across all elements
+            equals 1.
+        *args: Variable length argument list for BCEWithLogitsLoss.
+        **kwargs: Arbitrary keyword arguments for BCEWithLogitsLoss.
     """
-    def __init__(self, keep_n, *args, **kwargs):
+    def __init__(self, last_weight, *args, **kwargs):
         super().__init__()
-        self._keep_n = keep_n
-        self._bne = nn.BCEWithLogitsLoss(*args, **kwargs)
+        self._last_weight = last_weight
+        # Initialize the BCEWithLogitsLoss with no reduction to manually compute the weighted loss
+        self._bne = nn.BCEWithLogitsLoss(*args, **kwargs, reduction='none')
 
     def forward(self, predictions, targets):
         """
-        Applies the BCEWithLogitsLoss to the last 'keep_n' elements of the predictions and targets tensors.
+        Computes the weighted BCEWithLogitsLoss, where the loss for the last element in each sequence
+        is weighted by `last_weight` and the rest of the elements are weighted such that the average
+        weight across all elements is 1.
 
         Args:
-            predictions (torch.Tensor): The predictions tensor, typically the output of a model.
-            targets (torch.Tensor): The ground truth tensor.
+            predictions (torch.Tensor): The predictions tensor, typically the output of a model,
+                expected to have shape (batch_size, sequence_length).
+            targets (torch.Tensor): The ground truth tensor, must have the same shape as the predictions tensor.
 
         Returns:
-            torch.Tensor: The computed loss value.
+            torch.Tensor: The computed weighted loss as a scalar tensor.
         """
-        predictions = predictions[:, -self._keep_n:]
-        targets = targets[:, -self._keep_n:]
+        # Compute element-wise losses
+        losses = self._bne(predictions, targets)
+        # Compute the mean loss for all elements except the last, and separately for the last element
+        loss = (1 - self._last_weight) * losses[:, :-1].mean() + self._last_weight * losses[:, -1].mean()
 
-        return self._bne(predictions, targets)
+        return loss
