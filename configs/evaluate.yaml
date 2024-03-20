@@ -8,6 +8,8 @@ spurious_setting: separate_token # Options: 'separate_token'(x,c) , 'no_spurious
 aim_hash: cfaeecd30a3a466f95a1d789
 checkpoint_path: ${oc.env:OUTPUT_DIR}/runs/train/${aim_hash}/checkpoints/last.ckpt
 
+n_repeat: 5
+
 datamodule: # overriding default context_class_size
   context_class_size: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 25, 30, 35, 40, 45, 50]
 
