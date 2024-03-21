@@ -4,7 +4,7 @@ import torchmetrics
 from pytorch_lightning import LightningModule
 from hydra.utils import instantiate
 
-from src.utils.custom_metrics import MinorityMajorityAccuracy
+from src.utils.custom_metrics import MinorityMajorityAccuracy, GroupAccuracy
 
 
 class InContextLearner(LightningModule):
@@ -12,7 +12,7 @@ class InContextLearner(LightningModule):
     A PyTorch Lightning module for in-context learning.
     """
 
-    def __init__(self, network, loss_fn, val_sets, spurious_setting, optimizer_conf=None, scheduler_conf=None):
+    def __init__(self, network, loss_fn, val_sets, spurious_setting, dataset_name, optimizer_conf=None, scheduler_conf=None):
         """
         Initializes the InContextLearner module with a network, loss function, validation sets, optimizer, and scheduler configurations.
 
@@ -22,6 +22,7 @@ class InContextLearner(LightningModule):
             val_sets: A list of validation dataset names.
             spurious_setting (str): Determines the handling mode of spurious tokens in the dataset instances.
                                     Options include 'separate_token'(x,c) , 'no_spurious'(x), 'sum'(x+c)
+            dataset_name (str): Name of the dataset.
             optimizer_conf: Configuration dictionary for the optimizer.
             scheduler_conf: Configuration dictionary for the scheduler.
         """
@@ -29,6 +30,7 @@ class InContextLearner(LightningModule):
 
         self._network = network
         self._with_spurious_token = (spurious_setting == 'separate_token')
+        self._dataset_name = dataset_name
 
         self._optimizer_conf = optimizer_conf
         self._scheduler_conf = scheduler_conf
@@ -39,6 +41,9 @@ class InContextLearner(LightningModule):
         self.accuracy = dict()
         self.accuracy_minority = dict()
         self.accuracy_majority = dict()
+
+        if dataset_name == "waterbirds_emb_contexts":
+            self.group_accuracies = [dict() for _ in range(4)]
 
         self._initialize_metrics()
 
@@ -88,6 +93,11 @@ class InContextLearner(LightningModule):
         self.log(f"{set_name}_accuracy", self.accuracy[set_name], on_step=False, on_epoch=True)
         self.log(f"{set_name}_accuracy_minority", self.accuracy_minority[set_name], on_step=False, on_epoch=True)
         self.log(f"{set_name}_accuracy_majority", self.accuracy_majority[set_name], on_step=False, on_epoch=True)
+
+        if self._dataset_name == "waterbirds_emb_contexts":
+            for i in range(4):
+                self.group_accuracies[i][set_name].update(pred_y, class_labels, spurious_labels)
+                self.log(f"{set_name}_group_{i}_accuracy", self.group_accuracies[i][set_name], on_step=False, on_epoch=True)
 
         return loss
 
@@ -147,7 +157,12 @@ class InContextLearner(LightningModule):
         """
         Initializes metrics for training and validation.
         """
+
         for set_name in ["train"] + self._val_sets:
+            if self._dataset_name == "waterbirds_emb_contexts":
+                for i in range(4):
+                    self.group_accuracies[i][set_name] = GroupAccuracy(group=i)
+
             self.accuracy[set_name] = torchmetrics.Accuracy(task="binary")
             self.accuracy_minority[set_name] = MinorityMajorityAccuracy(group_type="minority")
             self.accuracy_majority[set_name] = MinorityMajorityAccuracy(group_type="majority")
@@ -164,3 +179,8 @@ class InContextLearner(LightningModule):
         setattr(self, f"{set_name}_accuracy", self.accuracy[set_name])
         setattr(self, f"{set_name}_accuracy_minority", self.accuracy_minority[set_name])
         setattr(self, f"{set_name}_accuracy_majority", self.accuracy_majority[set_name])
+
+        if self._dataset_name == "waterbirds_emb_contexts":
+            for i in range(4):
+                setattr(self, f"{set_name}_group_{i}_accuracy", self.group_accuracies[i][set_name])
+

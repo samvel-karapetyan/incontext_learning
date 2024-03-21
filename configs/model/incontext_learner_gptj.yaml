@@ -18,3 +18,4 @@ loss_fn:
   query_loss_weight: 1
 spurious_setting: ${spurious_setting}  # Use the global value of 'spurious_setting'
 val_sets: ${datamodule.val_sets} # null if there is a single val set, otherwise this is the list of names of val sets
+dataset_name: ${datamodule.name}

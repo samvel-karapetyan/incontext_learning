@@ -1,2 +1,3 @@
 from src.utils.custom_metrics.wga import WorstGroupAccuracy
 from src.utils.custom_metrics.minority_majority_accuracy import MinorityMajorityAccuracy
+from src.utils.custom_metrics.group_accuracy import GroupAccuracy
