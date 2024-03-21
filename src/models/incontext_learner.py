@@ -34,7 +34,7 @@ class InContextLearner(LightningModule):
         self._scheduler_conf = scheduler_conf
         self._fc = nn.Linear(network.embed_dim, 1)
         self._loss_fn = loss_fn
-        self._val_sets = [f"val_{x}" for x in val_sets]
+        self._val_sets = [f"val_{x}" for x in val_sets] if val_sets else ['val']
 
         self.accuracy = dict()
         self.accuracy_minority = dict()
