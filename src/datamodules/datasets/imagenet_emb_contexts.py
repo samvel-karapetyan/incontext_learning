@@ -6,7 +6,7 @@ import numpy as np
 
 from src.datamodules.datasets import ImagenetDataset
 from src.utils.dataset_helpers import TokenGenerator
-from src.datamodules.datasets.base_emb import BaseEmbContextsDataset
+from src.datamodules.datasets.base_emb_contexts import BaseEmbContextsDataset
 
 log = logging.getLogger(__name__)
 

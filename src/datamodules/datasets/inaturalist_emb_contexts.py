@@ -4,7 +4,7 @@ import os
 import numpy as np
 import pandas as pd
 
-from src.datamodules.datasets.base_emb import BaseEmbContextsDataset
+from src.datamodules.datasets.base_emb_contexts import BaseEmbContextsDataset
 from src.utils.dataset_helpers import TokenGenerator
 from src.utils.dataset_helpers.encoding_transforms import EncodingRotator, IdentityTransform
 
