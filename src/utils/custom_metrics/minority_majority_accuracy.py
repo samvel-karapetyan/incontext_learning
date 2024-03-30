@@ -1,78 +1,79 @@
+from collections import Counter
+
 import torch
 import torchmetrics
-from collections import Counter
 
 
 class MinorityMajorityAccuracy(torchmetrics.Metric):
-    """
-    A custom metric class in PyTorch to calculate accuracy focusing on either the majority or minority groups
-    in a dataset. This metric is useful for evaluating model performance across different demographic groups,
-    ensuring fair representation.
+    """A metric that can compute minority or majority group accuracy.
 
     Attributes:
     group_type (str): Determines whether to focus on the 'majority' or 'minority' group.
     threshold (float): The threshold for binary classification, defaults to 0.5.
-    correct (torch.Tensor): Tracks the number of correct predictions.
-    total (torch.Tensor): Tracks the total number of observations.
-
-    Methods:
-    update(predictions, targets, spurious_labels): Updates the state with new predictions and targets.
-    compute(): Computes the final accuracy metric.
-    select_groups(tensor, group_type): Static method to select either majority or minority groups.
     """
-
-    def __init__(self, group_type, threshold=0.5):
+    def __init__(self,
+                 group_type: str,
+                 threshold: int = 0.5):
         super().__init__()
         self.group_type = group_type
         self.threshold = threshold
         self.add_state("correct", default=torch.tensor(0), dist_reduce_fx="sum")
         self.add_state("total", default=torch.tensor(0), dist_reduce_fx="sum")
 
-    def update(self, predictions: torch.Tensor, targets: torch.Tensor, spurious_labels: torch.Tensor):
+    def update(
+            self,
+            query_prediction_batch: torch.Tensor,
+            query_target_batch: torch.Tensor,
+            query_spurious_batch: torch.Tensor,
+            context_targets_batch: torch.Tensor,
+            context_spurious_vals_batch: torch.Tensor,
+    ):
         """
-        Update the metric states based on the provided batch of predictions and targets.
+        Update the metric states based on context and query.
 
         Parameters:
-        predictions (torch.Tensor): Model predictions for the current batch.
-        targets (torch.Tensor): Ground truth labels for the current batch.
-        spurious_labels (torch.Tensor): Additional labels used to define groups for analysis.
+        query_prediction_batch: A [0,1]-valued torch.Tensor of shape (B,) specifying predictions for queries.
+            There is one query per in-context learning instance.
+        query_target_batch: A {0,1}-valued torch.Tensor of shape (B,) specifying query class labels.
+        query_spurious_batch: A {0,1}-valued torch.Tensor of shape (B,) specifying query spurious labels.
+        context_targets_batch: A {0,1}-valued torch.Tensor of shape (B, num_icl_examples) specifying class
+            labels of context examples.
+        context_spurious_vals_batch: A {0,1}-valued torch.Tensor of shape (B, num_icl_examples) specifying spurious
+            labels of context examples.
         """
-        predictions = (predictions > self.threshold).int()
-        for prediction, target, spurious_label in zip(predictions, targets, spurious_labels):
-            group = 2 * target + spurious_label  # Form a unique identifier for group
-            selected_groups = self.select_groups(group[:-1], group_type=self.group_type)
+        query_prediction_batch = (query_prediction_batch > self.threshold).int()
+        for (query_prediction,
+             query_target,
+             query_spurious,
+             context_targets,
+             context_spurious_vals) in zip(query_prediction_batch,
+                                           query_target_batch,
+                                           query_spurious_batch,
+                                           context_targets_batch,
+                                           context_spurious_vals_batch):
+            query_group = 2 * query_target + query_spurious
+            context_groups = 2 * context_targets + context_spurious_vals
+            selected_groups = self.select_groups(context_groups)
 
-            if group[-1] in selected_groups:
-                self.correct += (prediction[-1] == target[-1])  # Increment correct if prediction matches target
+            if query_group in selected_groups:
+                self.correct += (query_prediction == query_target)  # Increment correct if prediction matches target
                 self.total += 1  # Increment total count
 
-    def compute(self):
-        """
-        Compute the accuracy metric based on the current state.
-
-        Returns:
-        float: The computed accuracy value.
-        """
+    def compute(self) -> float:
+        """Computes the accuracy metric based on the current state."""
         return self.correct.float() / self.total
 
-    @staticmethod
-    def select_groups(tensor, group_type):
-        """
-        Selects groups from the tensor based on the frequency of occurrence, either as a majority or minority.
-
-        Parameters:
-        tensor (torch.Tensor): A tensor of group indices.
-        group_type (str): A string that can be either 'majority' or 'minority' to select the group accordingly.
-
-        Returns:
-        list: A list containing the selected group indices based on the group type.
-        """
+    def select_groups(
+            self,
+            context_groups: torch.Tensor,
+    ) -> list[int]:
+        """Returns list of groups for which accuracy is tracked."""
         counts = Counter({k: 0 for k in range(4)})
-        counts.update(tensor.tolist())  # Count the occurrences of each group
+        counts.update(context_groups.tolist())  # Count the occurrences of each group
 
-        if group_type == 'majority':
+        if self.group_type == 'majority':
             target_occurrence = max(counts.values())  # Maximum occurrence for majority
-        elif group_type == 'minority':
+        elif self.group_type == 'minority':
             target_occurrence = min(counts.values())  # Minimum occurrence for minority
         else:
             raise ValueError("Invalid group type. Choose 'majority' or 'minority'.")

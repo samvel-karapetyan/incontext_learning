@@ -83,11 +83,20 @@ class InContextLearner(LightningModule):
         loss = self._loss_fn(pred_y_logit, class_labels.float())
 
         pred_y = nn.functional.sigmoid(pred_y_logit)
-        last_pred_y, last_class_labels = pred_y[:, -1], class_labels[:, -1]
+        last_pred_y = pred_y[:, -1]
+        last_class_labels = class_labels[:, -1]
+        last_spurious_class = spurious_labels[:, -1]
 
         self.accuracy[set_name].update(last_pred_y, last_class_labels)
-        self.accuracy_minority[set_name].update(pred_y, class_labels, spurious_labels)
-        self.accuracy_majority[set_name].update(pred_y, class_labels, spurious_labels)
+        for min_maj_metric in [self.accuracy_minority[set_name],
+                               self.accuracy_majority[set_name]]:
+            min_maj_metric.update(
+                query_prediction_batch=last_pred_y,
+                query_target_batch=last_class_labels,
+                query_spurious_batch=last_spurious_class,
+                context_targets_batch=class_labels[:, :-1],
+                context_spurious_vals_batch=spurious_labels[:, :-1]
+            )
 
         self.log(f"{set_name}_loss", loss, on_step=True, on_epoch=True, prog_bar=True)
         self.log(f"{set_name}_accuracy", self.accuracy[set_name], on_step=False, on_epoch=True)
@@ -96,7 +105,10 @@ class InContextLearner(LightningModule):
 
         if self._dataset_name == "waterbirds_emb_contexts":
             for i in range(4):
-                self.group_accuracies[i][set_name].update(pred_y, class_labels, spurious_labels)
+                self.group_accuracies[i][set_name].update(
+                    query_prediction_batch=last_pred_y,
+                    query_target_batch=last_class_labels,
+                    query_spurious_batch=last_spurious_class)
                 self.log(f"{set_name}_group_{i}_accuracy", self.group_accuracies[i][set_name], on_step=False, on_epoch=True)
 
         return loss
@@ -183,4 +195,3 @@ class InContextLearner(LightningModule):
         if self._dataset_name == "waterbirds_emb_contexts":
             for i in range(4):
                 setattr(self, f"{set_name}_group_{i}_accuracy", self.group_accuracies[i][set_name])
-
