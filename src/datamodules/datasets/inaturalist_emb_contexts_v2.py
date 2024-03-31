@@ -55,7 +55,6 @@ class INaturalistEmbContextsDatasetV2(Dataset):
                  spurious_setting: str,
                  rotate_encodings: bool = False,
                  n_rotation_matrices: Optional[int] = None,
-                 class_dependant_rotate: bool = False,
                  saved_data_path: Optional[str] = None):
         """
         Arguments:
@@ -76,7 +75,6 @@ class INaturalistEmbContextsDatasetV2(Dataset):
         rotate_encodings (bool): Determines if image encodings are rotated. True enables rotation
                                  based on class labels, while False bypasses rotation.
         n_rotation_matrices (int): Specifies the number of rotation matrices to generate and store.
-        class_dependant_rotate (bool):  Flag decides whether image embedding rotations are class-specific.
         saved_data_path (str or None): Path for loading data; if None, new data is generated.
         """
         super(INaturalistEmbContextsDatasetV2, self).__init__()
@@ -121,10 +119,8 @@ class INaturalistEmbContextsDatasetV2(Dataset):
 
         if rotate_encodings:
             self._img_encoding_transform = EncodingRotator(n_rotation_matrices, tokens_data["token_len"].item())
-            self._class_dependant_rotate = class_dependant_rotate
         else:
             self._img_encoding_transform = IdentityTransform()
-            self._class_dependant_rotate = False
 
     def __getitem__(self, idx) -> (np.ndarray, np.ndarray, np.ndarray):
         """Returns a dataset example given the example index.
@@ -248,16 +244,18 @@ class INaturalistEmbContextsDatasetV2(Dataset):
             img_encodings.append(self._encodings[self._encodings_indices_map[image_id]])
         img_encodings = np.stack(img_encodings)
 
-        # rotate embeddings if needed (possibly class-dependently)
-        if self._class_dependant_rotate:
-            class_labels = np.array([example[2] for example in examples])
-            for label in np.unique(class_labels):
-                img_encodings[class_labels == label] = self._img_encoding_transform(
-                    img_encodings[class_labels == label])
-        else:
-            img_encodings = self._img_encoding_transform(img_encodings)
-
         return img_encodings
+
+    def _maybe_rotate_embeddings(
+            self,
+            context_img_encodings: np.ndarray,
+            query_img_encodings: np.ndarray
+    ) -> (np.ndarray, np.ndarray):
+        joint = np.concatenate([context_img_encodings, query_img_encodings],
+                               axis=0)
+        joint = self._img_encoding_transform(joint)
+        n = context_img_encodings.shape[0]
+        return joint[:n], joint[n:]
 
     def _prepare_transformer_input(
             self,
@@ -279,6 +277,12 @@ class INaturalistEmbContextsDatasetV2(Dataset):
         assert len(context) == len(queries)
         context_img_encodings = self._prepare_image_encodings(context)
         query_img_encodings = self._prepare_image_encodings(queries)
+
+        # rotate embeddings if specified
+        context_img_encodings, query_img_encodings = self._maybe_rotate_embeddings(
+            context_img_encodings=context_img_encodings,
+            query_img_encodings=query_img_encodings)
+
         input_seq = []
         for i in range(len(context)):
             # Add current context related tokens.
