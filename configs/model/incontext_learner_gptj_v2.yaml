@@ -1,0 +1,20 @@
+_target_: src.models.InContextLearnerV2
+
+network:
+  _target_: src.models.incontext_learner_v2.GPTJModelV2
+  config:
+    _target_: transformers.GPTJConfig
+    n_positions: 512
+    n_embd: 768
+    n_layer: 6
+    n_head: 8
+    n_inner: 3072  # Adjusted as per convention: 4 * n_embd
+    resid_pdrop: 0.0
+    embd_pdrop: 0.0
+    attn_pdrop: 0.0
+    use_cache: False
+loss_fn:
+  _target_: torch.nn.BCEWithLogitsLoss
+spurious_setting: ${spurious_setting}  # Use the global value of 'spurious_setting'
+val_sets: ${datamodule.val_sets} # null if there is a single val set, otherwise this is the list of names of val sets
+dataset_name: ${datamodule.name}

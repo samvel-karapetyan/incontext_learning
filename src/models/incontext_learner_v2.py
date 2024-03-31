@@ -36,6 +36,7 @@ class GPTJModelV2(GPTJModel):
         if input_ids is not None and inputs_embeds is not None:
             raise ValueError("You cannot specify both input_ids and inputs_embeds at the same time")
         elif input_ids is not None:
+            # self.warn_if_padding_and_no_attention_mask(input_ids, attention_mask)
             input_shape = input_ids.size()
             input_ids = input_ids.view(-1, input_shape[-1])
             batch_size = input_ids.shape[0]
@@ -58,20 +59,21 @@ class GPTJModelV2(GPTJModel):
         assert query_indices is not None
         seq_len = input_shape[-1]
         position_ids = torch.arange(0, seq_len, dtype=torch.long, device=device)
-        position_ids = position_ids.unsqueeze(0)
         query_indices = query_indices.to(dtype=torch.long)
-        query_mask = torch.zeros(seq_len, dtype=torch.long)
-        query_mask[query_indices] = 1
-        position_ids -= torch.cumsum(query_mask, dim=0)
+        query_mask = torch.zeros(seq_len + 1, dtype=torch.long)
+        query_mask[1 + query_indices] = 1
+        position_ids -= torch.cumsum(query_mask, dim=0).to(device)[:seq_len]
+        position_ids = position_ids.unsqueeze(0)
 
         # Constructing attention_mask tensor of shape [batch_size, num_heads, seq_len, seq_len],
         # which is going to be added after masking out non-causal pairs. Therefore, we just need
         # to prepare the part where we disallow any token to attend to any query token, unless it
         # is a query token attending to itself.
-        assert not self._use_flash_attention_2
         if batch_size <= 0:
             raise ValueError("batch_size has to be defined and > 0")
-        attention_mask = torch.zeros((batch_size, 1, seq_len, seq_len), dtype=self.dtype)
+        attention_mask = torch.zeros((batch_size, 1, seq_len, seq_len),
+                                     dtype=self.dtype,
+                                     device=device)
         attention_mask[:, :, :, query_indices] = torch.finfo(self.dtype).min
         for q_idx in query_indices:
             attention_mask[:, :, q_idx, q_idx] = 0
@@ -97,6 +99,9 @@ class GPTJModelV2(GPTJModel):
 
         if self.gradient_checkpointing and self.training:
             if use_cache:
+                # logger.warning_once(
+                #     "`use_cache=True` is incompatible with gradient checkpointing. Setting `use_cache=False`..."
+                # )
                 use_cache = False
 
         presents = () if use_cache else None
@@ -160,7 +165,8 @@ class GPTJModelV2(GPTJModel):
             all_hidden_states = all_hidden_states + (hidden_states,)
 
         if not return_dict:
-            return tuple(v for v in [hidden_states, presents, all_hidden_states, all_self_attentions] if v is not None)
+            return tuple(
+                v for v in [hidden_states, presents, all_hidden_states, all_self_attentions] if v is not None)
 
         return BaseModelOutputWithPast(
             last_hidden_state=hidden_states,
@@ -224,8 +230,9 @@ class InContextLearnerV2(InContextLearner):
         out = self._network(
             inputs_embeds=input_embeds,
             query_indices=query_indices,
-        ).last_hidden_state
-
+            # output_attentions=True,
+        )
+        out = out.last_hidden_state
         pred_embeddings = out[:, query_indices]
         pred_y = self._fc(pred_embeddings)
         return pred_y
@@ -241,28 +248,29 @@ class InContextLearnerV2(InContextLearner):
         Returns:
             The loss for the batch.
         """
-        # TODO(hrayr): we need to implement corresponding datasets
-        (input_seq, context_spurious_labels, context_class_labels,
-         query_spurious_labels, query_class_labels,
-         input_image_indices, query_image_indices) = batch
+        input_seq, context, queries = batch
+        # input_seq is np.array of shape (batch_size, total_seq_len, dim)
+        # context and queries are np.arrays of shape (batch_size, 2 * context_class_size, 3)
+        # describing context/query examples with (id, spurious_label, class_label) triplets.
 
         pred_y_logit = self.forward(input_seq).squeeze()
+        query_class_labels = queries[:, :, 2]
         loss = self._loss_fn(pred_y_logit, query_class_labels.float())
 
-        pred_y = nn.functional.sigmoid(pred_y_logit)
-        last_pred_y = pred_y[:, -1]
-        last_class_labels = query_class_labels[:, -1]
-        last_spurious_class = query_spurious_labels[:, -1]
+        last_pred_y = nn.functional.sigmoid(pred_y_logit[:, -1])
+        last_spurious_class = queries[:, -1, 1]
+        last_class_labels = queries[:, -1, 2]
 
         self.accuracy[set_name].update(last_pred_y, last_class_labels)
+
         for min_maj_metric in [self.accuracy_minority[set_name],
                                self.accuracy_majority[set_name]]:
             min_maj_metric.update(
                 query_prediction_batch=last_pred_y,
                 query_target_batch=last_class_labels,
                 query_spurious_batch=last_spurious_class,
-                context_targets_batch=context_class_labels,
-                context_spurious_vals_batch=context_spurious_labels,
+                context_targets_batch=context[:, :, 2],
+                context_spurious_vals_batch=context[:, :, 1],
             )
 
         self.log(f"{set_name}_loss", loss, on_step=True, on_epoch=True, prog_bar=True)
