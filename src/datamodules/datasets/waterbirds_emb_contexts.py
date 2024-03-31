@@ -1,9 +1,9 @@
 import logging
 import os
-import numpy as np
-import random
 
 from torch.utils.data import Dataset
+import numpy as np
+
 from src.utils.dataset_helpers import TokenGenerator
 from src.datamodules.datasets.waterbirds import CustomizedWaterbirdsDataset as WaterbirdsDataset
 
@@ -111,42 +111,8 @@ class WaterbirdsEmbContextsDataset(Dataset):
                                                                                                       class_tokens)
         return input_seq, spurious_labels, class_labels, image_indices
 
-    def __len__(self):
-        """
-        Returns the length of the dataset.
-
-        Returns:
-            int: The length of the dataset.
-        """
+    def __len__(self) -> int:
         return self._data_length
-
-    @staticmethod
-    def _generate_spurious_labels(primary_label, secondary_label, class_size, minority_proportion,
-                                  extra_token=False):
-        """
-        Generates spurious labels based on given labels and proportions.
-
-        Args:
-            primary_label (int): The primary label for the majority of tokens.
-            secondary_label (int): The secondary label for the minority of tokens.
-            class_size (int): The total number of examples in a class.
-            minority_proportion (float): The proportion of the minority group in the class.
-            extra_token (bool): Whether to add an extra token. Default is False.
-
-        Returns:
-            list: A list of spurious labels.
-        """
-        majority_count = int(class_size * (1 - minority_proportion))
-        minority_count = class_size - majority_count
-
-        spurious_tokens = [primary_label] * majority_count + \
-                          [secondary_label] * minority_count
-
-        if extra_token:
-            spurious_tokens.append(
-                random.choice([primary_label, secondary_label]))
-
-        return spurious_tokens
 
     def _construct_context_and_query_of_ids(self):
         """
