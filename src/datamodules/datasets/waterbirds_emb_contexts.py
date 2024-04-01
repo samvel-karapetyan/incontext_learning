@@ -6,6 +6,7 @@ import numpy as np
 
 from src.utils.dataset_helpers import TokenGenerator
 from src.datamodules.datasets.waterbirds import CustomizedWaterbirdsDataset as WaterbirdsDataset
+from src.utils.dataset_helpers.context_prep_utils import get_group_counts_based_on_proportions
 
 log = logging.getLogger(__name__)
 
@@ -119,16 +120,13 @@ class WaterbirdsEmbContextsDataset(Dataset):
         Constructs a context dataset and a query instance using identifiers and labels
         generated from two randomly selected categories for machine learning.
 
-        This method uses 'self._dataframe' as the source data and utilizes various class attributes
-        like 'categories', 'context_class_size', 'minority_group_proportion', etc.
-
         Returns:
             tuple: A tuple containing the combined context dataset and the query instance, both primarily based on IDs.
         """
 
-        # Using the class's dataframe
-        context_len = 2 * self._context_class_size
-        group_counts = [int(context_len * p) for p in self._group_proportions]
+        group_counts = get_group_counts_based_on_proportions(
+            num_examples=2 * self._context_class_size,
+            group_proportions=self._group_proportions)
 
         context_indices = np.array([], dtype=np.int64)
         for i, group_count in enumerate(group_counts):

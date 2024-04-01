@@ -1,10 +1,8 @@
 import logging
-import os.path
 
 import pytorch_lightning as pl
 
 from torch.utils.data import DataLoader
-from pytorch_lightning.utilities import CombinedLoader
 
 from src.datamodules.datasets import WaterbirdsEmbContextsDataset
 

@@ -58,3 +58,18 @@ def get_query_example_tokens(
     else:
         raise ValueError(
             f"Invalid spurious setting: '{spurious_setting}'. Expected 'separate_token', 'sum', or 'no_spurious'.")
+
+
+def get_group_counts_based_on_proportions(
+        num_examples: int,
+        group_proportions: list[float]) -> list[int]:
+    """Computes group sizes based on proprtions."""
+    assert np.allclose(np.sum(group_proportions), 1.0)
+    group_counts = [int(num_examples * p) for p in group_proportions]
+    cur_sum = sum(group_counts)
+    cur_idx = 0
+    while cur_sum < num_examples:
+        group_counts[cur_idx] += 1
+        cur_sum += 1
+        cur_idx = (cur_idx + 1) % len(group_proportions)
+    return group_counts
