@@ -33,9 +33,6 @@ class INaturalistEmbContextsDataModuleV2(pl.LightningDataModule):
         minority_group_proportion (float): Proportion of the minority group per class.
         are_spurious_tokens_fixed (bool): Flag indicating whether to use fixed spurious tokens.
         are_class_tokens_fixed (bool): Flag indicating whether to use fixed class tokens.
-        token_generation_mode (str): Mode of token generation. Accepts 'random' or 'opposite'.
-                                     'random' generates tokens with normal distribution,
-                                     and 'opposite' generates a pair of tokens where the second is the negative of the first.
         rotate_encodings (bool): Determines if image encodings are rotated in training set. True enables rotation
                                  based on class labels, while False bypasses rotation.
         n_rotation_matrices (int): Specifies the number of rotation matrices to generate and store.
@@ -67,7 +64,6 @@ class INaturalistEmbContextsDataModuleV2(pl.LightningDataModule):
                  minority_group_proportion,
                  are_spurious_tokens_fixed,
                  are_class_tokens_fixed,
-                 token_generation_mode,
                  spurious_setting,
                  rotate_encodings,
                  n_rotation_matrices,
@@ -84,7 +80,6 @@ class INaturalistEmbContextsDataModuleV2(pl.LightningDataModule):
         self._minority_group_proportion = minority_group_proportion
         self._are_spurious_tokens_fixed = are_spurious_tokens_fixed
         self._are_class_tokens_fixed = are_class_tokens_fixed
-        self._token_generation_mode = token_generation_mode
         self._spurious_setting = spurious_setting
         self._rotate_encodings = rotate_encodings
         self._n_rotation_matrices = n_rotation_matrices
@@ -115,7 +110,6 @@ class INaturalistEmbContextsDataModuleV2(pl.LightningDataModule):
                                                             self._minority_group_proportion,
                                                             self._are_spurious_tokens_fixed,
                                                             self._are_class_tokens_fixed,
-                                                            self._token_generation_mode,
                                                             self._spurious_setting,
                                                             rotate_encodings=self._rotate_encodings,
                                                             n_rotation_matrices=self._n_rotation_matrices)
@@ -130,7 +124,6 @@ class INaturalistEmbContextsDataModuleV2(pl.LightningDataModule):
                                                             self._minority_group_proportion,
                                                             self._are_spurious_tokens_fixed,
                                                             self._are_class_tokens_fixed,
-                                                            self._token_generation_mode,
                                                             self._spurious_setting,
                                                             saved_data_path=saved_data_path)
 
@@ -144,7 +137,6 @@ class INaturalistEmbContextsDataModuleV2(pl.LightningDataModule):
                                                             self._minority_group_proportion,
                                                             self._are_spurious_tokens_fixed,
                                                             self._are_class_tokens_fixed,
-                                                            self._token_generation_mode,
                                                             self._spurious_setting,
                                                             saved_data_path=saved_data_path)
 
@@ -158,7 +150,6 @@ class INaturalistEmbContextsDataModuleV2(pl.LightningDataModule):
                                                                   self._minority_group_proportion,
                                                                   self._are_spurious_tokens_fixed,
                                                                   self._are_class_tokens_fixed,
-                                                                  self._token_generation_mode,
                                                                   self._spurious_setting,
                                                                   saved_data_path=saved_data_path)
 

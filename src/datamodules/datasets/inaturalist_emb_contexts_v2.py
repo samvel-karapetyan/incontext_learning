@@ -51,11 +51,11 @@ class INaturalistEmbContextsDatasetV2(Dataset):
                  minority_group_proportion: float,
                  are_spurious_tokens_fixed: bool,
                  are_class_tokens_fixed: bool,
-                 token_generation_mode: str,
                  spurious_setting: str,
                  rotate_encodings: bool = False,
                  n_rotation_matrices: Optional[int] = None,
-                 saved_data_path: Optional[str] = None):
+                 saved_data_path: Optional[str] = None,
+                 v1_behavior: bool = False):
         """
         Arguments:
         dataset_path (str): The path to the dataset directory.
@@ -67,9 +67,6 @@ class INaturalistEmbContextsDatasetV2(Dataset):
         minority_group_proportion (float): The proportion of the minority group in the context per class.
         are_spurious_tokens_fixed (bool): Flag indicating whether to use fixed spurious tokens.
         are_class_tokens_fixed (bool): Flag indicating whether to use fixed class tokens.
-        token_generation_mode (str): Mode of token generation. Accepts 'random' or 'opposite'.
-                                     'random' generates tokens with normal distribution, and 'opposite' generates
-                                     a pair of tokens where the second is the negative of the first.
         spurious_setting (str): Determines the handling mode of spurious tokens in the dataset instances.
                                 Options include 'no_spurious'(x) and 'sum'(x+c)
         rotate_encodings (bool): Determines if image encodings are rotated. True enables rotation
@@ -96,6 +93,8 @@ class INaturalistEmbContextsDatasetV2(Dataset):
         self._spurious_setting = spurious_setting
 
         # Unique categories in the dataset
+        self._class1_split = class1_split
+        self._class2_split = class2_split
         if class1_split == class2_split:
             self._categories = self._dataframe["category"].unique()
         else:
@@ -110,17 +109,18 @@ class INaturalistEmbContextsDatasetV2(Dataset):
         tokens_generator = TokenGenerator(tokens_data=tokens_data,
                                           are_spurious_tokens_fixed=are_spurious_tokens_fixed,
                                           are_class_tokens_fixed=are_class_tokens_fixed,
-                                          token_generation_mode=token_generation_mode)
+                                          token_generation_mode='opposite')
 
         self._spurious_tokens_generator, self._class_tokens_generator = tokens_generator()
 
-        self._token_generation_mode = token_generation_mode
         self._saved_data_path = saved_data_path
 
         if rotate_encodings:
             self._img_encoding_transform = EncodingRotator(n_rotation_matrices, tokens_data["token_len"].item())
         else:
             self._img_encoding_transform = IdentityTransform()
+
+        self._v1_behavior = v1_behavior
 
     def __getitem__(self, idx) -> (np.ndarray, np.ndarray, np.ndarray):
         """Returns a dataset example given the example index.
@@ -143,8 +143,8 @@ class INaturalistEmbContextsDatasetV2(Dataset):
             # TODO(hrayr): need to do something here
             raise NotImplementedError('loading from saved data is not implemented yet.')
             # data = np.load(os.path.join(self._saved_data_path, f"{idx}.npz"))
-            # spurious_tokens = data[f"{self._token_generation_mode}_spurious_tokens"]
-            # class_tokens = data[f"{self._token_generation_mode}_class_tokens"]
+            # spurious_tokens = data[f"opposite_spurious_tokens"]
+            # class_tokens = data[f"opposite_class_tokens"]
             # instance = data["instance"]
             # context_of_ids = [tuple(x) for x in instance[:-1]]
             # query_of_ids = tuple(instance[-1])
@@ -155,6 +155,9 @@ class INaturalistEmbContextsDatasetV2(Dataset):
             queries=queries,
             spurious_tokens=spurious_tokens,
             class_tokens=class_tokens)
+
+        if self._v1_behavior:
+            queries[:-1] = context[1:]
 
         return input_seq, np.array(context), np.array(queries)
 
@@ -171,10 +174,10 @@ class INaturalistEmbContextsDatasetV2(Dataset):
         like 'categories', 'context_class_size', 'minority_group_proportion', etc.
 
         Returns:
-            tuple: A tuple containing the combined context dataset and the query instance, both primarily based on IDs.
+            tuple: A tuple containing the combined context and query examples -- (id, spurious, class) triplets.
         """
         # Randomly selecting two categories
-        if isinstance(self._categories, tuple):  # in case of inner_val-outer set
+        if self._class1_split != self._class2_split:
             category1, category2 = (np.random.choice(x, size=1)[0] for x in self._categories)
         else:
             category1, category2 = np.random.choice(self._categories, size=2, replace=False)

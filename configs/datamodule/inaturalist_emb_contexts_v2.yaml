@@ -15,7 +15,6 @@ inner_outer_val_len: 1024 # 2^n, because CombinedDataloader removes the last non
 
 are_spurious_tokens_fixed: False
 are_class_tokens_fixed: True
-token_generation_mode: opposite  # c,-c  y,-y
 
 batch_size: 32
 num_workers: 4
