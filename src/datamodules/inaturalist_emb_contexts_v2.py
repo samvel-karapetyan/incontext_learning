@@ -31,8 +31,6 @@ class INaturalistEmbContextsDataModuleV2(pl.LightningDataModule):
         num_workers (int): Number of workers for data loaders.
         context_class_size (int): Size of each class in context.
         minority_group_proportion (float): Proportion of the minority group per class.
-        are_spurious_tokens_fixed (bool): Flag indicating whether to use fixed spurious tokens.
-        are_class_tokens_fixed (bool): Flag indicating whether to use fixed class tokens.
         rotate_encodings (bool): Determines if image encodings are rotated in training set. True enables rotation
                                  based on class labels, while False bypasses rotation.
         n_rotation_matrices (int): Specifies the number of rotation matrices to generate and store.
@@ -62,8 +60,6 @@ class INaturalistEmbContextsDataModuleV2(pl.LightningDataModule):
                  num_workers,
                  context_class_size,
                  minority_group_proportion,
-                 are_spurious_tokens_fixed,
-                 are_class_tokens_fixed,
                  spurious_setting,
                  rotate_encodings,
                  n_rotation_matrices,
@@ -78,8 +74,6 @@ class INaturalistEmbContextsDataModuleV2(pl.LightningDataModule):
         self._num_workers = num_workers
         self._context_class_size = context_class_size
         self._minority_group_proportion = minority_group_proportion
-        self._are_spurious_tokens_fixed = are_spurious_tokens_fixed
-        self._are_class_tokens_fixed = are_class_tokens_fixed
         self._spurious_setting = spurious_setting
         self._rotate_encodings = rotate_encodings
         self._n_rotation_matrices = n_rotation_matrices
@@ -108,8 +102,6 @@ class INaturalistEmbContextsDataModuleV2(pl.LightningDataModule):
                                                             "inner_train", "inner_train",
                                                             self._context_class_size,
                                                             self._minority_group_proportion,
-                                                            self._are_spurious_tokens_fixed,
-                                                            self._are_class_tokens_fixed,
                                                             self._spurious_setting,
                                                             rotate_encodings=self._rotate_encodings,
                                                             n_rotation_matrices=self._n_rotation_matrices)
@@ -122,8 +114,6 @@ class INaturalistEmbContextsDataModuleV2(pl.LightningDataModule):
                                                             "inner_val", "inner_val",
                                                             self._context_class_size,
                                                             self._minority_group_proportion,
-                                                            self._are_spurious_tokens_fixed,
-                                                            self._are_class_tokens_fixed,
                                                             self._spurious_setting,
                                                             saved_data_path=saved_data_path)
 
@@ -135,8 +125,6 @@ class INaturalistEmbContextsDataModuleV2(pl.LightningDataModule):
                                                             "outer", "outer",
                                                             self._context_class_size,
                                                             self._minority_group_proportion,
-                                                            self._are_spurious_tokens_fixed,
-                                                            self._are_class_tokens_fixed,
                                                             self._spurious_setting,
                                                             saved_data_path=saved_data_path)
 
@@ -148,8 +136,6 @@ class INaturalistEmbContextsDataModuleV2(pl.LightningDataModule):
                                                                   "inner_val", "outer",
                                                                   self._context_class_size,
                                                                   self._minority_group_proportion,
-                                                                  self._are_spurious_tokens_fixed,
-                                                                  self._are_class_tokens_fixed,
                                                                   self._spurious_setting,
                                                                   saved_data_path=saved_data_path)
 

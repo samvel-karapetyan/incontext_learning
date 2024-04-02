@@ -49,8 +49,6 @@ class INaturalistEmbContextsDatasetV2(Dataset):
                  class2_split: str,
                  context_class_size: int,
                  minority_group_proportion: float,
-                 are_spurious_tokens_fixed: bool,
-                 are_class_tokens_fixed: bool,
                  spurious_setting: str,
                  rotate_encodings: bool = False,
                  n_rotation_matrices: Optional[int] = None,
@@ -65,8 +63,6 @@ class INaturalistEmbContextsDatasetV2(Dataset):
         class2_split (str): The type of data split of class 2 (e.g., 'inner_train', 'inner_val', 'outer').
         context_class_size (int): The size of each class in the context.
         minority_group_proportion (float): The proportion of the minority group in the context per class.
-        are_spurious_tokens_fixed (bool): Flag indicating whether to use fixed spurious tokens.
-        are_class_tokens_fixed (bool): Flag indicating whether to use fixed class tokens.
         spurious_setting (str): Determines the handling mode of spurious tokens in the dataset instances.
                                 Options include 'no_spurious'(x) and 'sum'(x+c)
         rotate_encodings (bool): Determines if image encodings are rotated. True enables rotation
@@ -107,8 +103,8 @@ class INaturalistEmbContextsDatasetV2(Dataset):
         tokens_data = {k: tokens_data[k] for k in tokens_data.keys()}
 
         tokens_generator = TokenGenerator(tokens_data=tokens_data,
-                                          are_spurious_tokens_fixed=are_spurious_tokens_fixed,
-                                          are_class_tokens_fixed=are_class_tokens_fixed,
+                                          are_spurious_tokens_fixed=False,
+                                          are_class_tokens_fixed=True,
                                           token_generation_mode='opposite')
 
         self._spurious_tokens_generator, self._class_tokens_generator = tokens_generator()
