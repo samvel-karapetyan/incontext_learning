@@ -21,4 +21,4 @@ spurious_setting: ${spurious_setting}  # Use the global value of 'spurious_setti
 rotate_encodings: True
 n_rotation_matrices: 100
 
-val_sets: [inner, outer, inner_outer]  # the order here should match the order in the combined loader
+val_sets: [inner, inner_outer, outer]  # the order here should match the order in the combined loader

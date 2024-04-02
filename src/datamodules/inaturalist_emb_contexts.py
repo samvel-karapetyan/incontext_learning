@@ -190,6 +190,6 @@ class INaturalistEmbContextsDataModule(pl.LightningDataModule):
                                                 num_workers=self._num_workers)
 
         return CombinedLoader({self.ValSets.INNER: inner_val_dataloader,
-                               self.ValSets.OUTER: outer_val_dataloader,
-                               self.ValSets.INNER_OUTER: inner_outer_val_dataloader},
+                               self.ValSets.INNER_OUTER: inner_outer_val_dataloader,
+                               self.ValSets.OUTER: outer_val_dataloader},
                               mode="sequential")
