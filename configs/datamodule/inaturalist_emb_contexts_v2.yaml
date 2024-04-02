@@ -13,8 +13,6 @@ inner_val_len: 1024 # 2^n, because CombinedDataloader removes the last non-full 
 outer_val_len: 1024 # 2^n, because CombinedDataloader removes the last non-full batch
 inner_outer_val_len: 1024 # 2^n, because CombinedDataloader removes the last non-full batch
 
-are_spurious_tokens_fixed: False
-
 batch_size: 32
 num_workers: 4
 
