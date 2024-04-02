@@ -212,7 +212,7 @@ class INaturalist2017Preparator:
         df_categories = pd.merge(df_categories, image_count_per_category, on='id', how='left')
 
         # Filter df_categories for those with more than min_images_per_category images
-        filtered_categories = df_categories[df_categories['num_images'] > self._min_images_per_category]
+        filtered_categories = df_categories[df_categories['num_images'] >= self._min_images_per_category]
 
         # Merge filtered_categories with df_annotations
         df_merged = pd.merge(filtered_categories, df_annotations, left_on='id', right_on='category_id')
