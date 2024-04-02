@@ -26,7 +26,6 @@ class INaturalist2017Dataset(Dataset, INaturalist2017Preparator):
         fully_outer_supercategories (list of str): List of supercategories that should be entirely classified as 'outer'. All categories under these supercategories will be assigned to an 'outer' split.
         fully_inner_supercategories (list of str): List of supercategories that should be entirely classified as 'inner'. All categories under these supercategories will be assigned to an 'inner' split.
         outer_classes_size (float): A decimal representing the proportion of categories within a non-fully classified supercategory to be randomly assigned to the 'outer' split. The rest will be assigned to the 'inner' split.
-        inner_val_size (float): A decimal indicating the proportion of data within 'inner' categories to be used as validation data ('inner_val'). The rest of the data in 'inner' categories will be used for training ('inner_train').
     """
 
     def __init__(self,
@@ -36,16 +35,13 @@ class INaturalist2017Dataset(Dataset, INaturalist2017Preparator):
                  crop_size,
                  fully_outer_supercategories,
                  fully_inner_supercategories,
-                 outer_classes_size,
-                 inner_val_size):
+                 outer_classes_size):
         # Initialize the INaturalist2017Preparator
         INaturalist2017Preparator.__init__(self, dataset_path,
                                            min_images_per_category,
                                            fully_outer_supercategories,
                                            fully_inner_supercategories,
-                                           outer_classes_size,
-                                           inner_val_size
-                                           )
+                                           outer_classes_size)
 
         # Initialize the Dataset
         Dataset.__init__(self)

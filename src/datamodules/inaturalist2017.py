@@ -18,7 +18,6 @@ class INaturalist2017DataModule:
         fully_outer_supercategories (list of str): List of supercategories that should be entirely classified as 'outer'. All categories under these supercategories will be assigned to an 'outer' split.
         fully_inner_supercategories (list of str): List of supercategories that should be entirely classified as 'inner'. All categories under these supercategories will be assigned to an 'inner' split.
         outer_classes_size (float): A decimal representing the proportion of categories within a non-fully classified supercategory to be randomly assigned to the 'outer' split. The rest will be assigned to the 'inner' split.
-        inner_val_size (float): A decimal indicating the proportion of data within 'inner' categories to be used as validation data ('inner_val'). The rest of the data in 'inner' categories will be used for training ('inner_train').
         batch_size (int): The number of items to be included in each batch.
         num_workers (int): The number of subprocesses to use for data loading.
     """
@@ -31,7 +30,6 @@ class INaturalist2017DataModule:
                  fully_outer_supercategories,
                  fully_inner_supercategories,
                  outer_classes_size,
-                 inner_val_size,
                  batch_size,
                  num_workers,
                  *args, **kwargs):
@@ -42,7 +40,6 @@ class INaturalist2017DataModule:
         self.fully_outer_supercategories = fully_outer_supercategories
         self.fully_inner_supercategories = fully_inner_supercategories
         self.outer_classes_size = outer_classes_size
-        self.inner_val_size = inner_val_size
 
         self.with_subsets = False
 
@@ -67,8 +64,7 @@ class INaturalist2017DataModule:
                                                self.crop_size,
                                                self.fully_outer_supercategories,
                                                self.fully_inner_supercategories,
-                                               self.outer_classes_size,
-                                               self.inner_val_size)
+                                               self.outer_classes_size)
 
     def get_dataloader(self):
         """
