@@ -1,7 +1,7 @@
 _target_: src.datamodules.INaturalistEmbContextsDataModuleV2
 name: inaturalist_emb_contexts
 
-context_class_size: 25  # TODO(hrayr): was 50 before. Don't have enough samples for some classes.
+context_class_size: 50
 minority_group_proportion: 0.1
 
 dataset_path: ${oc.env:DATA_ROOT_DIR}/inaturalist2017
@@ -19,6 +19,6 @@ num_workers: 4
 spurious_setting: ${spurious_setting}  # Use the global value of 'spurious_setting'
 
 rotate_encodings: True
-n_rotation_matrices: 100
+n_rotation_matrices: 1000  # 1000 works well, but is slow. Reduce for efficiency when experimenting
 
 val_sets: [inner, inner_outer, outer]  # the order here should match the order in the combined loader
