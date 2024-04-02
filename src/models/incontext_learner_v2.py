@@ -1,11 +1,23 @@
+"""In-context learning transformer implementation.
+
+We use the following naming conventions:
+  B: batch size
+  L: sequence length
+  C: number of context examples per class (class_context_size)
+  D: model dimensionality
+  Q: number of queries
+"""
 from typing import Optional, Tuple, Union
 
+from hydra.utils import instantiate
 from transformers.models.gptj import GPTJModel
 from transformers.modeling_outputs import BaseModelOutputWithPast
+from pytorch_lightning import LightningModule
 import torch
 import torch.nn as nn
+import torchmetrics
 
-from src.models import InContextLearner
+from src.utils.custom_metrics import MinorityMajorityAccuracy, GroupAccuracy
 
 
 class GPTJModelV2(GPTJModel):
@@ -176,18 +188,22 @@ class GPTJModelV2(GPTJModel):
         )
 
 
-class InContextLearnerV2(InContextLearner):
+class InContextLearnerV2(LightningModule):
     """In-context learner with different query prediction at each position.
 
-    It can handle sequences of the following form: [x1, y1, q1, x2, y2, q2, ..., xn, yn, qn].
-    I.e., spurious_setting is either 'sum' or 'no spurious' ('separate_token' is not allowed).
+    This transformer expects a list of tokens some of which are query tokens, and produces predictions on queries.
+    Importantly, query tokens are not attended to by tokens on their right. For example, this ICL transformer can
+    handle a sequences like this:
+    (a) [x1, y1, q1, x2, y2, q2, ..., xn, yn, qn]
+    (b) [x1, c1, y1, q1, x2, c2, y2, q2, ..., xn, cn, yn, qn]
+    where xi (context example) and qi (query example) are expected to be representations, likely containing information
+    about spurious features; ci are binary spurious features encoded in R^D; and yi are binary labels encoded in R^D.
     """
 
     def __init__(self,
                  network: GPTJModelV2,
                  loss_fn,
                  val_sets,
-                 spurious_setting: str,
                  dataset_name: str,
                  optimizer_conf = None,
                  scheduler_conf = None
@@ -197,36 +213,44 @@ class InContextLearnerV2(InContextLearner):
             network: The neural network to be used.
             loss_fn: The loss function for training.
             val_sets: A list of validation dataset names.
-            spurious_setting (str): Determines the handling mode of spurious tokens in the dataset instances.
-                                    Options include 'separate_token'(x,c) and 'sum'(x+c).
             dataset_name (str): Name of the dataset.
             optimizer_conf: Configuration dictionary for the optimizer.
             scheduler_conf: Configuration dictionary for the scheduler.
         """
-        assert spurious_setting in ['sum', 'no_spurious']
-        super(InContextLearnerV2, self).__init__(
-            network=network,
-            loss_fn=loss_fn,
-            val_sets=val_sets,
-            spurious_setting=spurious_setting,
-            dataset_name=dataset_name,
-            optimizer_conf=optimizer_conf,
-            scheduler_conf=scheduler_conf,
-        )
+        super(InContextLearnerV2, self).__init__()
 
-    def forward(self, input_embeds, *args, **kwargs):
-        """
-        Defines the forward pass for the model.
+        self._network = network
+        self._fc = nn.Linear(network.embed_dim, 1)
+
+        self._loss_fn = loss_fn
+        self._val_sets = [f"val_{x}" for x in val_sets] if val_sets else ['val']
+        self._dataset_name = dataset_name
+        self._optimizer_conf = optimizer_conf
+        self._scheduler_conf = scheduler_conf
+
+        self.accuracy = dict()
+        self.accuracy_minority = dict()
+        self.accuracy_majority = dict()
+
+        if dataset_name == "waterbirds_emb_contexts":
+            self.group_accuracies = [dict() for _ in range(4)]
+
+        self._initialize_metrics()
+
+    def forward(
+            self,
+            input_embeds: torch.Tensor,
+            query_indices: torch.Tensor,
+            *args, **kwargs
+    ) -> torch.Tensor:
+        """Forward pass.
 
         Args:
-            input_embeds: The input embeddings for the model.
+            input_embeds: Torch tensor of shape (B, L, D).
+            query_indices: Torch tensor of shape (Q,) describing query token positions.
 
-        Returns:
-            The output predictions of the model.
+        Returns: a torch tensor of shape (B, Q, 1) consisting of query prediction logits.
         """
-        seq_len = input_embeds.shape[1]  # (batch_size, seq_len, hidden_dim)
-        query_indices = torch.arange(2, seq_len, 3)
-
         out = self._network(
             inputs_embeds=input_embeds,
             query_indices=query_indices,
@@ -238,22 +262,21 @@ class InContextLearnerV2(InContextLearner):
         return pred_y
 
     def _step(self, batch, set_name):
-        """
-        A step for training or validation.
+        """A step for training or validation.
 
         Args:
-            batch: The batch of data for the step.
+            batch: The batch of data for the step. Should be (input_seq, context, queries, query_indices).
+                input_seq should be a tensor of shape (B, L, D). context and queries should be tensors of shape
+                (B, 2*C, 3) describing context/query examples with (id, spurious_label, class_label) triplets.
+                query_indices should be a tensor of shape (B, Q) with equal rows.
             set_name: The name of the dataset (e.g., 'train', 'val_inner', ...).
 
         Returns:
             The loss for the batch.
         """
-        input_seq, context, queries = batch
-        # input_seq is np.array of shape (batch_size, total_seq_len, dim)
-        # context and queries are np.arrays of shape (batch_size, 2 * context_class_size, 3)
-        # describing context/query examples with (id, spurious_label, class_label) triplets.
+        input_seq, context, queries, query_indices = batch
 
-        pred_y_logit = self.forward(input_seq).squeeze()
+        pred_y_logit = self.forward(input_seq, query_indices[0]).squeeze()
         query_class_labels = queries[:, :, 2]
         loss = self._loss_fn(pred_y_logit, query_class_labels.float())
 
@@ -288,3 +311,57 @@ class InContextLearnerV2(InContextLearner):
                          on_epoch=True)
 
         return loss
+
+    def training_step(self, batch):
+        return self._step(batch, "train")
+
+    def validation_step(self, batch, batch_idx, dataloader_idx=0):
+        set_name = self._val_sets[dataloader_idx]
+        return self._step(batch, set_name)
+
+    def configure_optimizers(self):
+        """Configures the optimizers and learning rate schedulers.
+
+        Returns:
+            The optimizer and (optionally) the learning rate scheduler.
+        """
+        target = self._optimizer_conf.pop('target')
+        optimizer_conf = dict(**self._optimizer_conf, params=self.parameters())
+        optimizer = instantiate(optimizer_conf, _target_=target)
+
+        if self._scheduler_conf.target is None:
+            return optimizer
+        else:
+            monitor = self._scheduler_conf.pop('monitor', None)
+            interval = self._scheduler_conf.pop('interval', None)
+            scheduler_target = self._scheduler_conf.pop('target')
+            scheduler = instantiate(self._scheduler_conf, optimizer=optimizer, _target_=scheduler_target)
+
+            ret_opt = dict(optimizer=optimizer,
+                           lr_scheduler={"scheduler": scheduler, "monitor": monitor, "interval": interval})
+
+            return ret_opt
+
+    def _initialize_metrics(self):
+        """Initializes metrics for training and validation."""
+
+        for set_name in ["train"] + self._val_sets:
+            if self._dataset_name == "waterbirds_emb_contexts":
+                for i in range(4):
+                    self.group_accuracies[i][set_name] = GroupAccuracy(group=i)
+
+            self.accuracy[set_name] = torchmetrics.Accuracy(task="binary")
+            self.accuracy_minority[set_name] = MinorityMajorityAccuracy(group_type="minority")
+            self.accuracy_majority[set_name] = MinorityMajorityAccuracy(group_type="majority")
+
+            self._set_metric_attributes(set_name)
+
+    def _set_metric_attributes(self, set_name):
+        """Sets metric attributes for a given set name."""
+        setattr(self, f"{set_name}_accuracy", self.accuracy[set_name])
+        setattr(self, f"{set_name}_accuracy_minority", self.accuracy_minority[set_name])
+        setattr(self, f"{set_name}_accuracy_majority", self.accuracy_majority[set_name])
+
+        if self._dataset_name == "waterbirds_emb_contexts":
+            for i in range(4):
+                setattr(self, f"{set_name}_group_{i}_accuracy", self.group_accuracies[i][set_name])

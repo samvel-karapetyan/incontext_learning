@@ -146,7 +146,7 @@ class INaturalistEmbContextsDatasetV2(Dataset):
             # query_of_ids = tuple(instance[-1])
 
         # Process and combine image encodings with tokens
-        input_seq = self._prepare_transformer_input(
+        input_seq, query_indices = self._prepare_transformer_input(
             context=context,
             queries=queries,
             spurious_tokens=spurious_tokens,
@@ -155,7 +155,7 @@ class INaturalistEmbContextsDatasetV2(Dataset):
         if self._v1_behavior:
             queries[:-1] = context[1:]
 
-        return input_seq, np.array(context), np.array(queries)
+        return input_seq, np.array(context), np.array(queries), query_indices
 
     def __len__(self):
         """Returns the total number of ICL instances."""
@@ -262,7 +262,7 @@ class INaturalistEmbContextsDatasetV2(Dataset):
             queries: list[Example],
             spurious_tokens: np.ndarray,
             class_tokens: np.ndarray,
-    ) -> np.ndarray:
+    ) -> (np.ndarray, np.ndarray):
         """Prepares the final input sequence to feed to the transformer given context and queries.
 
         Args:
@@ -271,7 +271,9 @@ class INaturalistEmbContextsDatasetV2(Dataset):
             spurious_tokens: numpy array mapping spurious labels to tokens.
             class_tokens: numpy array mapping class labels to tokens.
 
-        Returns: a numpy array of shape (total_seq_len, dim) that is to be fed to a V2 ICL transformer.
+        Returns: a pair of numpy arrays (input_seq, query_indices), where input_seq has shape
+            (total_seq_len, dim) and is to be fed to a V2 ICL transformer, while query_indices
+            indicates query positions within the input_seq.
         """
         assert len(context) == len(queries)
         context_img_encodings = self._prepare_image_encodings(context)
@@ -299,4 +301,7 @@ class INaturalistEmbContextsDatasetV2(Dataset):
                 spurious_setting=self._spurious_setting,
             )
 
-        return np.stack(input_seq)
+        input_seq = np.stack(input_seq)
+        query_indices = np.arange(2, input_seq.shape[0], 3)
+
+        return input_seq, query_indices
