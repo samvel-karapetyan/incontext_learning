@@ -1,4 +1,4 @@
-_target_: src.datamodules.WaterbirdsEmbContextsDataModule
+_target_: src.datamodules.WaterbirdsEmbContextsDataModuleV2
 name: waterbirds_emb_contexts
 
 context_class_size: 50
@@ -10,13 +10,11 @@ saved_val_set_path: null # ${datamodule.root_dir}/waterbirds/context_val_sets_${
 
 data_length: 1024
 
-are_spurious_tokens_fixed: False
-are_class_tokens_fixed: True
-token_generation_mode: opposite  # c,-c  y,-y
-
 batch_size: 32
 num_workers: 4
 
 spurious_setting: ${spurious_setting}  # Use the global value of 'spurious_setting'
+
+v1_behavior: ${v1_behavior}
 
 val_sets: null # null if there is a single val set, otherwise this is the list of names of val sets
