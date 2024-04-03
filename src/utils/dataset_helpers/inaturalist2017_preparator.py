@@ -37,9 +37,7 @@ class INaturalist2017Preparator:
                  min_images_per_category,
                  fully_outer_supercategories,
                  fully_inner_supercategories,
-                 outer_classes_size,
-                 inner_val_size
-                 ):
+                 outer_classes_size):
         """
         Initialize the INaturalist2017 object with the specified dataset path.
 
@@ -51,14 +49,12 @@ class INaturalist2017Preparator:
             fully_outer_supercategories (list of str): List of supercategories that should be entirely classified as 'outer'. All categories under these supercategories will be assigned to an 'outer' split.
             fully_inner_supercategories (list of str): List of supercategories that should be entirely classified as 'inner'. All categories under these supercategories will be assigned to an 'inner' split.
             outer_classes_size (float): A decimal representing the proportion of categories within a non-fully classified supercategory to be randomly assigned to the 'outer' split. The rest will be assigned to the 'inner' split.
-            inner_val_size (float): A decimal indicating the proportion of data within 'inner' categories to be used as validation data ('inner_val'). The rest of the data in 'inner' categories will be used for training ('inner_train').
         """
         self._dataset_path = dataset_path
         self._min_images_per_category = min_images_per_category
         self._fully_outer_supercategories = fully_outer_supercategories
         self._fully_inner_supercategories = fully_inner_supercategories
         self._outer_classes_size = outer_classes_size
-        self._inner_val_size = inner_val_size
 
         self._ensure_dataset()
         self._dataframe = self._process_annotations_and_make_splits()
@@ -216,7 +212,7 @@ class INaturalist2017Preparator:
         df_categories = pd.merge(df_categories, image_count_per_category, on='id', how='left')
 
         # Filter df_categories for those with more than min_images_per_category images
-        filtered_categories = df_categories[df_categories['num_images'] > self._min_images_per_category]
+        filtered_categories = df_categories[df_categories['num_images'] >= self._min_images_per_category]
 
         # Merge filtered_categories with df_annotations
         df_merged = pd.merge(filtered_categories, df_annotations, left_on='id', right_on='category_id')
@@ -281,6 +277,6 @@ class INaturalist2017Preparator:
         inner_categories = df.loc[df["split"] == "inner", "category"].unique()
         for c in inner_categories:
             category_mask = (df["category"] == c)
-            df.loc[category_mask, 'split'] = np.where(np.random.rand(category_mask.sum()) < self._inner_val_size,
+            df.loc[category_mask, 'split'] = np.where(np.random.rand(category_mask.sum()) < 0.5,
                                                       'inner_train',
                                                       'inner_val')

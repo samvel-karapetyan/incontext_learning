@@ -4,11 +4,13 @@ print_config: True
 ignore_warnings: False
 
 
-spurious_setting: sum # Options: 'separate_token'(x,c) , 'no_spurious'(x), 'sum'(x+c)
+spurious_setting: sum # Options: 'no_spurious'(x), 'sum'(x+c), 'separate_token'(x, c) , 'sum_with_spurious'(x+c, c)
+
+v1_behavior: False
 
 defaults:
   - datamodule: inaturalist_emb_contexts
-  - model: incontext_learner_gptj
+  - model: incontext_learner_gptj_v2
   - optimizer: adam_w
   - scheduler: warmup_cosine_annealing
   - trainer: default

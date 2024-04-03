@@ -1,0 +1,28 @@
+_target_: src.models.InContextLearnerV2
+
+network:
+  _target_: src.models.incontext_learner_v2.GPTJModelV2
+  config:
+    _target_: transformers.GPTJConfig
+    # TODO: do we need to increase this n_positions?
+    # Setting sum_with_spurious with class_context_size=50 produces 400 tokens.
+    # Not much room is left for extrapolation analysis.
+    n_positions: 512
+    n_embd: 768
+    n_layer: 6
+    n_head: 8
+    n_inner: 3072  # Adjusted as per convention: 4 * n_embd
+    resid_pdrop: 0.0
+    embd_pdrop: 0.0
+    attn_pdrop: 0.0
+    use_cache: False
+
+loss_fn:
+  _target_: torch.nn.BCEWithLogitsLoss
+#loss_fn:
+#  _target_: src.utils.custom_loss_functions.ContextBNEWithLogits
+#  query_loss_weight: 1
+
+val_sets: ${datamodule.val_sets} # null if there is a single val set, otherwise this is the list of names of val sets
+
+dataset_name: ${datamodule.name}

@@ -73,10 +73,11 @@ def run_evaluations_with_repetitions(trainer, model, datamodule_config, context_
         list: A list of dictionaries containing evaluation results for each repetition.
     """
     list_of_results = []
-    for _ in range(n_repeat):
+    for repeat_idx in range(n_repeat):
         results = {set_name: [] for set_name in val_sets}
 
         for context_class_size in context_class_sizes:
+            log.info(f"Starting {repeat_idx=} of {context_class_size=}")
             datamodule_config.context_class_size = context_class_size
             # Instantiate data module from configuration
             log.info(f"Instantiating datamodule <{datamodule_config._target_}>")

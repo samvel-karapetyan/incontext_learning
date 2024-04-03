@@ -1,1 +1,1 @@
-from src.models.incontext_learner import InContextLearner
+from src.models.incontext_learner_v2 import InContextLearnerV2
