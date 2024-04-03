@@ -1,4 +1,4 @@
-# TODO(hrayr): we need to remove code repetition in datamodules
+from typing import Optional
 import logging
 
 import pytorch_lightning as pl
@@ -18,8 +18,32 @@ class INaturalistEmbContextsDataModuleV2(pl.LightningDataModule):
 
     This module handles the setup and provision of data loaders for the inner train,
     inner validation, and outer dataset splits.
+    """
+    class ValSets(Enum):
+        """Enum of validation splits of INaturalistEmbContextsDataModule."""
+        INNER = "inner"
+        OUTER = "outer"
+        INNER_OUTER = "inner_outer"
 
-    Attributes:
+    def __init__(self,
+                 dataset_path: str,
+                 encoding_extractor: str,
+                 saved_val_sets_path: Optional[str],
+                 inner_train_len: int,
+                 inner_val_len: int,
+                 outer_val_len: int,
+                 inner_outer_val_len: int,
+                 batch_size: int,
+                 num_workers: Optional[int],
+                 context_class_size: int,
+                 minority_group_proportion: float,
+                 spurious_setting: str,
+                 v1_behavior: bool,
+                 rotate_encodings: bool,
+                 n_rotation_matrices: int,
+                 *args, **kwargs):
+        """
+        Args:
         dataset_path (str): Path to the dataset.
         encoding_extractor (str): Name of the encoding extractor.
         saved_val_sets_path (str or None): Path for loading validation sets; if None, new data is generated.
@@ -31,39 +55,13 @@ class INaturalistEmbContextsDataModuleV2(pl.LightningDataModule):
         num_workers (int): Number of workers for data loaders.
         context_class_size (int): Size of each class in context.
         minority_group_proportion (float): Proportion of the minority group per class.
+        spurious_setting (str): Determines the handling mode of spurious tokens in the dataset instances.
+                                Options include 'no_spurious'(x), 'sum'(x+c), or 'sum_with_spurious'(x+c, c).
+        v1_behavior (bool): Whether intermediate queries should be the context examples.
         rotate_encodings (bool): Determines if image encodings are rotated in training set. True enables rotation
                                  based on class labels, while False bypasses rotation.
         n_rotation_matrices (int): Specifies the number of rotation matrices to generate and store.
-        spurious_setting (str): Determines the handling mode of spurious tokens in the dataset instances.
-                                Options include 'separate_token'(x,c) , 'no_spurious'(x), 'sum'(x+c)
-    """
-    class ValSets(Enum):
         """
-        Enumeration for validation splits used in INaturalistEmbContextsDataModule.
-
-        This enum defines constants for different types of validation splits
-        such as inner, outer, and a combined inner-outer validation set.
-        """
-        INNER = "inner"
-        OUTER = "outer"
-        INNER_OUTER = "inner_outer"
-
-    def __init__(self,
-                 dataset_path,
-                 encoding_extractor,
-                 saved_val_sets_path,
-                 inner_train_len,
-                 inner_val_len,
-                 outer_val_len,
-                 inner_outer_val_len,
-                 batch_size,
-                 num_workers,
-                 context_class_size,
-                 minority_group_proportion,
-                 spurious_setting,
-                 rotate_encodings,
-                 n_rotation_matrices,
-                 *args, **kwargs):
         super(INaturalistEmbContextsDataModuleV2, self).__init__()
 
         # Initializing dataset parameters
@@ -75,6 +73,7 @@ class INaturalistEmbContextsDataModuleV2(pl.LightningDataModule):
         self._context_class_size = context_class_size
         self._minority_group_proportion = minority_group_proportion
         self._spurious_setting = spurious_setting
+        self._v1_behavior = v1_behavior
         self._rotate_encodings = rotate_encodings
         self._n_rotation_matrices = n_rotation_matrices
 
@@ -97,74 +96,86 @@ class INaturalistEmbContextsDataModuleV2(pl.LightningDataModule):
         """
         # Creating dataset instances for each split using class attributes
         if stage == "fit":
-            self._train_set = INaturalistEmbContextsDatasetV2(self._dataset_path, self._encoding_extractor,
-                                                            self._inner_train_len,
-                                                            "inner_train", "inner_train",
-                                                            self._context_class_size,
-                                                            self._minority_group_proportion,
-                                                            self._spurious_setting,
-                                                            rotate_encodings=self._rotate_encodings,
-                                                            n_rotation_matrices=self._n_rotation_matrices)
+            self._train_set = INaturalistEmbContextsDatasetV2(
+                dataset_path=self._dataset_path,
+                encoding_extractor=self._encoding_extractor,
+                data_length=self._inner_train_len,
+                class1_split="inner_train",
+                class2_split="inner_train",
+                context_class_size=self._context_class_size,
+                minority_group_proportion=self._minority_group_proportion,
+                spurious_setting=self._spurious_setting,
+                v1_behavior=self._v1_behavior,
+                rotate_encodings=self._rotate_encodings,
+                n_rotation_matrices=self._n_rotation_matrices,
+            )
 
         # saved_data_path = self._saved_val_sets_path and os.path.join(self._saved_val_sets_path,
         #                                                              self.ValSets.INNER.value)
         saved_data_path = None
-        self._inner_val_set = INaturalistEmbContextsDatasetV2(self._dataset_path, self._encoding_extractor,
-                                                            self._inner_val_len,
-                                                            "inner_val", "inner_val",
-                                                            self._context_class_size,
-                                                            self._minority_group_proportion,
-                                                            self._spurious_setting,
-                                                            saved_data_path=saved_data_path)
+        self._inner_val_set = INaturalistEmbContextsDatasetV2(
+            dataset_path=self._dataset_path,
+            encoding_extractor=self._encoding_extractor,
+            data_length=self._inner_val_len,
+            class1_split="inner_val",
+            class2_split="inner_val",
+            context_class_size=self._context_class_size,
+            minority_group_proportion=self._minority_group_proportion,
+            spurious_setting=self._spurious_setting,
+            v1_behavior=self._v1_behavior,
+            rotate_encodings=False,
+            saved_data_path=saved_data_path)
 
         # saved_data_path = self._saved_val_sets_path and os.path.join(self._saved_val_sets_path,
         #                                                              self.ValSets.OUTER.value)
         saved_data_path = None
-        self._outer_val_set = INaturalistEmbContextsDatasetV2(self._dataset_path, self._encoding_extractor,
-                                                            self._outer_val_len,
-                                                            "outer", "outer",
-                                                            self._context_class_size,
-                                                            self._minority_group_proportion,
-                                                            self._spurious_setting,
-                                                            saved_data_path=saved_data_path)
+        self._outer_val_set = INaturalistEmbContextsDatasetV2(
+            dataset_path=self._dataset_path,
+            encoding_extractor=self._encoding_extractor,
+            data_length=self._outer_val_len,
+            class1_split="outer",
+            class2_split="outer",
+            context_class_size=self._context_class_size,
+            minority_group_proportion=self._minority_group_proportion,
+            spurious_setting=self._spurious_setting,
+            v1_behavior=self._v1_behavior,
+            rotate_encodings=False,
+            saved_data_path=saved_data_path)
 
         # saved_data_path = self._saved_val_sets_path and os.path.join(self._saved_val_sets_path,
         #                                                              self.ValSets.INNER_OUTER.value)
         saved_data_path = None
-        self._inner_outer_val_set = INaturalistEmbContextsDatasetV2(self._dataset_path, self._encoding_extractor,
-                                                                  self._inner_outer_val_len,
-                                                                  "inner_val", "outer",
-                                                                  self._context_class_size,
-                                                                  self._minority_group_proportion,
-                                                                  self._spurious_setting,
-                                                                  saved_data_path=saved_data_path)
+        self._inner_outer_val_set = INaturalistEmbContextsDatasetV2(
+            dataset_path=self._dataset_path,
+            encoding_extractor=self._encoding_extractor,
+            data_length=self._inner_outer_val_len,
+            class1_split="inner_val",
+            class2_split="outer",
+            context_class_size=self._context_class_size,
+            minority_group_proportion=self._minority_group_proportion,
+            spurious_setting=self._spurious_setting,
+            v1_behavior=self._v1_behavior,
+            rotate_encodings=False,
+            saved_data_path=saved_data_path)
 
     def train_dataloader(self):
-        """
-        Creates a DataLoader for the inner training set.
-
-        Returns:
-            DataLoader: The DataLoader for the inner training set.
-        """
         return DataLoader(self._train_set, batch_size=self._batch_size, num_workers=self._num_workers)
 
     def val_dataloader(self):
-        """
-        Creates DataLoaders for inner validation and outer sets, and combines them.
+        """Creates a combined dataloader for all validation datasets.
 
         Returns:
-            CombinedLoader: A combined DataLoader for "inner", "outer" and "inner-outer" validation sets.
+            CombinedLoader: A combined DataLoader for "inner", "inner-outer", and "outer" validation sets.
         """
         inner_val_dataloader = DataLoader(self._inner_val_set,
                                           batch_size=self._batch_size,
                                           num_workers=self._num_workers)
-        outer_val_dataloader = DataLoader(self._outer_val_set,
-                                          batch_size=self._batch_size,
-                                          num_workers=self._num_workers)
-
         inner_outer_val_dataloader = DataLoader(self._inner_outer_val_set,
                                                 batch_size=self._batch_size,
                                                 num_workers=self._num_workers)
+        outer_val_dataloader = DataLoader(self._outer_val_set,
+                                          batch_size=self._batch_size,
+                                          num_workers=self._num_workers)
 
         return CombinedLoader({self.ValSets.INNER: inner_val_dataloader,
                                self.ValSets.INNER_OUTER: inner_outer_val_dataloader,

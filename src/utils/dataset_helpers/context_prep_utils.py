@@ -33,15 +33,14 @@ def get_context_example_tokens(
         class_token: np.ndarray,
         spurious_setting: str,
 ) -> list[np.ndarray]:
-    if spurious_setting == 'separate_token':
-        return [img_encoding, spurious_token, class_token]
-    elif spurious_setting == 'sum':
-        return [img_encoding + spurious_token, class_token]
-    elif spurious_setting == 'no_spurious':
+    if spurious_setting == 'no_spurious':
         return [img_encoding, class_token]
-    else:
-        raise ValueError(
-            f"Invalid spurious setting: '{spurious_setting}'. Expected 'separate_token', 'sum', or 'no_spurious'.")
+    if spurious_setting == 'sum':
+        return [img_encoding + spurious_token, class_token]
+    if spurious_setting == 'sum_with_spurious':
+        return [img_encoding + spurious_token, spurious_token, class_token]
+    raise ValueError(
+        f"Invalid spurious setting: '{spurious_setting}'. Expected 'no_spurious', 'sum', or 'sum_with_spurious'.")
 
 
 def get_query_example_tokens(
@@ -49,15 +48,14 @@ def get_query_example_tokens(
         spurious_token: np.ndarray,
         spurious_setting: str,
 ) -> list[np.ndarray]:
-    if spurious_setting == 'separate_token':
-        return [img_encoding, spurious_token]
-    elif spurious_setting == 'sum':
-        return [img_encoding + spurious_token]
-    elif spurious_setting == 'no_spurious':
+    if spurious_setting == 'no_spurious':
         return [img_encoding]
-    else:
-        raise ValueError(
-            f"Invalid spurious setting: '{spurious_setting}'. Expected 'separate_token', 'sum', or 'no_spurious'.")
+    if spurious_setting == 'sum':
+        return [img_encoding + spurious_token]
+    if spurious_setting == 'sum_with_spurious':
+        return [img_encoding + spurious_token]
+    raise ValueError(
+        f"Invalid spurious setting: '{spurious_setting}'. Expected 'no_spurious', 'sum', or 'sum_with_spurious'.")
 
 
 def get_group_counts_based_on_proportions(
