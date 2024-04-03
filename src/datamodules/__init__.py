@@ -3,6 +3,7 @@ from src.datamodules.inaturalist_emb_contexts import INaturalistEmbContextsDataM
 from src.datamodules.inaturalist_emb_contexts_v2 import INaturalistEmbContextsDataModuleV2
 from src.datamodules.waterbirds import WaterbirdsDataModule
 from src.datamodules.waterbirds_emb_contexts import WaterbirdsEmbContextsDataModule
+from src.datamodules.waterbirds_emb_contexts_v2 import WaterbirdsEmbContextsDataModuleV2
 from src.datamodules.cub import CUBDataModule
 from src.datamodules.cub_emb_contexts import CUBEmbContextsDataModule
 from src.datamodules.imagenet import ImagenetDataModule

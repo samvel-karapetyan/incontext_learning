@@ -3,6 +3,7 @@ from src.datamodules.datasets.inaturalist_emb_contexts import INaturalistEmbCont
 from src.datamodules.datasets.inaturalist_emb_contexts_v2 import INaturalistEmbContextsDatasetV2
 from src.datamodules.datasets.waterbirds import CustomizedWaterbirdsDataset as WaterbirdsDataset
 from src.datamodules.datasets.waterbirds_emb_contexts import WaterbirdsEmbContextsDataset
+from src.datamodules.datasets.waterbirds_emb_contexts_v2 import WaterbirdsEmbContextsDatasetV2
 from src.datamodules.datasets.cub import CUBDataset
 from src.datamodules.datasets.cub_emb_contexts import CUBEmbContextsDataset
 from src.datamodules.datasets.imagenet import ImagenetDataset
