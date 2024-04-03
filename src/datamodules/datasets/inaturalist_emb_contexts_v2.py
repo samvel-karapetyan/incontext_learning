@@ -120,7 +120,7 @@ class INaturalistEmbContextsDatasetV2(Dataset):
 
         self._saved_data_path = saved_data_path
 
-    def __getitem__(self, idx) -> (np.ndarray, np.ndarray, np.ndarray):
+    def __getitem__(self, idx) -> (np.ndarray, np.ndarray, np.ndarray, np.ndarray):
         """Returns a dataset example given the example index.
 
         If 'self._saved_data_path' is None, it generates a new data item.
@@ -129,9 +129,10 @@ class INaturalistEmbContextsDatasetV2(Dataset):
         Args:
             idx (int): The index of the item to retrieve.
 
-        Returns: A tuple (input_seq, context, queries), where input_seq is a np.ndarray of shape (total_seq_len, dim)
-                 that is to fed ta a V2 ICL transformer. Context and queries are np.ndarrays of shape
-                 (2 * context_class_size, 3) describing context/query examples with (id, spurious, class) tuples.
+        Returns: A tuple (input_seq, context, queries, query_indices), where input_seq is a np.ndarray of shape
+            (total_seq_len, dim) that is to be fed ta a V2 transformer. Context and queries are np.ndarrays of shape
+            (2 * context_class_size, 3) describing context/query examples with (id, spurious, class) tuples.
+            query_indices specifies positions of input_seq corresponding to query tokens.
         """
         if self._saved_data_path is None:
             spurious_tokens = next(self._spurious_tokens_generator)
@@ -243,9 +244,7 @@ class INaturalistEmbContextsDatasetV2(Dataset):
         for example in examples:
             image_id = example[0]
             img_encodings.append(self._encodings[self._encodings_indices_map[image_id]])
-        img_encodings = np.stack(img_encodings)
-
-        return img_encodings
+        return np.stack(img_encodings)
 
     def _maybe_rotate_embeddings(
             self,
@@ -289,19 +288,21 @@ class INaturalistEmbContextsDatasetV2(Dataset):
         input_seq = []
         for i in range(len(context)):
             # Add current context related tokens.
+            _, sp, label = context[i]
             input_seq += get_context_example_tokens(
                 img_encoding=context_img_encodings[i],
-                spurious_token=spurious_tokens[context[i][1]],
-                class_token=class_tokens[context[i][2]],
+                spurious_token=spurious_tokens[sp],
+                class_token=class_tokens[label],
                 spurious_setting=self._spurious_setting,
             )
 
             # Add current query related token.
             # NOTE: no matter what spurious setting we use, query spurious label
             #       and class label will not get their own tokens.
+            _, sp, _ = queries[i]
             input_seq += get_query_example_tokens(
                 img_encoding=query_img_encodings[i],
-                spurious_token=spurious_tokens[queries[i][1]],
+                spurious_token=spurious_tokens[sp],
                 spurious_setting=self._spurious_setting,
             )
 
