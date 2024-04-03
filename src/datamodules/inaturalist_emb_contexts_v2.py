@@ -56,7 +56,8 @@ class INaturalistEmbContextsDataModuleV2(pl.LightningDataModule):
         context_class_size (int): Size of each class in context.
         minority_group_proportion (float): Proportion of the minority group per class.
         spurious_setting (str): Determines the handling mode of spurious tokens in the dataset instances.
-                                Options include 'no_spurious'(x), 'sum'(x+c), or 'sum_with_spurious'(x+c, c).
+                                Options include 'no_spurious'(x), 'sum'(x+c), 'separate_token'(x, c)
+                                or 'sum_with_spurious'(x+c, c).
         v1_behavior (bool): Whether intermediate queries should be the context examples.
         rotate_encodings (bool): Determines if image encodings are rotated in training set. True enables rotation
                                  based on class labels, while False bypasses rotation.

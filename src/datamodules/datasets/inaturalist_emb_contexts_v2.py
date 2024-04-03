@@ -65,7 +65,8 @@ class INaturalistEmbContextsDatasetV2(Dataset):
         context_class_size (int): The size of each class in the context.
         minority_group_proportion (float): The proportion of the minority group in the context per class.
         spurious_setting (str): Determines the handling mode of spurious tokens in the dataset instances.
-                                Options include 'no_spurious'(x), 'sum'(x+c), or 'sum_with_spurious'(x+c, c).
+                                Options include 'no_spurious'(x), 'sum'(x+c), 'separate_token'(x, c)
+                                or 'sum_with_spurious'(x+c, c).
         v1_behavior (bool): Whether intermediate queries should be the context examples.
         rotate_encodings (bool): Determines if image encodings are rotated. True enables rotation
                                  based on class labels, while False bypasses rotation.
@@ -87,7 +88,6 @@ class INaturalistEmbContextsDatasetV2(Dataset):
         # Dataset parameters
         self._context_class_size = context_class_size
         self._minority_group_proportion = minority_group_proportion
-        assert spurious_setting in ['sum', 'no_spurious', 'sum_with_spurious']
         self._spurious_setting = spurious_setting
 
         # Unique categories in the dataset
@@ -309,11 +309,11 @@ class INaturalistEmbContextsDatasetV2(Dataset):
 
         if self._spurious_setting in ['no_spurious', 'sum']:
             query_indices = np.arange(2, input_seq.shape[0], 3)
-        elif self._spurious_setting == 'sum_with_spurious':
+        elif self._spurious_setting in ['separate_token', 'sum_with_spurious']:
             query_indices = np.arange(3, input_seq.shape[0], 4)
         else:
             raise ValueError(
                 f"Invalid spurious setting: '{self._spurious_setting}'. "
-                f"Expected 'no_spurious', 'sum', or 'sum_with_spurious'.")
+                f"Expected 'no_spurious', 'sum', 'separate_token' or 'sum_with_spurious'.")
 
         return input_seq, query_indices
