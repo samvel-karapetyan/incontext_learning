@@ -1,9 +1,10 @@
 from typing import Optional
 import logging
 import os
+import random
+
 import pandas as pd
 import numpy as np
-import random
 
 from src.datamodules.datasets.base_emb_contexts_v2 import BaseEmbContextsDatasetV2
 from src.utils.dataset_helpers.context_prep_utils import generate_spurious_labels, prepare_context_or_query
@@ -13,15 +14,13 @@ log = logging.getLogger(__name__)
 Example = tuple[int, int, int]  # (index, spurious_label, class_label)
 
 
-class INaturalistEmbContextsDatasetV2(BaseEmbContextsDatasetV2):
-    """A dataset class for iNaturalist in-context learning instances."""
+class CUBEmbContextsDatasetV2(BaseEmbContextsDatasetV2):
+    """A dataset class for Caltech-UCSD Birds (CUB) in-context learning instances."""
 
     def __init__(self,
                  dataset_path: str,
                  encoding_extractor: str,
                  data_length: int,
-                 class1_split: str,
-                 class2_split: str,
                  context_class_size: int,
                  minority_group_proportion: float,
                  spurious_setting: str,
@@ -35,8 +34,6 @@ class INaturalistEmbContextsDatasetV2(BaseEmbContextsDatasetV2):
         dataset_path (str): The path to the dataset directory.
         encoding_extractor (str): The name of the encoding extractor used.
         data_length (int): The length of the dataset.
-        class1_split (str): The type of data split of class 1 (e.g., 'inner_train', 'inner_val', 'outer').
-        class2_split (str): The type of data split of class 2 (e.g., 'inner_train', 'inner_val', 'outer').
         context_class_size (int): The size of each class in the context.
         minority_group_proportion (float): The proportion of the minority group in the context per class.
         spurious_setting (str): Determines the handling mode of spurious tokens in the dataset instances.
@@ -48,7 +45,7 @@ class INaturalistEmbContextsDatasetV2(BaseEmbContextsDatasetV2):
         n_rotation_matrices (int): Specifies the number of rotation matrices to generate and store.
         saved_data_path (str or None): Path for loading data; if None, new data is generated.
         """
-        super(INaturalistEmbContextsDatasetV2, self).__init__(
+        super(CUBEmbContextsDatasetV2, self).__init__(
             encoding_extractor=encoding_extractor,
             data_length=data_length,
             context_class_size=context_class_size,
@@ -64,17 +61,16 @@ class INaturalistEmbContextsDatasetV2(BaseEmbContextsDatasetV2):
         self._encodings = encodings_data["encodings"]
         self._encodings_indices_map = encodings_data["indices_map"]
 
-        self._dataframe = pd.read_csv(os.path.join(dataset_path, "prepared_data.csv"))
-        self._dataframe = self._dataframe[self._dataframe['split'].isin([class1_split, class2_split])]
+        self._dataframe = pd.read_csv(os.path.join(dataset_path, 'image_class_labels.txt'), sep=' ',
+                                      header=None, names=['image_id', 'category'])
 
-        # Unique categories in the dataset
-        self._class1_split = class1_split
-        self._class2_split = class2_split
-        if class1_split == class2_split:
-            self._categories = self._dataframe["category"].unique()
-        else:
-            self._categories = (self._dataframe.loc[self._dataframe['split'] == class1_split, "category"].unique(),
-                                self._dataframe.loc[self._dataframe['split'] == class2_split, "category"].unique())
+        # Calculate the value counts of categories that appear more than context_class_size times
+        valid_categories = self._dataframe['category'].value_counts()[lambda x: x > context_class_size].index
+
+        # Filter the dataframe to only include rows with those categories
+        self._dataframe = self._dataframe[self._dataframe['category'].isin(valid_categories)]
+
+        self._categories = self._dataframe["category"].unique()
 
         self._minority_group_proportion = minority_group_proportion
 
@@ -85,10 +81,7 @@ class INaturalistEmbContextsDatasetV2(BaseEmbContextsDatasetV2):
             a pair (context, queries), where both are lists of 2 * context_class_size (id, spurious, label) triplets.
         """
         # Randomly selecting two categories
-        if self._class1_split != self._class2_split:
-            category1, category2 = (np.random.choice(x, size=1)[0] for x in self._categories)
-        else:
-            category1, category2 = np.random.choice(self._categories, size=2, replace=False)
+        category1, category2 = np.random.choice(self._categories, size=2, replace=False)
 
         # Sampling 2 * _context_class_size examples from each category (half for context and half for queries)
         df = self._dataframe  # shorthand

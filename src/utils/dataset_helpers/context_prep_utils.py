@@ -1,4 +1,27 @@
+import random
+
 import numpy as np
+
+Example = tuple[int, int, int]  # (index, spurious_label, class_label)
+
+
+def prepare_context_or_query(
+        cat1_indices: list[int],
+        cat2_indices: list[int],
+        cat1_spurious_labels: list[int],
+        cat2_spurious_labels: list[int],
+        cat1_class_label: int,
+        cat2_class_label: int) -> list[Example]:
+    """Combines and shuffles list of examples from 2 classes."""
+    cat1_class_labels = [cat1_class_label] * len(cat1_indices)
+    cat2_class_labels = [cat2_class_label] * len(cat2_indices)
+    cat1_examples = list(zip(
+        cat1_indices, cat1_spurious_labels, cat1_class_labels))
+    cat2_examples = list(zip(
+        cat2_indices, cat2_spurious_labels, cat2_class_labels))
+    examples = cat1_examples + cat2_examples
+    random.shuffle(examples)
+    return examples
 
 
 def generate_spurious_labels(

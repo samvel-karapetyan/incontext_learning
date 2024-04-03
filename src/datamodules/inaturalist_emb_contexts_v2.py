@@ -13,14 +13,9 @@ log = logging.getLogger(__name__)
 
 
 class INaturalistEmbContextsDataModuleV2(pl.LightningDataModule):
-    """
-    A PyTorch Lightning Data Module for the iNaturalist Embedding Contexts dataset.
-
-    This module handles the setup and provision of data loaders for the inner train,
-    inner validation, and outer dataset splits.
-    """
+    """A PyTorch Lightning data module for iNaturalist in-context learning instances."""
     class ValSets(Enum):
-        """Enum of validation splits of INaturalistEmbContextsDataModule."""
+        """Enum of validation splits of INaturalistEmbContextsDataModuleV2."""
         INNER = "inner"
         OUTER = "outer"
         INNER_OUTER = "inner_outer"
@@ -42,27 +37,6 @@ class INaturalistEmbContextsDataModuleV2(pl.LightningDataModule):
                  rotate_encodings: bool,
                  n_rotation_matrices: int,
                  *args, **kwargs):
-        """
-        Args:
-        dataset_path (str): Path to the dataset.
-        encoding_extractor (str): Name of the encoding extractor.
-        saved_val_sets_path (str or None): Path for loading validation sets; if None, new data is generated.
-        inner_train_len (int): Length of the inner training set.
-        inner_val_len (int): Length of the inner validation set.
-        outer_val_len (int): Length of the outer val set.
-        inner_outer_val_len (int): Length of the inner-outer val set.
-        batch_size (int): Batch size for data loaders.
-        num_workers (int): Number of workers for data loaders.
-        context_class_size (int): Size of each class in context.
-        minority_group_proportion (float): Proportion of the minority group per class.
-        spurious_setting (str): Determines the handling mode of spurious tokens in the dataset instances.
-                                Options include 'no_spurious'(x), 'sum'(x+c), 'separate_token'(x, c)
-                                or 'sum_with_spurious'(x+c, c).
-        v1_behavior (bool): Whether intermediate queries should be the context examples.
-        rotate_encodings (bool): Determines if image encodings are rotated in training set. True enables rotation
-                                 based on class labels, while False bypasses rotation.
-        n_rotation_matrices (int): Specifies the number of rotation matrices to generate and store.
-        """
         super(INaturalistEmbContextsDataModuleV2, self).__init__()
 
         # Initializing dataset parameters

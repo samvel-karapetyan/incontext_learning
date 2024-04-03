@@ -1,4 +1,4 @@
-_target_: src.datamodules.ImagenetEmbContextsDataModule
+_target_: src.datamodules.ImagenetEmbContextsDataModuleV2
 name: imagenet_emb_contexts
 
 context_class_size: 50
@@ -6,17 +6,18 @@ minority_group_proportion: 0.1
 
 dataset_path: ${oc.env:IMAGENET_DIR}
 encoding_extractor: dinov2_vitb14
-saved_path: null # ${datamodule.dataset_path}/context_val_sets_${datamodule.context_class_size}_${datamodule.minority_group_proportion}/${datamodule.encoding_extractor}
+saved_data_path: null # ${datamodule.dataset_path}/context_val_sets_${datamodule.context_class_size}_${datamodule.minority_group_proportion}/${datamodule.encoding_extractor}
 
 data_length: 1024
-
-are_spurious_tokens_fixed: False
-are_class_tokens_fixed: True
-token_generation_mode: opposite  # c,-c  y,-y
 
 batch_size: 32
 num_workers: 4
 
 spurious_setting: ${spurious_setting}  # Use the global value of 'spurious_setting'
+
+v1_behavior: ${v1_behavior}
+
+rotate_encodings: False
+n_rotation_matrices: 1000  # 1000 works well, but is slow. Reduce for efficiency when experimenting
 
 val_sets: null # null if there is a single val set, otherwise this is the list of names of val sets
