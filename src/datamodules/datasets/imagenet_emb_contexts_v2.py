@@ -87,7 +87,7 @@ class ImagenetEmbContextsDatasetV2(BaseEmbContextsDatasetV2):
         # Randomly selecting two categories
         category1, category2 = np.random.choice(self._categories, size=2, replace=False)
 
-        # Sampling 2 * _context_class_size examples from each category (half for context and half for queries)
+        # Sampling 2 * context_class_size examples from each category (half for context and half for queries)
         df = self._dataframe  # shorthand
         cat1_indices = df.loc[df["category"] == category1, "id"].sample(2 * self._context_class_size).tolist()
         cat2_indices = df.loc[df["category"] == category2, "id"].sample(2 * self._context_class_size).tolist()

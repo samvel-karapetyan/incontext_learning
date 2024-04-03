@@ -20,7 +20,7 @@ class WaterbirdsEmbContextsDataModuleV2(pl.LightningDataModule):
                  root_dir: str,
                  encoding_extractor: str,
                  data_length: int,
-                 saved_val_set_path: Optional[str],
+                 saved_data_path: Optional[str],
                  batch_size: int,
                  num_workers: Optional[int],
                  context_class_size: int,
@@ -36,7 +36,7 @@ class WaterbirdsEmbContextsDataModuleV2(pl.LightningDataModule):
         self._root_dir = root_dir
         self._encoding_extractor = encoding_extractor
         self._data_length = data_length
-        self._saved_val_set_path = saved_val_set_path
+        self._saved_data_path = saved_data_path
         self._batch_size = batch_size
         self._num_workers = num_workers
         self._context_class_size = context_class_size
@@ -63,7 +63,7 @@ class WaterbirdsEmbContextsDataModuleV2(pl.LightningDataModule):
             v1_behavior=self._v1_behavior,
             rotate_encodings=self._rotate_encodings,
             n_rotation_matrices=self._n_rotation_matrices,
-            saved_data_path=self._saved_val_set_path)
+            saved_data_path=self._saved_data_path)
 
     def val_dataloader(self):
         return DataLoader(self._dataset, batch_size=self._batch_size, num_workers=self._num_workers)

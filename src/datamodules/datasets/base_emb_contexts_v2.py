@@ -55,7 +55,7 @@ class BaseEmbContextsDatasetV2(Dataset, ABC):
 
         # Loading tokens data
         token_data_path = os.path.join(
-            '/nfs/np/mnt/xtb/rafayel/data/inaturalist2017/avg_norms',
+            '/nfs/np/mnt/xtb/rafayel/data/inaturalist2017/avg_norms',  # TODO(hrayr): fix data path hard coding
             f"{encoding_extractor}_l2.npz")
         tokens_data = np.load(token_data_path, mmap_mode="r")
         # Convert tokens_data to a dictionary to resolve "Bad CRC-32" error in multi-worker mode.
@@ -74,7 +74,6 @@ class BaseEmbContextsDatasetV2(Dataset, ABC):
             self._img_encoding_transform = EncodingRotator(n_rotation_matrices, tokens_data["token_len"].item())
         else:
             self._img_encoding_transform = IdentityTransform()
-
 
     def __getitem__(self, idx) -> (np.ndarray, np.ndarray, np.ndarray, np.ndarray):
         """Returns a dataset example given the example index.
@@ -104,15 +103,16 @@ class BaseEmbContextsDatasetV2(Dataset, ABC):
             # context_of_ids = [tuple(x) for x in instance[:-1]]
             # query_of_ids = tuple(instance[-1])
 
+        # Switch to v1 behavior if needed
+        if self._v1_behavior:
+            queries[:-1] = context[1:]
+
         # Process and combine image encodings with tokens
         input_seq, query_indices = self._prepare_transformer_input(
             context=context,
             queries=queries,
             spurious_tokens=spurious_tokens,
             class_tokens=class_tokens)
-
-        if self._v1_behavior:
-            queries[:-1] = context[1:]
 
         return input_seq, np.array(context), np.array(queries), query_indices
 
