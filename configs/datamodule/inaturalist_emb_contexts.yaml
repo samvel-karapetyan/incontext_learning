@@ -1,4 +1,4 @@
-_target_: src.datamodules.INaturalistEmbContextsDataModule
+_target_: src.datamodules.INaturalistEmbContextsDataModuleV2
 name: inaturalist_emb_contexts
 
 context_class_size: 50
@@ -13,17 +13,14 @@ inner_val_len: 1024 # 2^n, because CombinedDataloader removes the last non-full 
 outer_val_len: 1024 # 2^n, because CombinedDataloader removes the last non-full batch
 inner_outer_val_len: 1024 # 2^n, because CombinedDataloader removes the last non-full batch
 
-are_spurious_tokens_fixed: False
-are_class_tokens_fixed: True
-token_generation_mode: opposite  # c,-c  y,-y
-
 batch_size: 32
 num_workers: 4
 
 spurious_setting: ${spurious_setting}  # Use the global value of 'spurious_setting'
 
+v1_behavior: ${v1_behavior}
+
 rotate_encodings: True
-n_rotation_matrices: 100
-class_dependant_rotate: False
+n_rotation_matrices: 1000  # 1000 works well, but is slow. Reduce for efficiency when experimenting
 
 val_sets: [inner, inner_outer, outer]  # the order here should match the order in the combined loader
