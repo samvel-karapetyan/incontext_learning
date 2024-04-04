@@ -25,15 +25,11 @@ def compute_encodings_avg_norm_and_generate_tokens(config: DictConfig) -> None:
     if config.split:
         encodings_path = os.path.join(encodings_path, config.split)
 
-    norms: List[float] = []  # List to store norms of each encoding
+    # Load the encoding from the file
+    enc, *_ = np.load(os.path.join(encodings_path, "combined.npz")).values()
 
-    # Process each file in the encodings directory
-    enc = None
-    for filename in tqdm(os.listdir(encodings_path)):
-        # Load the encoding from the file
-        enc = np.load(os.path.join(encodings_path, filename))
-        # Compute and append the L2 norm of the encoding
-        norms.append(np.linalg.norm(enc))
+     # Store norms of each encoding
+    norms = np.linalg.norm(enc, axis=1)
 
     # Calculate the average of all norms
     avg_norm = np.mean(norms)
