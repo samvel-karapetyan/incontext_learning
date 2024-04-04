@@ -47,10 +47,7 @@ class WaterbirdsSubsetExtracted(Dataset):
         metadata = self._wilds_waterbirds_subset.metadata_array[idx]
         c = metadata[0]
 
-        idx_within_full_waterbirds = self._wilds_waterbirds_subset.indices[idx]
-        encoding_row_index = self._index_map[idx_within_full_waterbirds]
-        assert encoding_row_index != -1
-        x = self._encodings[encoding_row_index]
+        x = self._encodings[idx]
 
         return x, y, c, idx
 
