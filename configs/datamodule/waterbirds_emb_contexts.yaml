@@ -23,4 +23,6 @@ n_rotation_matrices: 1000  # 1000 works well, but is slow. Reduce for efficiency
 
 randomly_swap_labels: True
 
+add_context_noise: True
+
 val_sets: [train, train_val, val]  # the order here should match the order in the combined loader

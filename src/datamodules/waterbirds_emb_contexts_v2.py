@@ -36,6 +36,7 @@ class WaterbirdsEmbContextsDataModuleV2(pl.LightningDataModule):
                  rotate_encodings: bool,
                  n_rotation_matrices: int,
                  randomly_swap_labels: bool,
+                 add_context_noise: bool,
                  *args, **kwargs):
         super(WaterbirdsEmbContextsDataModuleV2, self).__init__()
 
@@ -52,6 +53,7 @@ class WaterbirdsEmbContextsDataModuleV2(pl.LightningDataModule):
         self._rotate_encodings = rotate_encodings
         self._n_rotation_matrices = n_rotation_matrices
         self._randomly_swap_labels = randomly_swap_labels
+        self._add_context_noise = add_context_noise
 
         # Initializing dataset lengths for different splits
         self._train_len = train_len
@@ -79,6 +81,7 @@ class WaterbirdsEmbContextsDataModuleV2(pl.LightningDataModule):
                 rotate_encodings=self._rotate_encodings,
                 n_rotation_matrices=self._n_rotation_matrices,
                 randomly_swap_labels=self._randomly_swap_labels,
+                add_context_noise=self._add_context_noise,
             )
 
         # saved_data_path = self._saved_val_sets_path and os.path.join(self._saved_val_sets_path,
@@ -96,6 +99,7 @@ class WaterbirdsEmbContextsDataModuleV2(pl.LightningDataModule):
             v1_behavior=self._v1_behavior,
             rotate_encodings=False,
             randomly_swap_labels=False,
+            add_context_noise=False,
             saved_data_path=saved_data_path,
         )
 
@@ -114,6 +118,7 @@ class WaterbirdsEmbContextsDataModuleV2(pl.LightningDataModule):
             v1_behavior=self._v1_behavior,
             rotate_encodings=False,
             randomly_swap_labels=False,
+            add_context_noise=False,
             saved_data_path=saved_data_path,
         )
 
@@ -132,6 +137,7 @@ class WaterbirdsEmbContextsDataModuleV2(pl.LightningDataModule):
             v1_behavior=self._v1_behavior,
             rotate_encodings=False,
             randomly_swap_labels=False,
+            add_context_noise=False,
             saved_data_path=saved_data_path,
         )
 
