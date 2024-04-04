@@ -72,6 +72,7 @@ class CustomizedWaterbirdsDataset(WaterbirdsDataset):
 
             # Find the actual index in the encodings using the index map
             actual_index = index_map[idx]
+            assert actual_index != -1  # -1 was used to denote absence. Without an assert this might go unnoticed.
 
             # Finally, access the encoding using the actual index
             x = set_info["encodings"][actual_index]
