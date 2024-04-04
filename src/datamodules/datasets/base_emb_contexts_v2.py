@@ -173,7 +173,14 @@ class BaseEmbContextsDatasetV2(Dataset, ABC):
         """
         assert len(context) == len(queries)
         context_img_encodings = self._prepare_context_image_encodings(context)
-        query_img_encodings = self._prepare_query_image_encodings(queries)
+        if not self._v1_behavior:
+            query_img_encodings = self._prepare_query_image_encodings(queries)
+        else:
+            # only the last query is from the query distribution, other are actually the context examples
+            query_img_encodings = np.concatenate([
+                self._prepare_context_image_encodings(queries[:-1]),
+                self._prepare_query_image_encodings(queries[-1:]),
+            ], axis=0)
 
         # rotate embeddings if specified
         context_img_encodings, query_img_encodings = self._maybe_rotate_embeddings(

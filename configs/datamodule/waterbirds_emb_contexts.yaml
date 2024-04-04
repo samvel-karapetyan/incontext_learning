@@ -6,9 +6,10 @@ group_proportions: [0.45, 0.05, 0.05, 0.45] # train set default [0.7295098900794
 
 root_dir: ${oc.env:DATA_ROOT_DIR}
 encoding_extractor: dinov2_vitb14
-saved_data_path: null # ${datamodule.root_dir}/waterbirds/context_val_sets_${datamodule.context_class_size}/${datamodule.encoding_extractor}
+saved_val_sets_path: null # ${datamodule.root_dir}/waterbirds/context_val_sets_${datamodule.context_class_size}/${datamodule.encoding_extractor}
 
-data_length: 1024
+train_len: ${trainer.max_steps}
+eval_len: 1024 # 2^n, because CombinedDataloader removes the last non-full batch
 
 batch_size: 32
 num_workers: 4
@@ -17,7 +18,9 @@ spurious_setting: ${spurious_setting}  # Use the global value of 'spurious_setti
 
 v1_behavior: ${v1_behavior}
 
-rotate_encodings: False
+rotate_encodings: True
 n_rotation_matrices: 1000  # 1000 works well, but is slow. Reduce for efficiency when experimenting
 
-val_sets: null # null if there is a single val set, otherwise this is the list of names of val sets
+randomly_swap_labels: True
+
+val_sets: [train, train_val, val]  # the order here should match the order in the combined loader

@@ -2,125 +2,72 @@ import logging
 import os.path
 
 import numpy as np
-
+from torch.utils.data import Dataset
 from wilds.datasets.waterbirds_dataset import WaterbirdsDataset
 from wilds.datasets.wilds_dataset import WILDSSubset
 
 log = logging.getLogger(__name__)
 
 
-class CustomizedWaterbirdsDataset(WaterbirdsDataset):
-    """
-    A customized version of the WaterbirdsDataset from the WILDS dataset collection.
-    This class extends the standard WaterbirdsDataset with some dataset-specific
-    functionalities and modifications.
-    """
+class WaterbirdsSubsetForEncodingExtraction(Dataset):
+    def __init__(self, wilds_waterbirds_subset: WILDSSubset):
+        self._wilds_waterbirds_subset = wilds_waterbirds_subset
 
-    def __init__(self, root_dir, data_type="img", encoding_extractor=None, return_labels=False, *args, **kwargs):
-        """
-        Initializes the CustomizedWaterbirdsDataset instance.
+    def __getitem__(self, idx):
+        x, y, metadata = self._wilds_waterbirds_subset[idx]
+        return x, idx
 
-        Args:
-            root_dir (str): The root directory of the dataset.
-        """
-        super().__init__(root_dir=root_dir, *args, **kwargs)
+    def __len__(self):
+        return len(self._wilds_waterbirds_subset)
+
+
+class WaterbirdsForEncodingExtraction:
+    def __init__(self, root_dir: str, download: bool = False):
+        self._wilds_waterbirds = WaterbirdsDataset(root_dir=root_dir, download=download)
+
+    def get_subset(self, *args, **kwargs) -> WaterbirdsSubsetForEncodingExtraction:
+        return WaterbirdsSubsetForEncodingExtraction(
+            self._wilds_waterbirds.get_subset(*args, **kwargs))
+
+
+class WaterbirdsSubsetExtracted(Dataset):
+    def __init__(self,
+                 wilds_waterbirds_subset: WILDSSubset,
+                 encodings: np.ndarray,
+                 index_map: np.ndarray):
+        self._wilds_waterbirds_subset = wilds_waterbirds_subset
+        self._encodings = encodings
+        self._index_map = index_map
+
+    def __getitem__(self, idx):
+        y = self._wilds_waterbirds_subset.y_array[idx]
+        metadata = self._wilds_waterbirds_subset.metadata_array[idx]
+        c = metadata[0]
+
+        idx_within_full_waterbirds = self._wilds_waterbirds_subset.indices[idx]
+        encoding_row_index = self._index_map[idx_within_full_waterbirds]
+        assert encoding_row_index != -1
+        x = self._encodings[encoding_row_index]
+
+        return x, y, c, idx
+
+    def __len__(self):
+        return len(self._wilds_waterbirds_subset)
+
+
+class WaterbirdsExtracted:
+    def __init__(self,
+                 root_dir: str,
+                 encoding_extractor: str):
         self._root_dir = root_dir
-        self._data_type = data_type
         self._encoding_extractor = encoding_extractor
-        self._return_labels = return_labels
+        self._wilds_waterbirds = WaterbirdsDataset(root_dir=root_dir)
 
-        if data_type == "encoding":
-            # Prepare encodings and data files
-            self._encodings_data = {}
-            for split in self.DEFAULT_SPLITS:
-                self._encodings_data[split] = {}
-
-                encodings_data = np.load(os.path.join(root_dir, "waterbirds", encoding_extractor, split, "combined.npz"))
-                self._encodings_data[split]["encodings"] = encodings_data["encodings"]
-                self._encodings_data[split]["indices_map"] = encodings_data["indices_map"]
-
-    def __getitem__(self, idx):
-        """
-        Retrieves the item at the given index from the dataset.
-
-        Args:
-            idx (int): The index of the item to retrieve.
-
-        Returns:
-            tuple: A tuple containing the image data (x), label (y), spurious label (c), and index (idx).
-        """
-        x, y, metadata = super().__getitem__(idx)
-        x, y, c = x, y, metadata[0]
-
-        if self._return_labels:
-            return x, y, c, idx
-        else:
-            return x, idx
-
-    def get_input(self, idx):
-        if self._data_type == "img":
-            return super().get_input(idx)
-        elif self._data_type == "encoding":
-            split_dict = {value: key for key, value in self.split_dict.items()}
-            set_name = split_dict[self.split_array[idx]]
-
-            # Retrieve the set information from the encodings data
-            set_info = self._encodings_data[set_name]
-
-            # Get the index map for the current set
-            index_map = set_info["indices_map"]
-
-            # Find the actual index in the encodings using the index map
-            actual_index = index_map[idx]
-
-            # Finally, access the encoding using the actual index
-            x = set_info["encodings"][actual_index]
-            return x
-
-    def get_subset(self, split, frac=1.0, transform=None):
-        """
-        Generates a  subset of the dataset based on the specified split.
-
-        Note: This method and the CustomizedWildsSubset class will be removed when PR https://github.com/p-lambda/wilds/pull/156 is merged.
-        """
-        if split not in self.split_dict:
-            raise ValueError(f"Split {split} not found in dataset's split_dict.")
-
-        split_mask = self.split_array == self.split_dict[split]
-        split_idx = np.where(split_mask)[0]
-
-        if frac < 1.0:
-            # Randomly sample a fraction of the split
-            num_to_retain = int(np.round(float(len(split_idx)) * frac))
-            split_idx = np.sort(np.random.permutation(split_idx)[:num_to_retain])
-
-        return CustomizedWildsSubset(self, split_idx, transform)
-
-
-class CustomizedWildsSubset(WILDSSubset):
-    """
-    A customized subset of the WILDS dataset, used to handle specific data retrieval and transformations.
-    This class extends the standard WILDSSubset with some dataset-specific functionalities.
-
-    Note: This class will be removed when PR https://github.com/p-lambda/wilds/pull/156 is merged.
-    """
-
-    def __getitem__(self, idx):
-        """
-        Retrieves the item at the given index from the subset.
-
-        Args:
-            idx (int): The index of the item to retrieve from the subset.
-
-        Returns:
-            tuple: A tuple containing the transformed image data (x), label (y), and other metadata.
-        """
-        vv = self.dataset[self.indices[idx]]
-
-        x, y, *_ = vv
-        if self.transform is not None:
-            if self.do_transform_y:
-                x, y = self.transform(x, y)
-            else:
-                x = self.transform(x)
-        return x, y, *vv[2:]
+    def get_subset(self, split, *args, **kwargs) -> WaterbirdsSubsetExtracted:
+        encodings_data = np.load(
+            os.path.join(self._root_dir, "waterbirds", self._encoding_extractor, split, "combined.npz"))
+        return WaterbirdsSubsetExtracted(
+            wilds_waterbirds_subset=self._wilds_waterbirds.get_subset(split, *args, **kwargs),
+            encodings=encodings_data['encodings'],
+            index_map=encodings_data['indices_map'],
+        )
