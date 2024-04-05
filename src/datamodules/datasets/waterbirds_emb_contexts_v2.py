@@ -5,12 +5,41 @@ import random
 import numpy as np
 
 from src.datamodules.datasets.base_emb_contexts_v2 import BaseEmbContextsDatasetV2
-from src.datamodules.datasets.waterbirds import CustomizedWaterbirdsDataset as WaterbirdsDataset
+from src.datamodules.datasets.waterbirds import WaterbirdsExtracted
 from src.utils.dataset_helpers.context_prep_utils import get_group_counts_based_on_proportions
 
 log = logging.getLogger(__name__)
 
 Example = tuple[int, int, int]  # (index, spurious_label, class_label)
+
+
+def _sample(
+        dataset,
+        dataset_groups,
+        num_examples: int,
+        group_proportions: list[float],
+        remaining_mask: Optional[np.ndarray] = None,
+) -> list[Example]:
+    """Samples a subset of examples given a dataset and groups of its examples."""
+
+    if remaining_mask is None:
+        remaining_mask = np.ones(len(dataset), dtype=bool)
+
+    group_counts = get_group_counts_based_on_proportions(
+        num_examples=num_examples,
+        group_proportions=group_proportions)
+
+    indices = []
+    for i, group_count in enumerate(group_counts):
+        all_group_items = np.where(remaining_mask & (dataset_groups == i))[0]
+        random_items = np.random.choice(all_group_items, group_count, replace=False)
+        indices.extend(random_items)
+
+    labels = [dataset[idx][1] for idx in indices]
+    spurious_labels = [dataset[idx][2] for idx in indices]
+    examples = list(zip(indices, spurious_labels, labels))
+    random.shuffle(examples)
+    return examples
 
 
 class WaterbirdsEmbContextsDatasetV2(BaseEmbContextsDatasetV2):
@@ -20,12 +49,15 @@ class WaterbirdsEmbContextsDatasetV2(BaseEmbContextsDatasetV2):
                  root_dir: str,
                  encoding_extractor: str,
                  data_length: int,
+                 context_split: str,
+                 query_split: str,
                  context_class_size: int,
                  group_proportions: list[float],
                  spurious_setting: str,
                  v1_behavior: bool = False,
                  rotate_encodings: bool = False,
                  n_rotation_matrices: Optional[int] = None,
+                 randomly_swap_labels: bool = False,
                  saved_data_path: Optional[str] = None):
         """
         Args:
@@ -33,6 +65,8 @@ class WaterbirdsEmbContextsDatasetV2(BaseEmbContextsDatasetV2):
         root_dir (str): The root directory of the dataset.
         encoding_extractor (str): The name of the encoding extractor used.
         data_length (int): The length of the dataset.
+        context_split (str): The split where context examples are selected from ('train' or 'val').
+        query_split (str): The split where query examples are selected from ('train' or 'val').
         context_class_size (int): The size of each class in the context.
         group_proportions (list[float]): Proportions for the 4 groups.
         spurious_setting (str): Determines the handling mode of spurious tokens in the dataset instances.
@@ -42,6 +76,7 @@ class WaterbirdsEmbContextsDatasetV2(BaseEmbContextsDatasetV2):
         rotate_encodings (bool): Determines if image encodings are rotated. True enables rotation
                                  based on class labels, while False bypasses rotation.
         n_rotation_matrices (int): Specifies the number of rotation matrices to generate and store.
+        randomly_swap_labels (bool): Whether to randomly swap labels (0 -> 1 and 1 -> 0) when creating an ILC instance.
         saved_data_path (str or None): Path for loading data; if None, new data is generated.
         """
         super(WaterbirdsEmbContextsDatasetV2, self).__init__(
@@ -56,18 +91,36 @@ class WaterbirdsEmbContextsDatasetV2(BaseEmbContextsDatasetV2):
         )
 
         self._group_proportions = group_proportions
+        self._randomly_swap_labels = randomly_swap_labels
 
-        dataset = WaterbirdsDataset(root_dir,
-                                    data_type="encoding",
-                                    encoding_extractor=encoding_extractor,
-                                    return_labels=True)
-        groups = np.stack([(2 * y + c) for _, y, c, _ in dataset])
+        dataset = WaterbirdsExtracted(root_dir,
+                                      encoding_extractor=encoding_extractor)
 
-        self._train_set = dataset.get_subset("train")
-        self._val_set = dataset.get_subset("val")
+        train_set = dataset.get_subset("train")
+        train_groups = np.stack([(2 * y + c) for _, y, c, _ in train_set])
 
-        self._train_groups = groups[self._train_set.indices]
-        self._val_groups = groups[self._val_set.indices]
+        val_set = dataset.get_subset("val")
+        val_groups = np.stack([(2 * y + c) for _, y, c, _ in val_set])
+
+        self._context_split = context_split
+        if context_split == 'train':
+            self._context_set = train_set
+            self._context_groups = train_groups
+        elif context_split == 'val':
+            self._context_set = val_set
+            self._context_groups = val_groups
+        else:
+            raise ValueError()
+
+        self._query_split = query_split
+        if query_split == 'train':
+            self._query_set = train_set
+            self._query_groups = train_groups
+        elif query_split == 'val':
+            self._query_set = val_set
+            self._query_groups = val_groups
+        else:
+            raise ValueError()
 
     def _generate_context_and_queries(self) -> (list[Example], list[Example]):
         """Samples context and query examples.
@@ -76,36 +129,27 @@ class WaterbirdsEmbContextsDatasetV2(BaseEmbContextsDatasetV2):
             a pair (context, queries), where both are lists of 2 * context_class_size (id, spurious, label) triplets.
         """
 
-        def sample(dataset,
-                   dataset_groups,
-                   num_examples: int,
-                   group_proportions: list[float]) -> list[Example]:
-            "Samples a subset of examples given a dataset and groups of its examples."
-            group_counts = get_group_counts_based_on_proportions(
-                num_examples=num_examples,
-                group_proportions=group_proportions)
+        context = _sample(dataset=self._context_set,
+                          dataset_groups=self._context_groups,
+                          num_examples=2 * self._context_class_size,
+                          group_proportions=self._group_proportions)
 
-            indices = []
-            for i, group_count in enumerate(group_counts):
-                all_group_items = np.where(dataset_groups == i)[0]
-                random_items = np.random.choice(all_group_items, group_count, replace=False)
-                indices.extend(random_items)
+        if self._context_split == self._query_split:
+            remaining_mask = np.ones(len(self._context_set), dtype=bool)
+            for idx, _, _ in context:
+                remaining_mask[idx] = False
+        else:
+            remaining_mask = None
 
-            labels = [dataset[idx][1] for idx in indices]
-            spurious_labels = [dataset[idx][2] for idx in indices]
-            examples = list(zip(indices, spurious_labels, labels))
-            random.shuffle(examples)
-            return examples
+        queries = _sample(dataset=self._query_set,
+                          dataset_groups=self._query_groups,
+                          num_examples=2 * self._context_class_size,
+                          group_proportions=[0.25, 0.25, 0.25, 0.25],
+                          remaining_mask=remaining_mask)
 
-        context = sample(dataset=self._train_set,
-                         dataset_groups=self._train_groups,
-                         num_examples=2 * self._context_class_size,
-                         group_proportions=self._group_proportions)
-
-        queries = sample(dataset=self._val_set,
-                         dataset_groups=self._val_groups,
-                         num_examples=2 * self._context_class_size,
-                         group_proportions=[0.25, 0.25, 0.25, 0.25])
+        if self._randomly_swap_labels and np.random.rand() < 0.5:
+            context = [(idx, sp, 1 - label) for idx, sp, label in context]
+            queries = [(idx, sp, 1 - label) for idx, sp, label in queries]
 
         return context, queries
 
@@ -115,7 +159,7 @@ class WaterbirdsEmbContextsDatasetV2(BaseEmbContextsDatasetV2):
     ) -> np.ndarray:
         """Returns a matrix of shape [2*C, D] containing context example encodings."""
         return np.stack(
-            [self._train_set[idx][0] for idx, _, _ in context]
+            [self._context_set[idx][0] for idx, _, _ in context]
         )
 
     def _prepare_query_image_encodings(
@@ -124,5 +168,5 @@ class WaterbirdsEmbContextsDatasetV2(BaseEmbContextsDatasetV2):
     ) -> np.ndarray:
         """Returns a matrix of shape [2*C, D] containing query example encodings."""
         return np.stack(
-            [self._val_set[idx][0] for idx, _, _ in queries]
+            [self._query_set[idx][0] for idx, _, _ in queries]
         )

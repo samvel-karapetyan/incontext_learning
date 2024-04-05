@@ -6,7 +6,7 @@ from wilds.common.data_loaders import get_train_loader, get_eval_loader
 from torchvision.transforms import transforms
 from pytorch_lightning.utilities import CombinedLoader
 
-from src.datamodules.datasets import WaterbirdsDataset
+from src.datamodules.datasets import WaterbirdsForEncodingExtraction
 
 log = logging.getLogger(__name__)
 
@@ -48,7 +48,7 @@ class WaterbirdsDataModule(pl.LightningDataModule):
 
     def prepare_data(self):
         """Prepares the Waterbirds dataset for use, downloading it if necessary."""
-        self._dataset = WaterbirdsDataset(root_dir=self._root_dir, download=True)
+        self._dataset = WaterbirdsForEncodingExtraction(root_dir=self._root_dir, download=True)
 
     def train_dataloader(self) -> DataLoader:
         """Returns a DataLoader for the training subset of the Waterbirds dataset."""
