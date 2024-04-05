@@ -58,7 +58,9 @@ class WaterbirdsEmbContextsDatasetV2(BaseEmbContextsDatasetV2):
                  rotate_encodings: bool = False,
                  n_rotation_matrices: Optional[int] = None,
                  randomly_swap_labels: bool = False,
-                 add_context_noise: bool = False,
+                 label_noise_ratio_interval: list = None,
+                 input_noise_std_interval: list = None,
+                 permute_input_dim: bool = False,
                  saved_data_path: Optional[str] = None):
         """
         Args:
@@ -78,7 +80,12 @@ class WaterbirdsEmbContextsDatasetV2(BaseEmbContextsDatasetV2):
                                  based on class labels, while False bypasses rotation.
         n_rotation_matrices (int): Specifies the number of rotation matrices to generate and store.
         randomly_swap_labels (bool): Whether to randomly swap labels (0 -> 1 and 1 -> 0) when creating an ILC instance.
-        add_context_noise (bool): Whether to randomly add input or label noise to the context.
+        label_noise_ratio_interval (list or None): Interval for the ratio of label noise. 
+                                If None, no label noise is added.
+        input_noise_std_interval (list or None): Interval for the standard deviation of Gaussian noise.
+                                If None, no Gaussian noise is added to representations.
+        permute_input_dim (bool): Determines if image encodings are permuted. 
+                                True enables permutation, while False bypasses it.
         saved_data_path (str or None): Path for loading data; if None, new data is generated.
         """
         super(WaterbirdsEmbContextsDatasetV2, self).__init__(
@@ -89,12 +96,14 @@ class WaterbirdsEmbContextsDatasetV2(BaseEmbContextsDatasetV2):
             v1_behavior=v1_behavior,
             rotate_encodings=rotate_encodings,
             n_rotation_matrices=n_rotation_matrices,
+            label_noise_ratio_interval=label_noise_ratio_interval,
+            input_noise_std_interval=input_noise_std_interval,
+            permute_input_dim=permute_input_dim,
             saved_data_path=saved_data_path,
         )
 
         self._group_proportions = group_proportions
         self._randomly_swap_labels = randomly_swap_labels
-        self._add_context_noise = add_context_noise
 
         dataset = WaterbirdsExtracted(root_dir,
                                       encoding_extractor=encoding_extractor)
@@ -104,6 +113,9 @@ class WaterbirdsEmbContextsDatasetV2(BaseEmbContextsDatasetV2):
 
         val_set = dataset.get_subset("val")
         val_groups = np.stack([(2 * y + c) for _, y, c, _ in val_set])
+
+        test_set = dataset.get_subset("test")
+        test_groups = np.stack([(2 * y + c) for _, y, c, _ in test_set])
 
         self._context_split = context_split
         if context_split == 'train':
@@ -122,6 +134,9 @@ class WaterbirdsEmbContextsDatasetV2(BaseEmbContextsDatasetV2):
         elif query_split == 'val':
             self._query_set = val_set
             self._query_groups = val_groups
+        elif query_split == 'test':
+            self._query_set = test_set
+            self._query_groups = test_groups
         else:
             raise ValueError()
 
@@ -154,14 +169,6 @@ class WaterbirdsEmbContextsDatasetV2(BaseEmbContextsDatasetV2):
             context = [(idx, sp, 1 - label) for idx, sp, label in context]
             queries = [(idx, sp, 1 - label) for idx, sp, label in queries]
 
-        if self._add_context_noise:
-            label_noise_count = int(np.random.uniform(low=0, high=0.2) * len(context)) 
-            label_noise_indices = np.random.choice(len(context), label_noise_count, replace=False)
-
-            for i in label_noise_indices:
-                idx, sp, label = context[i]
-                context[i] = (idx, sp, 1 - label)
-
         return context, queries
 
     def _prepare_context_image_encodings(
@@ -169,20 +176,9 @@ class WaterbirdsEmbContextsDatasetV2(BaseEmbContextsDatasetV2):
             context: list[Example]
     ) -> np.ndarray:
         """Returns a matrix of shape [2*C, D] containing context example encodings."""
-        image_encodings =  np.stack(
+        return np.stack(
             [self._context_set[idx][0] for idx, _, _ in context]
         )
-
-        if self._add_context_noise:
-            input_noise_ratio = np.random.uniform(low=0, high=0.5)
-            input_noise = np.random.normal(size=image_encodings.shape).astype(image_encodings.dtype)
-
-            input_noise = input_noise / np.linalg.norm(input_noise, axis=1, keepdims=True) \
-                * np.linalg.norm(image_encodings, axis=1, keepdims=True) * input_noise_ratio
-            
-            image_encodings = image_encodings + input_noise
-
-        return image_encodings
 
     def _prepare_query_image_encodings(
             self,

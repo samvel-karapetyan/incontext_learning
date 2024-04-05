@@ -28,6 +28,8 @@ class ImagenetEmbContextsDatasetV2(BaseEmbContextsDatasetV2):
                  v1_behavior: bool = False,
                  rotate_encodings: bool = False,
                  n_rotation_matrices: Optional[int] = None,
+                 label_noise_ratio_interval: list = None,
+                 input_noise_std_interval: list = None,
                  saved_data_path: Optional[str] = None,
                  ):
         """
@@ -44,6 +46,12 @@ class ImagenetEmbContextsDatasetV2(BaseEmbContextsDatasetV2):
         rotate_encodings (bool): Determines if image encodings are rotated. True enables rotation
                                  based on class labels, while False bypasses rotation.
         n_rotation_matrices (int): Specifies the number of rotation matrices to generate and store.
+        label_noise_ratio_interval (list or None): Interval for the ratio of label noise. 
+                                If None, no label noise is added.
+        input_noise_std_interval (list or None): Interval for the standard deviation of Gaussian noise.
+                                If None, no Gaussian noise is added to representations.
+        permute_input_dim (bool): Determines if image encodings are permuted. 
+                                True enables permutation, while False bypasses it.
         saved_data_path (str or None): Path for loading data; if None, new data is generated.
         """
         super(ImagenetEmbContextsDatasetV2, self).__init__(
@@ -54,6 +62,8 @@ class ImagenetEmbContextsDatasetV2(BaseEmbContextsDatasetV2):
             v1_behavior=v1_behavior,
             rotate_encodings=rotate_encodings,
             n_rotation_matrices=n_rotation_matrices,
+            label_noise_ratio_interval=label_noise_ratio_interval,
+            input_noise_std_interval=input_noise_std_interval,
             saved_data_path=saved_data_path,
         )
 
