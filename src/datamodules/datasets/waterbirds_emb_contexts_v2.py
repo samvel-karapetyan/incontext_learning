@@ -175,7 +175,7 @@ class WaterbirdsEmbContextsDatasetV2(BaseEmbContextsDatasetV2):
 
         if self._add_context_noise:
             input_noise_ratio = np.random.uniform(low=0, high=0.5)
-            input_noise = np.random.uniform(-1, 1, size=image_encodings.shape).astype(image_encodings.dtype)
+            input_noise = np.random.normal(size=image_encodings.shape).astype(image_encodings.dtype)
 
             input_noise = input_noise / np.linalg.norm(input_noise, axis=1, keepdims=True) \
                 * np.linalg.norm(image_encodings, axis=1, keepdims=True) * input_noise_ratio
