@@ -18,7 +18,7 @@ class WaterbirdsSubsetForEncodingExtraction(Dataset):
 
     def __getitem__(self, idx):
         x, y, metadata = self._wilds_waterbirds_subset[idx]
-        return x, idx
+        return x, self._wilds_waterbirds_subset.indices[idx]
 
     def __len__(self):
         return len(self._wilds_waterbirds_subset)
@@ -47,7 +47,10 @@ class WaterbirdsSubsetExtracted(Dataset):
         metadata = self._wilds_waterbirds_subset.metadata_array[idx]
         c = metadata[0]
 
-        x = self._encodings[idx]
+        idx_within_full_waterbirds = self._wilds_waterbirds_subset.indices[idx]
+        encoding_row_index = self._index_map[idx_within_full_waterbirds]
+        assert encoding_row_index != -1
+        x = self._encodings[encoding_row_index]
 
         return x, y, c, idx
 
