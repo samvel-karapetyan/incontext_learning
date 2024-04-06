@@ -27,4 +27,6 @@ label_noise_ratio_interval: null  # [min_ratio, max_ratio], the label noise rati
 input_noise_std_interval: null  # [min_std, max_std], the standard deviation of the Gaussian noise will be uniformly sampled from this interval
 permute_input_dim: False
 
+ask_context_prob: 0.5
+
 val_sets: [inner, inner_outer, outer]  # the order here should match the order in the combined loader

@@ -24,4 +24,6 @@ label_noise_ratio_interval: null  # [min_ratio, max_ratio], the label noise rati
 input_noise_std_interval: null  # [min_std, max_std], the standard deviation of the Gaussian noise will be uniformly sampled from this interval
 permute_input_dim: False
 
+ask_context_prob: null
+
 val_sets: null # null if there is a single val set, otherwise this is the list of names of val sets
