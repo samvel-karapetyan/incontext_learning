@@ -30,6 +30,7 @@ class CUBEmbContextsDataModuleV2(pl.LightningDataModule):
                  label_noise_ratio_interval: list,
                  input_noise_std_interval: list,
                  permute_input_dim: bool,
+                 ask_context_prob: float,
                  *args, **kwargs):
         super(CUBEmbContextsDataModuleV2, self).__init__()
 
@@ -49,6 +50,7 @@ class CUBEmbContextsDataModuleV2(pl.LightningDataModule):
         self._label_noise_ratio_interval = label_noise_ratio_interval
         self._input_noise_std_interval = input_noise_std_interval
         self._permute_input_dim = permute_input_dim
+        self._ask_context_prob = ask_context_prob
 
         self._dataset = None
 
@@ -70,6 +72,7 @@ class CUBEmbContextsDataModuleV2(pl.LightningDataModule):
             label_noise_ratio_interval=self._label_noise_ratio_interval,
             input_noise_std_interval=self._input_noise_std_interval,
             permute_input_dim=self._permute_input_dim,
+            ask_context_prob = self._ask_context_prob,
             saved_data_path=self._saved_data_path)
 
     def val_dataloader(self):
