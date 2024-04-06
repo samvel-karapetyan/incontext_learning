@@ -200,8 +200,8 @@ class WaterbirdsEmbContextsDataModuleV2(pl.LightningDataModule):
                                           batch_size=self._batch_size,
                                           num_workers=self._num_workers)
         train_test_dataloader = DataLoader(self._train_test_dataset,
-                                          batch_size=self._batch_size,
-                                          num_workers=self._num_workers)
+                                           batch_size=self._batch_size,
+                                           num_workers=self._num_workers)
         val_dataloader = DataLoader(self._val_dataset,
                                     batch_size=self._batch_size,
                                     num_workers=self._num_workers)
