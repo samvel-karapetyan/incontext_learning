@@ -29,6 +29,7 @@ class BaseEmbContextsDatasetV2(Dataset, ABC):
                  label_noise_ratio_interval: Optional[list] = None,
                  input_noise_std_interval: Optional[list] = None,
                  permute_input_dim: bool = False,
+                 ask_context_prob: Optional[float] = None,
                  saved_data_path: Optional[str] = None,
                  ):
         """
@@ -49,6 +50,8 @@ class BaseEmbContextsDatasetV2(Dataset, ABC):
                                 If None, no Gaussian noise is added to representations.
         permute_input_dim (bool): Determines if image encodings are permuted. 
                                 True enables permutation, while False bypasses it.
+        ask_context_prob (float or None). If specified, defines the probability with which a query is set to be one
+                                          of previous context examples.
         saved_data_path (str or None): Path for loading data; if None, new data is generated.
         """
         super(BaseEmbContextsDatasetV2, self).__init__()
@@ -63,6 +66,7 @@ class BaseEmbContextsDatasetV2(Dataset, ABC):
         self._label_noise_ratio_interval = label_noise_ratio_interval
         self._input_noise_std_interval = input_noise_std_interval
         self._permute_input_dim = permute_input_dim
+        self._ask_context_prob = ask_context_prob
         self._saved_data_path = saved_data_path
 
         # Loading tokens data
@@ -101,30 +105,93 @@ class BaseEmbContextsDatasetV2(Dataset, ABC):
             (2 * context_class_size, 3) describing context/query examples with (id, spurious, class) tuples.
             query_indices specifies positions of input_seq corresponding to query tokens.
         """
-        if self._saved_data_path is None:
-            spurious_tokens = next(self._spurious_tokens_generator)
-            class_tokens = next(self._class_tokens_generator)
-            context, queries = self._generate_context_and_queries()
-        else:
-            # TODO(hrayr): need to do something here
+        if self._saved_data_path is not None:
+            # TODO(hrayr): implement loading from a cached dataset
             raise NotImplementedError('loading from saved data is not implemented yet.')
-            # data = np.load(os.path.join(self._saved_data_path, f"{idx}.npz"))
-            # spurious_tokens = data[f"opposite_spurious_tokens"]
-            # class_tokens = data[f"opposite_class_tokens"]
-            # instance = data["instance"]
-            # context_of_ids = [tuple(x) for x in instance[:-1]]
-            # query_of_ids = tuple(instance[-1])
 
-        # Switch to v1 behavior if needed
+        # get spurious and class tokens
+        spurious_tokens = next(self._spurious_tokens_generator)
+        class_tokens = next(self._class_tokens_generator)
+
+        # generate context and query examples
+        context, queries = self._generate_context_and_queries()
+        assert len(context) == len(queries)
+
+        # Deciding which queries should be replaced with which context examples.
+        # This depends on v1 behavior and self.ask_context_prob.
+        # Setting -1 indicates keeping the original query.
+        query_to_context_map = -np.ones(len(context), dtype=np.int32)  # keeping all original queries
+
+        if self._ask_context_prob is not None:
+            for q_idx in range(len(context)):
+                if np.random.rand() < self._ask_context_prob:
+                    c_idx = np.random.randint(q_idx + 1)  # selecting one of previous context examples
+                    query_to_context_map[q_idx] = c_idx
+
+        # When v1 behavior is enabled, we need to replace the remaining original queries
+        # with corresponding context examples.
         if self._v1_behavior:
-            queries[:-1] = context[1:]
+            for q_idx in range(len(context) - 1):  # excluding the last query
+                if query_to_context_map[q_idx] == -1:
+                    query_to_context_map[q_idx] = q_idx + 1  # next unseen context example
 
-        # Process and combine image encodings with tokens
-        input_seq, query_indices = self._prepare_transformer_input(
-            context=context,
-            queries=queries,
-            spurious_tokens=spurious_tokens,
-            class_tokens=class_tokens)
+        # construct context and query image encodings
+        # update `queries`
+        context_img_encodings = self._prepare_context_image_encodings(context)
+        query_img_encodings = self._prepare_query_image_encodings(queries)
+        for q_idx in range(len(context)):
+            c_idx = query_to_context_map[q_idx]
+            if c_idx != -1:
+                query_img_encodings[q_idx] = context_img_encodings[c_idx]
+                queries[q_idx] = context[c_idx]
+
+        # do data augmentations if needed
+        context_img_encodings, query_img_encodings = self._maybe_rotate_embeddings(
+            context_img_encodings=context_img_encodings,
+            query_img_encodings=query_img_encodings)
+
+        context_img_encodings, query_img_encodings = self._maybe_permute_embeddings(
+            context_img_encodings=context_img_encodings,
+            query_img_encodings=query_img_encodings
+        )
+
+        self._maybe_add_label_noise(context)
+
+        context_img_encodings = self._maybe_add_input_noise(
+            context_img_encodings=context_img_encodings
+        )
+
+        input_seq = []
+        for i in range(len(context)):
+            # Add current context related tokens.
+            _, sp, label = context[i]
+            input_seq += get_context_example_tokens(
+                img_encoding=context_img_encodings[i],
+                spurious_token=spurious_tokens[sp],
+                class_token=class_tokens[label],
+                spurious_setting=self._spurious_setting,
+            )
+
+            # Add current query related token.
+            # NOTE: no matter what spurious setting we use, query spurious label
+            #       and class label will not get their own tokens.
+            _, sp, _ = queries[i]
+            input_seq += get_query_example_tokens(
+                img_encoding=query_img_encodings[i],
+                spurious_token=spurious_tokens[sp],
+                spurious_setting=self._spurious_setting,
+            )
+
+        input_seq = np.stack(input_seq)
+
+        if self._spurious_setting in ['no_spurious', 'sum']:
+            query_indices = np.arange(2, input_seq.shape[0], 3)
+        elif self._spurious_setting in ['separate_token', 'sum_with_spurious']:
+            query_indices = np.arange(3, input_seq.shape[0], 4)
+        else:
+            raise ValueError(
+                f"Invalid spurious setting: '{self._spurious_setting}'. "
+                f"Expected 'no_spurious', 'sum', 'separate_token' or 'sum_with_spurious'.")
 
         return input_seq, np.array(context), np.array(queries), query_indices
 
@@ -207,83 +274,3 @@ class BaseEmbContextsDatasetV2(Dataset, ABC):
             context_img_encodings = context_img_encodings + input_noise
 
         return context_img_encodings
-
-    def _prepare_transformer_input(
-            self,
-            context: list[Example],
-            queries: list[Example],
-            spurious_tokens: np.ndarray,
-            class_tokens: np.ndarray,
-    ) -> (np.ndarray, np.ndarray):
-        """Prepares the final input sequence to feed to the transformer given context and queries.
-
-        Args:
-            context: List of tuples containing image IDs, spurious labels, and class labels for the context images.
-            queries: List of tuples containing image ID, spurious label, and class label for the queries.
-            spurious_tokens: numpy array mapping spurious labels to tokens.
-            class_tokens: numpy array mapping class labels to tokens.
-
-        Returns: a pair of numpy arrays (input_seq, query_indices), where input_seq has shape
-            (total_seq_len, dim) and is to be fed to a V2 ICL transformer, while query_indices
-            indicates query positions within the input_seq.
-        """
-        assert len(context) == len(queries)
-        context_img_encodings = self._prepare_context_image_encodings(context)
-        if not self._v1_behavior:
-            query_img_encodings = self._prepare_query_image_encodings(queries)
-        else:
-            # only the last query is from the query distribution, other are actually the context examples
-            query_img_encodings = np.concatenate([
-                self._prepare_context_image_encodings(queries[:-1]),
-                self._prepare_query_image_encodings(queries[-1:]),
-            ], axis=0)
-
-        # do data augmentations if needed
-        context_img_encodings, query_img_encodings = self._maybe_rotate_embeddings(
-            context_img_encodings=context_img_encodings,
-            query_img_encodings=query_img_encodings)
-        
-        context_img_encodings, query_img_encodings = self._maybe_permute_embeddings(
-            context_img_encodings=context_img_encodings,
-            query_img_encodings=query_img_encodings
-        )
-
-        self._maybe_add_label_noise(context)
-
-        context_img_encodings = self._maybe_add_input_noise(
-            context_img_encodings=context_img_encodings
-        )
-
-        input_seq = []
-        for i in range(len(context)):
-            # Add current context related tokens.
-            _, sp, label = context[i]
-            input_seq += get_context_example_tokens(
-                img_encoding=context_img_encodings[i],
-                spurious_token=spurious_tokens[sp],
-                class_token=class_tokens[label],
-                spurious_setting=self._spurious_setting,
-            )
-
-            # Add current query related token.
-            # NOTE: no matter what spurious setting we use, query spurious label
-            #       and class label will not get their own tokens.
-            _, sp, _ = queries[i]
-            input_seq += get_query_example_tokens(
-                img_encoding=query_img_encodings[i],
-                spurious_token=spurious_tokens[sp],
-                spurious_setting=self._spurious_setting,
-            )
-
-        input_seq = np.stack(input_seq)
-
-        if self._spurious_setting in ['no_spurious', 'sum']:
-            query_indices = np.arange(2, input_seq.shape[0], 3)
-        elif self._spurious_setting in ['separate_token', 'sum_with_spurious']:
-            query_indices = np.arange(3, input_seq.shape[0], 4)
-        else:
-            raise ValueError(
-                f"Invalid spurious setting: '{self._spurious_setting}'. "
-                f"Expected 'no_spurious', 'sum', 'separate_token' or 'sum_with_spurious'.")
-
-        return input_seq, query_indices

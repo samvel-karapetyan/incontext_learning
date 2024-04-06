@@ -40,6 +40,7 @@ class WaterbirdsEmbContextsDataModuleV2(pl.LightningDataModule):
                  label_noise_ratio_interval: list,
                  input_noise_std_interval: list,
                  permute_input_dim: bool,
+                 ask_context_prob: float,
                  *args, **kwargs):
         super(WaterbirdsEmbContextsDataModuleV2, self).__init__()
 
@@ -59,7 +60,7 @@ class WaterbirdsEmbContextsDataModuleV2(pl.LightningDataModule):
         self._label_noise_ratio_interval = label_noise_ratio_interval
         self._input_noise_std_interval = input_noise_std_interval
         self._permute_input_dim = permute_input_dim
-
+        self._ask_context_prob = ask_context_prob
 
         # Initializing dataset lengths for different splits
         self._train_len = train_len
@@ -90,7 +91,8 @@ class WaterbirdsEmbContextsDataModuleV2(pl.LightningDataModule):
                 randomly_swap_labels=self._randomly_swap_labels,
                 label_noise_ratio_interval=self._label_noise_ratio_interval,
                 input_noise_std_interval=self._input_noise_std_interval,
-                permute_input_dim=self._permute_input_dim
+                permute_input_dim=self._permute_input_dim,
+                ask_context_prob=self._ask_context_prob,
             )
 
         # saved_data_path = self._saved_val_sets_path and os.path.join(self._saved_val_sets_path,
@@ -111,6 +113,7 @@ class WaterbirdsEmbContextsDataModuleV2(pl.LightningDataModule):
             label_noise_ratio_interval=None,
             input_noise_std_interval=None,
             permute_input_dim=False,
+            ask_context_prob=None,
             saved_data_path=saved_data_path,
         )
 
@@ -132,6 +135,7 @@ class WaterbirdsEmbContextsDataModuleV2(pl.LightningDataModule):
             label_noise_ratio_interval=None,
             input_noise_std_interval=None,
             permute_input_dim=False,
+            ask_context_prob=None,
             saved_data_path=saved_data_path,
         )
 
@@ -153,6 +157,7 @@ class WaterbirdsEmbContextsDataModuleV2(pl.LightningDataModule):
             label_noise_ratio_interval=None,
             input_noise_std_interval=None,
             permute_input_dim=False,
+            ask_context_prob=None,
             saved_data_path=saved_data_path,
         )
 
@@ -174,6 +179,7 @@ class WaterbirdsEmbContextsDataModuleV2(pl.LightningDataModule):
             label_noise_ratio_interval=None,
             input_noise_std_interval=None,
             permute_input_dim=False,
+            ask_context_prob=None,
             saved_data_path=saved_data_path,
         )
 
@@ -194,8 +200,8 @@ class WaterbirdsEmbContextsDataModuleV2(pl.LightningDataModule):
                                           batch_size=self._batch_size,
                                           num_workers=self._num_workers)
         train_test_dataloader = DataLoader(self._train_test_dataset,
-                                          batch_size=self._batch_size,
-                                          num_workers=self._num_workers)
+                                           batch_size=self._batch_size,
+                                           num_workers=self._num_workers)
         val_dataloader = DataLoader(self._val_dataset,
                                     batch_size=self._batch_size,
                                     num_workers=self._num_workers)
