@@ -67,12 +67,11 @@ class CUBEmbContextsDataModuleV2(pl.LightningDataModule):
             minority_group_proportion=self._minority_group_proportion,
             spurious_setting=self._spurious_setting,
             v1_behavior=self._v1_behavior,
-            rotate_encodings=self._rotate_encodings,
-            n_rotation_matrices=self._n_rotation_matrices,
-            label_noise_ratio_interval=self._label_noise_ratio_interval,
-            input_noise_std_interval=self._input_noise_std_interval,
-            permute_input_dim=self._permute_input_dim,
-            ask_context_prob = self._ask_context_prob,
+            rotate_encodings=False,
+            label_noise_ratio_interval=None,
+            input_noise_std_interval=None,
+            permute_input_dim=False,
+            ask_context_prob=None,
             saved_data_path=self._saved_data_path)
 
     def val_dataloader(self):

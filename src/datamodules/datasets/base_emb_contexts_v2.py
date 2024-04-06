@@ -123,7 +123,7 @@ class BaseEmbContextsDatasetV2(Dataset, ABC):
         query_to_context_map = -np.ones(len(context), dtype=np.int32)  # keeping all original queries
 
         if self._ask_context_prob is not None:
-            for q_idx in range(len(context) - 1):  # excluding the last query
+            for q_idx in range(len(context)):
                 if np.random.rand() < self._ask_context_prob:
                     c_idx = np.random.randint(q_idx + 1)  # selecting one of previous context examples
                     query_to_context_map[q_idx] = c_idx
@@ -139,7 +139,7 @@ class BaseEmbContextsDatasetV2(Dataset, ABC):
         # update `queries`
         context_img_encodings = self._prepare_context_image_encodings(context)
         query_img_encodings = self._prepare_query_image_encodings(queries)
-        for q_idx in range(len(context) - 1):  # excluding the last query
+        for q_idx in range(len(context)):
             c_idx = query_to_context_map[q_idx]
             if c_idx != -1:
                 query_img_encodings[q_idx] = context_img_encodings[c_idx]
