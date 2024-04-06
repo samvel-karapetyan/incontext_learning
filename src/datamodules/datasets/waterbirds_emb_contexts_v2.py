@@ -58,6 +58,9 @@ class WaterbirdsEmbContextsDatasetV2(BaseEmbContextsDatasetV2):
                  rotate_encodings: bool = False,
                  n_rotation_matrices: Optional[int] = None,
                  randomly_swap_labels: bool = False,
+                 label_noise_ratio_interval: Optional[list] = None,
+                 input_noise_std_interval: Optional[list] = None,
+                 permute_input_dim: bool = False,
                  saved_data_path: Optional[str] = None):
         """
         Args:
@@ -77,6 +80,12 @@ class WaterbirdsEmbContextsDatasetV2(BaseEmbContextsDatasetV2):
                                  based on class labels, while False bypasses rotation.
         n_rotation_matrices (int): Specifies the number of rotation matrices to generate and store.
         randomly_swap_labels (bool): Whether to randomly swap labels (0 -> 1 and 1 -> 0) when creating an ILC instance.
+        label_noise_ratio_interval (list or None): Interval for the ratio of label noise. 
+                                If None, no label noise is added.
+        input_noise_std_interval (list or None): Interval for the standard deviation of Gaussian noise.
+                                If None, no Gaussian noise is added to representations.
+        permute_input_dim (bool): Determines if image encodings are permuted. 
+                                True enables permutation, while False bypasses it.
         saved_data_path (str or None): Path for loading data; if None, new data is generated.
         """
         super(WaterbirdsEmbContextsDatasetV2, self).__init__(
@@ -87,6 +96,9 @@ class WaterbirdsEmbContextsDatasetV2(BaseEmbContextsDatasetV2):
             v1_behavior=v1_behavior,
             rotate_encodings=rotate_encodings,
             n_rotation_matrices=n_rotation_matrices,
+            label_noise_ratio_interval=label_noise_ratio_interval,
+            input_noise_std_interval=input_noise_std_interval,
+            permute_input_dim=permute_input_dim,
             saved_data_path=saved_data_path,
         )
 
@@ -101,6 +113,9 @@ class WaterbirdsEmbContextsDatasetV2(BaseEmbContextsDatasetV2):
 
         val_set = dataset.get_subset("val")
         val_groups = np.stack([(2 * y + c) for _, y, c, _ in val_set])
+
+        test_set = dataset.get_subset("test")
+        test_groups = np.stack([(2 * y + c) for _, y, c, _ in test_set])
 
         self._context_split = context_split
         if context_split == 'train':
@@ -119,6 +134,9 @@ class WaterbirdsEmbContextsDatasetV2(BaseEmbContextsDatasetV2):
         elif query_split == 'val':
             self._query_set = val_set
             self._query_groups = val_groups
+        elif query_split == 'test':
+            self._query_set = test_set
+            self._query_groups = test_groups
         else:
             raise ValueError()
 

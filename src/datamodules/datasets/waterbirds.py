@@ -13,9 +13,12 @@ class WaterbirdsSubsetForEncodingExtraction(Dataset):
     def __init__(self, wilds_waterbirds_subset: WILDSSubset):
         self._wilds_waterbirds_subset = wilds_waterbirds_subset
 
+        if hasattr(self._wilds_waterbirds_subset, 'collate'): # necessary method for constructing subsets
+            setattr(self, 'collate', getattr(self._wilds_waterbirds_subset, 'collate'))
+
     def __getitem__(self, idx):
         x, y, metadata = self._wilds_waterbirds_subset[idx]
-        return x, idx
+        return x, self._wilds_waterbirds_subset.indices[idx]
 
     def __len__(self):
         return len(self._wilds_waterbirds_subset)

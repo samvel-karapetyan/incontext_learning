@@ -27,6 +27,9 @@ class ImagenetEmbContextsDataModuleV2(pl.LightningDataModule):
                  v1_behavior: bool,
                  rotate_encodings: bool,
                  n_rotation_matrices: int,
+                 label_noise_ratio_interval: list,
+                 input_noise_std_interval: list,
+                 permute_input_dim: bool,
                  *args, **kwargs):
         super(ImagenetEmbContextsDataModuleV2, self).__init__()
 
@@ -43,6 +46,9 @@ class ImagenetEmbContextsDataModuleV2(pl.LightningDataModule):
         self._v1_behavior = v1_behavior
         self._rotate_encodings = rotate_encodings
         self._n_rotation_matrices = n_rotation_matrices
+        self._label_noise_ratio_interval = label_noise_ratio_interval
+        self._input_noise_std_interval = input_noise_std_interval
+        self._permute_input_dim = permute_input_dim
 
         self._dataset = None
 
@@ -61,6 +67,9 @@ class ImagenetEmbContextsDataModuleV2(pl.LightningDataModule):
             v1_behavior=self._v1_behavior,
             rotate_encodings=self._rotate_encodings,
             n_rotation_matrices=self._n_rotation_matrices,
+            label_noise_ratio_interval=self._label_noise_ratio_interval,
+            input_noise_std_interval=self._input_noise_std_interval,
+            permute_input_dim=self._permute_input_dim,
             saved_data_path=self._saved_data_path)
 
     def val_dataloader(self):

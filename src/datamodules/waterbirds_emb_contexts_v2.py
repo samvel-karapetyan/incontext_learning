@@ -19,6 +19,7 @@ class WaterbirdsEmbContextsDataModuleV2(pl.LightningDataModule):
         """Enum of validation splits of WaterbirdsEmbContextsDataModuleV2."""
         TRAIN = "train"
         TRAIN_VAL = "train_val"
+        TRAIN_TEST = "train_test"
         VAL = "val"
 
     def __init__(self,
@@ -36,6 +37,9 @@ class WaterbirdsEmbContextsDataModuleV2(pl.LightningDataModule):
                  rotate_encodings: bool,
                  n_rotation_matrices: int,
                  randomly_swap_labels: bool,
+                 label_noise_ratio_interval: list,
+                 input_noise_std_interval: list,
+                 permute_input_dim: bool,
                  *args, **kwargs):
         super(WaterbirdsEmbContextsDataModuleV2, self).__init__()
 
@@ -52,6 +56,10 @@ class WaterbirdsEmbContextsDataModuleV2(pl.LightningDataModule):
         self._rotate_encodings = rotate_encodings
         self._n_rotation_matrices = n_rotation_matrices
         self._randomly_swap_labels = randomly_swap_labels
+        self._label_noise_ratio_interval = label_noise_ratio_interval
+        self._input_noise_std_interval = input_noise_std_interval
+        self._permute_input_dim = permute_input_dim
+
 
         # Initializing dataset lengths for different splits
         self._train_len = train_len
@@ -61,6 +69,7 @@ class WaterbirdsEmbContextsDataModuleV2(pl.LightningDataModule):
         self._train_dataset_for_fit = None
         self._train_dataset_for_eval = None
         self._train_val_dataset = None
+        self._train_test_dataset = None
         self._val_dataset = None
 
     def setup(self, stage="fit", *args, **kwargs):
@@ -79,6 +88,9 @@ class WaterbirdsEmbContextsDataModuleV2(pl.LightningDataModule):
                 rotate_encodings=self._rotate_encodings,
                 n_rotation_matrices=self._n_rotation_matrices,
                 randomly_swap_labels=self._randomly_swap_labels,
+                label_noise_ratio_interval=self._label_noise_ratio_interval,
+                input_noise_std_interval=self._input_noise_std_interval,
+                permute_input_dim=self._permute_input_dim
             )
 
         # saved_data_path = self._saved_val_sets_path and os.path.join(self._saved_val_sets_path,
@@ -96,6 +108,9 @@ class WaterbirdsEmbContextsDataModuleV2(pl.LightningDataModule):
             v1_behavior=self._v1_behavior,
             rotate_encodings=False,
             randomly_swap_labels=False,
+            label_noise_ratio_interval=None,
+            input_noise_std_interval=None,
+            permute_input_dim=False,
             saved_data_path=saved_data_path,
         )
 
@@ -114,6 +129,30 @@ class WaterbirdsEmbContextsDataModuleV2(pl.LightningDataModule):
             v1_behavior=self._v1_behavior,
             rotate_encodings=False,
             randomly_swap_labels=False,
+            label_noise_ratio_interval=None,
+            input_noise_std_interval=None,
+            permute_input_dim=False,
+            saved_data_path=saved_data_path,
+        )
+
+        # saved_data_path = self._saved_val_sets_path and os.path.join(self._saved_val_sets_path,
+        #                                                              self.ValSets.TRAIN_TEST.value)
+        saved_data_path = None
+        self._train_test_dataset = WaterbirdsEmbContextsDatasetV2(
+            root_dir=self._root_dir,
+            encoding_extractor=self._encoding_extractor,
+            data_length=self._eval_len,
+            context_split='train',
+            query_split='test',
+            context_class_size=self._context_class_size,
+            group_proportions=self._group_proportions,
+            spurious_setting=self._spurious_setting,
+            v1_behavior=self._v1_behavior,
+            rotate_encodings=False,
+            randomly_swap_labels=False,
+            label_noise_ratio_interval=None,
+            input_noise_std_interval=None,
+            permute_input_dim=False,
             saved_data_path=saved_data_path,
         )
 
@@ -132,6 +171,9 @@ class WaterbirdsEmbContextsDataModuleV2(pl.LightningDataModule):
             v1_behavior=self._v1_behavior,
             rotate_encodings=False,
             randomly_swap_labels=False,
+            label_noise_ratio_interval=None,
+            input_noise_std_interval=None,
+            permute_input_dim=False,
             saved_data_path=saved_data_path,
         )
 
@@ -142,12 +184,16 @@ class WaterbirdsEmbContextsDataModuleV2(pl.LightningDataModule):
         """Creates a combined dataloader for all validation datasets.
 
         Returns:
-            CombinedLoader: A combined DataLoader for "train", "train_val" and "val" validation sets.
+            CombinedLoader: A combined DataLoader for "train", "train_val", 
+                        "train_test" and "val" validation sets.
         """
         train_dataloader = DataLoader(self._train_dataset_for_eval,
                                       batch_size=self._batch_size,
                                       num_workers=self._num_workers)
         train_val_dataloader = DataLoader(self._train_val_dataset,
+                                          batch_size=self._batch_size,
+                                          num_workers=self._num_workers)
+        train_test_dataloader = DataLoader(self._train_test_dataset,
                                           batch_size=self._batch_size,
                                           num_workers=self._num_workers)
         val_dataloader = DataLoader(self._val_dataset,
@@ -156,5 +202,6 @@ class WaterbirdsEmbContextsDataModuleV2(pl.LightningDataModule):
 
         return CombinedLoader({self.ValSets.TRAIN: train_dataloader,
                                self.ValSets.TRAIN_VAL: train_val_dataloader,
+                               self.ValSets.TRAIN_TEST: train_test_dataloader,
                                self.ValSets.VAL: val_dataloader},
                               mode="sequential")
