@@ -26,8 +26,8 @@ class BaseEmbContextsDatasetV2(Dataset, ABC):
                  v1_behavior: bool = False,
                  rotate_encodings: bool = False,
                  n_rotation_matrices: Optional[int] = None,
-                 label_noise_ratio_interval: list = None,
-                 input_noise_std_interval: list = None,
+                 label_noise_ratio_interval: Optional[list] = None,
+                 input_noise_std_interval: Optional[list] = None,
                  permute_input_dim: bool = False,
                  saved_data_path: Optional[str] = None,
                  ):
@@ -176,32 +176,37 @@ class BaseEmbContextsDatasetV2(Dataset, ABC):
             query_img_encodings = query_img_encodings[:, random_permutation]
 
         return context_img_encodings, query_img_encodings
-    
-    def _maybe_add_context_noise(
+
+    def _maybe_add_label_noise(
             self,
-            context: np.ndarray,
-            context_img_encodings: np.ndarray
-    ) -> np.ndarray:
+            context: list[Example],
+    ) -> None:
         if self._label_noise_ratio_interval:
             low, high = self._label_noise_ratio_interval
 
-            label_noise_count = int(np.random.uniform(low=low, high=high) * len(context)) 
+            flip_p = np.random.uniform(low=low, high=high)
+            label_noise_count = int(flip_p * len(context))
             label_noise_indices = np.random.choice(len(context), label_noise_count, replace=False)
 
             for i in label_noise_indices:
                 idx, sp, label = context[i]
                 context[i] = (idx, sp, 1 - label)
-        
+
+    def _maybe_add_input_noise(
+            self,
+            context_img_encodings: np.ndarray
+    ) -> np.ndarray:
         if self._input_noise_std_interval:
             low, high = self._input_noise_std_interval
 
             input_noise_std = np.random.uniform(low=low, high=high)
-            input_noise = np.random.normal(scale=input_noise_std, 
-                                            size=context_img_encodings.shape).astype(context_img_encodings.dtype)
+            input_noise = np.random.normal(
+                scale=input_noise_std, size=context_img_encodings.shape,
+            ).astype(context_img_encodings.dtype)
 
             context_img_encodings = context_img_encodings + input_noise
 
-        return context, context_img_encodings
+        return context_img_encodings
 
     def _prepare_transformer_input(
             self,
@@ -233,7 +238,7 @@ class BaseEmbContextsDatasetV2(Dataset, ABC):
                 self._prepare_query_image_encodings(queries[-1:]),
             ], axis=0)
 
-        # rotate embeddings if specified
+        # do data augmentations if needed
         context_img_encodings, query_img_encodings = self._maybe_rotate_embeddings(
             context_img_encodings=context_img_encodings,
             query_img_encodings=query_img_encodings)
@@ -242,9 +247,10 @@ class BaseEmbContextsDatasetV2(Dataset, ABC):
             context_img_encodings=context_img_encodings,
             query_img_encodings=query_img_encodings
         )
-        
-        context, context_img_encodings = self._maybe_add_context_noise(
-            context=context,
+
+        self._maybe_add_label_noise(context)
+
+        context_img_encodings = self._maybe_add_input_noise(
             context_img_encodings=context_img_encodings
         )
 

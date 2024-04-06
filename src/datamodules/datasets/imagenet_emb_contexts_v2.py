@@ -28,8 +28,9 @@ class ImagenetEmbContextsDatasetV2(BaseEmbContextsDatasetV2):
                  v1_behavior: bool = False,
                  rotate_encodings: bool = False,
                  n_rotation_matrices: Optional[int] = None,
-                 label_noise_ratio_interval: list = None,
-                 input_noise_std_interval: list = None,
+                 label_noise_ratio_interval: Optional[list] = None,
+                 input_noise_std_interval: Optional[list] = None,
+                 permute_input_dim: bool = False,
                  saved_data_path: Optional[str] = None,
                  ):
         """
@@ -64,6 +65,7 @@ class ImagenetEmbContextsDatasetV2(BaseEmbContextsDatasetV2):
             n_rotation_matrices=n_rotation_matrices,
             label_noise_ratio_interval=label_noise_ratio_interval,
             input_noise_std_interval=input_noise_std_interval,
+            permute_input_dim=permute_input_dim,
             saved_data_path=saved_data_path,
         )
 

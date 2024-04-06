@@ -19,7 +19,7 @@ spurious_setting: ${spurious_setting}  # Use the global value of 'spurious_setti
 v1_behavior: ${v1_behavior}
 
 rotate_encodings: True
-n_rotation_matrices: 1000  # 1000 works well, but is slow. Reduce for efficiency when experimenting
+n_rotation_matrices: 1000  # 1000 might not be enough for waterbirds, because the train size ~= 4k.
 
 randomly_swap_labels: True
 

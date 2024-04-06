@@ -58,8 +58,8 @@ class WaterbirdsEmbContextsDatasetV2(BaseEmbContextsDatasetV2):
                  rotate_encodings: bool = False,
                  n_rotation_matrices: Optional[int] = None,
                  randomly_swap_labels: bool = False,
-                 label_noise_ratio_interval: list = None,
-                 input_noise_std_interval: list = None,
+                 label_noise_ratio_interval: Optional[list] = None,
+                 input_noise_std_interval: Optional[list] = None,
                  permute_input_dim: bool = False,
                  saved_data_path: Optional[str] = None):
         """
