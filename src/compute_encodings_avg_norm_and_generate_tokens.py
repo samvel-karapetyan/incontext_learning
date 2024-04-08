@@ -2,9 +2,7 @@ import os
 import logging
 import numpy as np
 
-from tqdm import tqdm
 from omegaconf import DictConfig
-from typing import List
 
 log = logging.getLogger(__name__)
 
@@ -28,22 +26,26 @@ def compute_encodings_avg_norm_and_generate_tokens(config: DictConfig) -> None:
     # Load the encoding from the file
     enc = np.load(os.path.join(encodings_path, "combined.npz"))['encodings']
 
-     # Store norms of each encoding
-    norms = np.linalg.norm(enc, axis=1)
-
     # Calculate the average of all norms
-    avg_norm = np.mean(norms)
+    avg_norm = np.linalg.norm(enc, axis=1).mean()
     log.info(f"Average norm: {avg_norm}")
 
     # Generate random fixed tokens
-    fixed_tokens = generate_fixed_tokens(avg_norm.item(), len(enc))
+    token_len = enc.shape[1]
+    fixed_tokens = generate_fixed_tokens(
+        norm=avg_norm.item(),
+        token_len=token_len,
+    )
 
     # Save the average norm and tokens
     save_dir = os.path.join(config.data_path, "avg_norms")
     os.makedirs(save_dir, exist_ok=True)
     save_path = os.path.join(save_dir, f"{config.encoding_extractor}_l2.npz")
 
-    np.savez(save_path, avg_norm=np.array(avg_norm), token_len=np.array(len(enc)), **fixed_tokens)
+    np.savez(save_path,
+             avg_norm=np.array(avg_norm),
+             token_len=np.array(token_len),
+             **fixed_tokens)
 
 
 def generate_fixed_tokens(norm: float, token_len: int) -> dict:
@@ -52,30 +54,31 @@ def generate_fixed_tokens(norm: float, token_len: int) -> dict:
 
     Parameters:
     - norm (float): Norm to scale the random tokens.
-    - token_len (int): Length of each token.
+    - token_len (int): Dimensionality of each token.
 
     Returns:
-    - dict: Dictionary containing two types of random and two types of opposite fixed tokens.
+    - dict: Dictionary containing three pairs of random and opposite fixed tokens.
     """
+
     # Generating random tokens
-    tokens = np.random.randn(4, token_len).astype(np.float32)
-    # Normalize and scale each token array
+    tokens = np.random.randn(6, token_len).astype(np.float32)
     tokens = (tokens / np.linalg.norm(tokens, axis=1, keepdims=True)) * norm
-    # Split into two types of tokens
+    # Split into 3 types of tokens
     random_tokens = {
         "random_class_tokens": tokens[:2],
-        "random_spurious_tokens": tokens[2:]
+        "random_spurious_tokens": tokens[2:4],
+        "random_spurious_tokens_2": tokens[4:],
     }
 
     # Generating opposite tokens
-    first_rows = np.random.randn(2, token_len).astype(np.float32)
+    first_rows = np.random.randn(3, token_len).astype(np.float32)
     tokens = np.vstack((first_rows, -first_rows))
-    # Normalize and scale each token array
     tokens = (tokens / np.linalg.norm(tokens, axis=1, keepdims=True)) * norm
-    # Split into two types of tokens
+    # Split into 3 types of tokens
     opposite_tokens = {
-        "opposite_class_tokens": tokens[::2],
-        "opposite_spurious_tokens": tokens[1::2]
+        "opposite_class_tokens": tokens[::3],
+        "opposite_spurious_tokens": tokens[1::3],
+        "opposite_spurious_tokens_2": tokens[2::3]
     }
 
     return dict(**random_tokens, **opposite_tokens)
