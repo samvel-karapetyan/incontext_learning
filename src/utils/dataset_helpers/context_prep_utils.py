@@ -52,18 +52,19 @@ def generate_spurious_labels(
 
 def get_context_example_tokens(
         img_encoding: np.ndarray,
-        spurious_token: np.ndarray,
+        x_spurious_token: np.ndarray,
+        c_spurious_token: np.ndarray,
         class_token: np.ndarray,
         spurious_setting: str,
 ) -> list[np.ndarray]:
     if spurious_setting == 'no_spurious':
         return [img_encoding, class_token]
     if spurious_setting == 'sum':
-        return [img_encoding + spurious_token, class_token]
+        return [img_encoding + x_spurious_token, class_token]
     if spurious_setting == 'separate_token':
-        return [img_encoding, spurious_token, class_token]
+        return [img_encoding, c_spurious_token, class_token]
     if spurious_setting == 'sum_with_spurious':
-        return [img_encoding + spurious_token, spurious_token, class_token]
+        return [img_encoding + x_spurious_token, c_spurious_token, class_token]
     raise ValueError(
         f"Invalid spurious setting: '{spurious_setting}'. "
         f"Expected 'no_spurious', 'sum', 'separate_token' or 'sum_with_spurious'.")
@@ -71,17 +72,17 @@ def get_context_example_tokens(
 
 def get_query_example_tokens(
         img_encoding: np.ndarray,
-        spurious_token: np.ndarray,
+        x_spurious_token: np.ndarray,
         spurious_setting: str,
 ) -> list[np.ndarray]:
     if spurious_setting == 'no_spurious':
         return [img_encoding]
     if spurious_setting == 'sum':
-        return [img_encoding + spurious_token]
+        return [img_encoding + x_spurious_token]
     if spurious_setting == 'separate_token':
         return [img_encoding]
     if spurious_setting == 'sum_with_spurious':
-        return [img_encoding + spurious_token]
+        return [img_encoding + x_spurious_token]
     raise ValueError(
         f"Invalid spurious setting: '{spurious_setting}'. "
         f"Expected 'no_spurious', 'sum', 'separate_token' or 'sum_with_spurious'.")

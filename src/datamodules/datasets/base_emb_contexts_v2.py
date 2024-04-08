@@ -79,11 +79,14 @@ class BaseEmbContextsDatasetV2(Dataset, ABC):
         tokens_data = {k: tokens_data[k] for k in tokens_data.keys()}
 
         tokens_generator = TokenGenerator(tokens_data=tokens_data,
-                                          are_spurious_tokens_fixed=False,
+                                          are_x_spurious_tokens_fixed=False,
+                                          are_c_spurious_tokens_fixed=True,
                                           are_class_tokens_fixed=True,
                                           token_generation_mode='opposite')
 
-        self._spurious_tokens_generator, self._class_tokens_generator = tokens_generator()
+        (self._x_spurious_tokens_generator,
+         self._c_spurious_tokens_generator,
+         self._class_tokens_generator) = tokens_generator()
 
         self._v1_behavior = v1_behavior
 
@@ -111,7 +114,8 @@ class BaseEmbContextsDatasetV2(Dataset, ABC):
             raise NotImplementedError('loading from saved data is not implemented yet.')
 
         # get spurious and class tokens
-        spurious_tokens = next(self._spurious_tokens_generator)
+        x_spurious_tokens = next(self._x_spurious_tokens_generator)
+        c_spurious_tokens = next(self._c_spurious_tokens_generator)
         class_tokens = next(self._class_tokens_generator)
 
         # generate context and query examples
@@ -168,7 +172,8 @@ class BaseEmbContextsDatasetV2(Dataset, ABC):
             _, sp, label = context[i]
             input_seq += get_context_example_tokens(
                 img_encoding=context_img_encodings[i],
-                spurious_token=spurious_tokens[sp],
+                x_spurious_token=x_spurious_tokens[sp],
+                c_spurious_token=c_spurious_tokens[sp],
                 class_token=class_tokens[label],
                 spurious_setting=self._spurious_setting,
             )
@@ -179,7 +184,7 @@ class BaseEmbContextsDatasetV2(Dataset, ABC):
             _, sp, _ = queries[i]
             input_seq += get_query_example_tokens(
                 img_encoding=query_img_encodings[i],
-                spurious_token=spurious_tokens[sp],
+                x_spurious_token=x_spurious_tokens[sp],
                 spurious_setting=self._spurious_setting,
             )
 
