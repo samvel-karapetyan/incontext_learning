@@ -207,6 +207,6 @@ def plot_results_and_save_figure(results_mean_sem, title, filename):
     for ax in axs:
         ax.set_ylim(min_value - 0.005, max_value + 0.005)
 
-    plt.tight_layout(rect=[0, 0, 1, 0.9])
     plt.suptitle(title, fontsize=16)
+    plt.tight_layout()
     plt.savefig(filename)
