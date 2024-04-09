@@ -47,10 +47,10 @@ class TokenGenerator:
             while True:
                 yield self.tokens_data[f"opposite_class_tokens"]
 
-        x_spurious_tokens_generator = random_sp_tokens_generator
+        x_spurious_tokens_generator = random_sp_tokens_generator()
 
-        c_spurious_tokens_generator = fixed_c_spurious_tokens_generator
+        c_spurious_tokens_generator = fixed_c_spurious_tokens_generator()
 
-        class_tokens_generator = fixed_class_tokens_generator
+        class_tokens_generator = fixed_class_tokens_generator()
 
         return x_spurious_tokens_generator, c_spurious_tokens_generator, class_tokens_generator
