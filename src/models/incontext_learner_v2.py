@@ -17,7 +17,7 @@ import torch
 import torch.nn as nn
 import torchmetrics
 
-from src.utils.custom_metrics import MinorityMajorityAccuracy, GroupAccuracy
+from src.utils.custom_metrics import MinorityMajorityAccuracy, GroupAccuracy, WorstGroupAccuracy
 
 
 class GPTJModelV2(GPTJModel):
@@ -234,6 +234,7 @@ class InContextLearnerV2(LightningModule):
 
         if dataset_name == "waterbirds_emb_contexts":
             self.group_accuracies = [dict() for _ in range(4)]
+            self.worst_group_accuracy = dict()
 
         self._initialize_metrics()
 
@@ -302,6 +303,14 @@ class InContextLearnerV2(LightningModule):
         self.log(f"{set_name}_accuracy_majority", self.accuracy_majority[set_name], on_step=False, on_epoch=True)
 
         if self._dataset_name == "waterbirds_emb_contexts":
+            self.worst_group_accuracy[set_name].update(
+                preds=last_pred_y,
+                targets=last_class_labels,
+                spurious_labels=last_spurious_class,
+            )
+            self.log(f"{set_name}_worst_group_accuracy", self.worst_group_accuracy[set_name], on_step=False,
+                     on_epoch=True)
+
             for i in range(4):
                 self.group_accuracies[i][set_name].update(
                     query_prediction_batch=last_pred_y,
@@ -347,6 +356,7 @@ class InContextLearnerV2(LightningModule):
 
         for set_name in ["train"] + self._val_sets:
             if self._dataset_name == "waterbirds_emb_contexts":
+                self.worst_group_accuracy[set_name] = WorstGroupAccuracy()
                 for i in range(4):
                     self.group_accuracies[i][set_name] = GroupAccuracy(group=i)
 
@@ -363,5 +373,6 @@ class InContextLearnerV2(LightningModule):
         setattr(self, f"{set_name}_accuracy_majority", self.accuracy_majority[set_name])
 
         if self._dataset_name == "waterbirds_emb_contexts":
+            setattr(self, f"{set_name}_worst_group_accuracy", self.worst_group_accuracy[set_name])
             for i in range(4):
                 setattr(self, f"{set_name}_group_{i}_accuracy", self.group_accuracies[i][set_name])

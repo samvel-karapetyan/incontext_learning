@@ -1,57 +1,38 @@
 import torch
-import torch.nn
-
-from torchmetrics import Metric
+import torchmetrics
 
 
-class WorstGroupAccuracy(Metric):
-    """
-    A custom PyTorch Metric for calculating the accuracy of the worst-performing group. This metric is particularly
-    useful in fairness-aware machine learning, where the goal is often to improve the model's performance on the
-    underperforming groups.
-    """
+class WorstGroupAccuracy(torchmetrics.Metric):
 
-    def __init__(self, num_groups):
+    def __init__(self, threshold: float = 0.5):
         super().__init__()
-        self.num_groups = num_groups
-        self.add_state("correct", default=torch.zeros(num_groups), dist_reduce_fx="sum")
-        self.add_state("total", default=torch.zeros(num_groups), dist_reduce_fx="sum")
+        self.threshold = threshold
+        self.add_state("correct", default=torch.zeros(4), dist_reduce_fx="sum")
+        self.add_state("total", default=torch.zeros(4), dist_reduce_fx="sum")
 
-    def update(self, preds, targets, groups):
-        """
-        Updates the state tensors with the new batch of predictions, targets, and group identifiers.
+    def update(
+            self,
+            preds: torch.Tensor,
+            targets: torch.Tensor,
+            spurious_labels: torch.Tensor,
+    ):
+        """Updates the state tensors with the new batch of predictions, targets, and spurious labels.
 
         Args:
-            preds (torch.Tensor): The predictions tensor, typically the output of a model.
-            targets (torch.Tensor): The ground truth tensor.
-            groups (torch.Tensor): A tensor containing the group identifier for each instance.
+            preds: A [0,1]-valued torch.Tensor of shape (B,).
+            targets: A {0,1}-valued torch.Tensor of shape (B,).
+            spurious_labels: A {0,1}-valued torch.Tensor of shape (B,).
         """
-        preds = torch.argmax(preds, dim=-1)
+        preds = (preds > self.threshold).int()
         is_correct = (preds == targets).long()
-        for g in range(self.num_groups):
+        groups = 2 * targets + spurious_labels
+        for g in range(4):
             self.correct[g] += is_correct[groups == g].sum()
             self.total[g] += (groups == g).long().sum()
 
-    def compute(self):
-        """
-        Computes the accuracy of the worst-performing group.
-
-        Returns:
-            torch.Tensor: The accuracy of the worst-performing group.
-        """
+    def compute(self) -> float:
         worst_group_acc = torch.tensor(1.0)
         for c, t in zip(self.correct, self.total):
             if t > 0:
                 worst_group_acc = min(worst_group_acc, c.float() / t)
         return worst_group_acc
-
-    def compute_all_groups(self):
-        """
-        Computes the accuracies of all groups.
-
-        Returns:
-            torch.Tensor: A tensor containing the accuracies for all groups, with 'nan' for groups with no instances.
-        """
-        ret = self.correct.float() / self.total
-        ret[self.total == 0] = float('nan')
-        return ret

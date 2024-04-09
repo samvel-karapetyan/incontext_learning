@@ -1,5 +1,3 @@
-from collections import Counter
-
 import torch
 import torchmetrics
 
@@ -13,7 +11,7 @@ class GroupAccuracy(torchmetrics.Metric):
     """
     def __init__(self,
                  group: int,
-                 threshold: int = 0.5):
+                 threshold: float = 0.5):
         super().__init__()
         self.group = group
         self.threshold = threshold
