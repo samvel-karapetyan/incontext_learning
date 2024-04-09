@@ -3,9 +3,13 @@ seed: 0
 print_config: True
 ignore_warnings: False
 
-spurious_setting: separate_token # Options: 'separate_token'(x,c) , 'no_spurious'(x), 'sum'(x+c), 'sum_with_spurious'(x+c,c)
+spurious_setting: no_spurious # Options: 'separate_token'(x,c) , 'no_spurious'(x), 'sum'(x+c), 'sum_with_spurious'(x+c,c)
+sp_token_generation_mode: opposite  # Options: 'opposite' and 'random'
+
 v1_behavior: False  # True of False should have no effect, because we throw intermediate predictions
-aim_hash: 8a1fd0f86cc14ba888bce608  # 50 context_class_size v2, 1000 rotations, sum_with_spurious
+
+aim_hash: b663619f99104104ac7a0a0f
+
 checkpoint_path: ${oc.env:OUTPUT_DIR}/runs/train/${aim_hash}/checkpoints/last.ckpt
 
 n_repeat: 5
@@ -13,9 +17,8 @@ n_repeat: 5
 datamodule: # overriding default context_class_size
   context_class_size: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 25, 30, 35, 40, 45, 50]
 
-
 defaults:
-  - datamodule: waterbirds_emb_contexts # Options: 'inaturalist_emb_contexts', 'waterbirds_emb_contexts', 'cub_emb_contexts', 'imagenet_emb_contexts'
+  - datamodule: inaturalist_emb_contexts # Options: 'inaturalist_emb_contexts', 'waterbirds_emb_contexts', 'cub_emb_contexts', 'imagenet_emb_contexts'
   - model: incontext_learner_gptj_v2
   - trainer: default
   - override hydra/job_logging: custom

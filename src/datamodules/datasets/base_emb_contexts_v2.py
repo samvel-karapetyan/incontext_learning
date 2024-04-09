@@ -63,6 +63,7 @@ class BaseEmbContextsDatasetV2(Dataset, ABC):
         self._data_length = data_length
         self._context_class_size = context_class_size
         self._spurious_setting = spurious_setting
+        self._sp_token_generation_mode = sp_token_generation_mode
         self._v1_behavior = v1_behavior
         self._rotate_encodings = rotate_encodings
         self._n_rotation_matrices = n_rotation_matrices
@@ -82,7 +83,7 @@ class BaseEmbContextsDatasetV2(Dataset, ABC):
         tokens_data = {k: tokens_data[k] for k in tokens_data.keys()}
 
         tokens_generator = TokenGenerator(tokens_data=tokens_data,
-                                          sp_token_generation_mode='opposite')
+                                          sp_token_generation_mode=self._sp_token_generation_mode)
 
         (self._x_spurious_tokens_generator,
          self._c_spurious_tokens_generator,

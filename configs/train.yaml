@@ -4,12 +4,13 @@ print_config: True
 ignore_warnings: False
 
 
-spurious_setting: sum # Options: 'no_spurious'(x), 'sum'(x+c), 'separate_token'(x, c) , 'sum_with_spurious'(x+c, c)
+spurious_setting: separate_token # Options: 'no_spurious'(x), 'sum'(x+c), 'separate_token'(x, c) , 'sum_with_spurious'(x+c, c)
+sp_token_generation_mode: opposite  # Options: 'opposite' and 'random'
 
 v1_behavior: False
 
 defaults:
-  - datamodule: inaturalist_emb_contexts
+  - datamodule: waterbirds_emb_contexts  # Options: inaturalist_emb_contexts, waterbirds_emb_contexts
   - model: incontext_learner_gptj_v2
   - optimizer: adam_w
   - scheduler: warmup_cosine_annealing
