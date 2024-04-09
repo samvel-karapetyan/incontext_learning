@@ -39,7 +39,7 @@ class WaterbirdsEmbContextsDataModuleV2(pl.LightningDataModule):
                  n_rotation_matrices: int,
                  randomly_swap_labels: bool,
                  label_noise_ratio_interval: list,
-                 input_noise_std_interval: list,
+                 input_noise_norm_interval: list,
                  permute_input_dim: bool,
                  ask_context_prob: float,
                  *args, **kwargs):
@@ -60,7 +60,7 @@ class WaterbirdsEmbContextsDataModuleV2(pl.LightningDataModule):
             n_rotation_matrices=n_rotation_matrices,
             randomly_swap_labels=randomly_swap_labels,
             label_noise_ratio_interval=label_noise_ratio_interval,
-            input_noise_std_interval=input_noise_std_interval,
+            input_noise_norm_interval=input_noise_norm_interval,
             permute_input_dim=permute_input_dim,
             ask_context_prob=ask_context_prob,
         )
@@ -80,7 +80,7 @@ class WaterbirdsEmbContextsDataModuleV2(pl.LightningDataModule):
         self._n_rotation_matrices = n_rotation_matrices
         self._randomly_swap_labels = randomly_swap_labels
         self._label_noise_ratio_interval = label_noise_ratio_interval
-        self._input_noise_std_interval = input_noise_std_interval
+        self._input_noise_norm_interval = input_noise_norm_interval
         self._permute_input_dim = permute_input_dim
         self._ask_context_prob = ask_context_prob
 
