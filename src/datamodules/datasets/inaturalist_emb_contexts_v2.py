@@ -117,8 +117,6 @@ class INaturalistEmbContextsDatasetV2(BaseEmbContextsDatasetV2):
 
         # Shuffling class and spurious labels
         class_labels, spurious_labels = [0, 1], [0, 1]
-        random.shuffle(class_labels)
-        random.shuffle(spurious_labels)
         cat1_class_label, cat2_class_label = class_labels
         spurious_label1, spurious_label2 = spurious_labels
 
