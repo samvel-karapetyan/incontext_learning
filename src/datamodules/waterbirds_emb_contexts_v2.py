@@ -45,6 +45,26 @@ class WaterbirdsEmbContextsDataModuleV2(pl.LightningDataModule):
                  *args, **kwargs):
         super(WaterbirdsEmbContextsDataModuleV2, self).__init__()
 
+        self._core_params = dict(
+            root_dir=root_dir,
+            encoding_extractor=encoding_extractor,
+            context_class_size=context_class_size,
+            group_proportions=group_proportions,
+            spurious_setting=spurious_setting,
+            sp_token_generation_mode=sp_token_generation_mode,
+            v1_behavior=v1_behavior,
+        )
+
+        self._aug_params = dict(
+            rotate_encodings=rotate_encodings,
+            n_rotation_matrices=n_rotation_matrices,
+            randomly_swap_labels=randomly_swap_labels,
+            label_noise_ratio_interval=label_noise_ratio_interval,
+            input_noise_std_interval=input_noise_std_interval,
+            permute_input_dim=permute_input_dim,
+            ask_context_prob=ask_context_prob,
+        )
+
         # Initializing dataset parameters
         self._root_dir = root_dir
         self._encoding_extractor = encoding_extractor
@@ -64,9 +84,11 @@ class WaterbirdsEmbContextsDataModuleV2(pl.LightningDataModule):
         self._permute_input_dim = permute_input_dim
         self._ask_context_prob = ask_context_prob
 
-        # Initializing dataset lengths for different splits
+        self._saved_val_sets_path = saved_val_sets_path
         self._train_len = train_len
         self._eval_len = eval_len
+        self._batch_size = batch_size
+        self._num_workers = num_workers
 
         # Placeholders for dataset splits
         self._train_dataset_for_fit = None
@@ -79,45 +101,21 @@ class WaterbirdsEmbContextsDataModuleV2(pl.LightningDataModule):
         """Sets up the training and validation datasets."""
         if stage == "fit":
             self._train_dataset_for_fit = WaterbirdsEmbContextsDatasetV2(
-                root_dir=self._root_dir,
-                encoding_extractor=self._encoding_extractor,
+                **self._core_params,
+                **self._aug_params,
                 data_length=self._train_len,
                 context_split='train',
                 query_split='train',
-                context_class_size=self._context_class_size,
-                group_proportions=self._group_proportions,
-                spurious_setting=self._spurious_setting,
-                sp_token_generation_mode=self._sp_token_generation_mode,
-                v1_behavior=self._v1_behavior,
-                rotate_encodings=self._rotate_encodings,
-                n_rotation_matrices=self._n_rotation_matrices,
-                randomly_swap_labels=self._randomly_swap_labels,
-                label_noise_ratio_interval=self._label_noise_ratio_interval,
-                input_noise_std_interval=self._input_noise_std_interval,
-                permute_input_dim=self._permute_input_dim,
-                ask_context_prob=self._ask_context_prob,
             )
 
         # saved_data_path = self._saved_val_sets_path and os.path.join(self._saved_val_sets_path,
         #                                                              self.ValSets.TRAIN.value)
         saved_data_path = None
         self._train_dataset_for_eval = WaterbirdsEmbContextsDatasetV2(
-            root_dir=self._root_dir,
-            encoding_extractor=self._encoding_extractor,
+            **self._core_params,
             data_length=self._eval_len,
             context_split='train',
             query_split='train',
-            context_class_size=self._context_class_size,
-            group_proportions=self._group_proportions,
-            spurious_setting=self._spurious_setting,
-            sp_token_generation_mode=self._sp_token_generation_mode,
-            v1_behavior=self._v1_behavior,
-            rotate_encodings=False,
-            randomly_swap_labels=False,
-            label_noise_ratio_interval=None,
-            input_noise_std_interval=None,
-            permute_input_dim=False,
-            ask_context_prob=None,
             saved_data_path=saved_data_path,
         )
 
@@ -125,22 +123,10 @@ class WaterbirdsEmbContextsDataModuleV2(pl.LightningDataModule):
         #                                                              self.ValSets.TRAIN_VAL.value)
         saved_data_path = None
         self._train_val_dataset = WaterbirdsEmbContextsDatasetV2(
-            root_dir=self._root_dir,
-            encoding_extractor=self._encoding_extractor,
+            **self._core_params,
             data_length=self._eval_len,
             context_split='train',
             query_split='val',
-            context_class_size=self._context_class_size,
-            group_proportions=self._group_proportions,
-            spurious_setting=self._spurious_setting,
-            sp_token_generation_mode=self._sp_token_generation_mode,
-            v1_behavior=self._v1_behavior,
-            rotate_encodings=False,
-            randomly_swap_labels=False,
-            label_noise_ratio_interval=None,
-            input_noise_std_interval=None,
-            permute_input_dim=False,
-            ask_context_prob=None,
             saved_data_path=saved_data_path,
         )
 
@@ -148,22 +134,10 @@ class WaterbirdsEmbContextsDataModuleV2(pl.LightningDataModule):
         #                                                              self.ValSets.TRAIN_TEST.value)
         saved_data_path = None
         self._train_test_dataset = WaterbirdsEmbContextsDatasetV2(
-            root_dir=self._root_dir,
-            encoding_extractor=self._encoding_extractor,
+            **self._core_params,
             data_length=self._eval_len,
             context_split='train',
             query_split='test',
-            context_class_size=self._context_class_size,
-            group_proportions=self._group_proportions,
-            spurious_setting=self._spurious_setting,
-            sp_token_generation_mode=self._sp_token_generation_mode,
-            v1_behavior=self._v1_behavior,
-            rotate_encodings=False,
-            randomly_swap_labels=False,
-            label_noise_ratio_interval=None,
-            input_noise_std_interval=None,
-            permute_input_dim=False,
-            ask_context_prob=None,
             saved_data_path=saved_data_path,
         )
 
@@ -171,22 +145,10 @@ class WaterbirdsEmbContextsDataModuleV2(pl.LightningDataModule):
         #                                                              self.ValSets.VAL.value)
         saved_data_path = None
         self._val_dataset = WaterbirdsEmbContextsDatasetV2(
-            root_dir=self._root_dir,
-            encoding_extractor=self._encoding_extractor,
+            **self._core_params,
             data_length=self._eval_len,
             context_split='val',
             query_split='val',
-            context_class_size=self._context_class_size,
-            group_proportions=self._group_proportions,
-            spurious_setting=self._spurious_setting,
-            sp_token_generation_mode=self._sp_token_generation_mode,
-            v1_behavior=self._v1_behavior,
-            rotate_encodings=False,
-            randomly_swap_labels=False,
-            label_noise_ratio_interval=None,
-            input_noise_std_interval=None,
-            permute_input_dim=False,
-            ask_context_prob=None,
             saved_data_path=saved_data_path,
         )
 
