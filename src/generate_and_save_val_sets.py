@@ -38,7 +38,7 @@ def generate_and_save_val_sets(config: DictConfig):
     tokens_generators = {}
     for mode in token_generation_modes:
         spurious_tokens_generator, class_tokens_generator = TokenGenerator(**tokens_generator_params,
-                                                                           token_generation_mode=mode)()
+                                                                           sp_token_generation_mode=mode)()
         tokens_generators.update({f"{mode}_spurious": spurious_tokens_generator,
                                   f"{mode}_class": class_tokens_generator})
 

@@ -33,6 +33,7 @@ class WaterbirdsEmbContextsDataModuleV2(pl.LightningDataModule):
                  context_class_size: int,
                  group_proportions: list[float],
                  spurious_setting: str,
+                 sp_token_generation_mode: str,
                  v1_behavior: bool,
                  rotate_encodings: bool,
                  n_rotation_matrices: int,
@@ -53,6 +54,7 @@ class WaterbirdsEmbContextsDataModuleV2(pl.LightningDataModule):
         self._context_class_size = context_class_size
         self._group_proportions = group_proportions
         self._spurious_setting = spurious_setting
+        self._sp_token_generation_mode = sp_token_generation_mode
         self._v1_behavior = v1_behavior
         self._rotate_encodings = rotate_encodings
         self._n_rotation_matrices = n_rotation_matrices
@@ -85,6 +87,7 @@ class WaterbirdsEmbContextsDataModuleV2(pl.LightningDataModule):
                 context_class_size=self._context_class_size,
                 group_proportions=self._group_proportions,
                 spurious_setting=self._spurious_setting,
+                sp_token_generation_mode=self._sp_token_generation_mode,
                 v1_behavior=self._v1_behavior,
                 rotate_encodings=self._rotate_encodings,
                 n_rotation_matrices=self._n_rotation_matrices,
@@ -107,6 +110,7 @@ class WaterbirdsEmbContextsDataModuleV2(pl.LightningDataModule):
             context_class_size=self._context_class_size,
             group_proportions=self._group_proportions,
             spurious_setting=self._spurious_setting,
+            sp_token_generation_mode=self._sp_token_generation_mode,
             v1_behavior=self._v1_behavior,
             rotate_encodings=False,
             randomly_swap_labels=False,
@@ -129,6 +133,7 @@ class WaterbirdsEmbContextsDataModuleV2(pl.LightningDataModule):
             context_class_size=self._context_class_size,
             group_proportions=self._group_proportions,
             spurious_setting=self._spurious_setting,
+            sp_token_generation_mode=self._sp_token_generation_mode,
             v1_behavior=self._v1_behavior,
             rotate_encodings=False,
             randomly_swap_labels=False,
@@ -151,6 +156,7 @@ class WaterbirdsEmbContextsDataModuleV2(pl.LightningDataModule):
             context_class_size=self._context_class_size,
             group_proportions=self._group_proportions,
             spurious_setting=self._spurious_setting,
+            sp_token_generation_mode=self._sp_token_generation_mode,
             v1_behavior=self._v1_behavior,
             rotate_encodings=False,
             randomly_swap_labels=False,
@@ -173,6 +179,7 @@ class WaterbirdsEmbContextsDataModuleV2(pl.LightningDataModule):
             context_class_size=self._context_class_size,
             group_proportions=self._group_proportions,
             spurious_setting=self._spurious_setting,
+            sp_token_generation_mode=self._sp_token_generation_mode,
             v1_behavior=self._v1_behavior,
             rotate_encodings=False,
             randomly_swap_labels=False,

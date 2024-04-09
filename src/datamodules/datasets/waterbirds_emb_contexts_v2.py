@@ -54,6 +54,7 @@ class WaterbirdsEmbContextsDatasetV2(BaseEmbContextsDatasetV2):
                  context_class_size: int,
                  group_proportions: list[float],
                  spurious_setting: str,
+                 sp_token_generation_mode: str,
                  v1_behavior: bool = False,
                  rotate_encodings: bool = False,
                  n_rotation_matrices: Optional[int] = None,
@@ -76,6 +77,8 @@ class WaterbirdsEmbContextsDatasetV2(BaseEmbContextsDatasetV2):
         spurious_setting (str): Determines the handling mode of spurious tokens in the dataset instances.
                                 Options include 'no_spurious'(x), 'sum'(x+c), 'separate_token'(x, c)
                                 or 'sum_with_spurious'(x+c, c).
+        sp_token_generation_mode (str): Specifies whether the representations of two spurious labels should be
+                                        'opposite' or 'random'.
         v1_behavior (bool): Whether intermediate queries should be the context examples.
         rotate_encodings (bool): Determines if image encodings are rotated. True enables rotation
                                  based on class labels, while False bypasses rotation.
@@ -96,6 +99,7 @@ class WaterbirdsEmbContextsDatasetV2(BaseEmbContextsDatasetV2):
             data_length=data_length,
             context_class_size=context_class_size,
             spurious_setting=spurious_setting,
+            sp_token_generation_mode=sp_token_generation_mode,
             v1_behavior=v1_behavior,
             rotate_encodings=rotate_encodings,
             n_rotation_matrices=n_rotation_matrices,

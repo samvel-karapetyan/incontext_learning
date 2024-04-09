@@ -23,6 +23,7 @@ class BaseEmbContextsDatasetV2(Dataset, ABC):
                  data_length: int,
                  context_class_size: int,
                  spurious_setting: str,
+                 sp_token_generation_mode: str,
                  v1_behavior: bool = False,
                  rotate_encodings: bool = False,
                  n_rotation_matrices: Optional[int] = None,
@@ -40,6 +41,8 @@ class BaseEmbContextsDatasetV2(Dataset, ABC):
         spurious_setting (str): Determines the handling mode of spurious tokens in the dataset instances.
                                 Options include 'no_spurious'(x), 'sum'(x+c), 'separate_token'(x, c)
                                 or 'sum_with_spurious'(x+c, c).
+        sp_token_generation_mode (str): Specifies whether the representations of two spurious labels should be
+                                        'opposite' or 'random'.
         v1_behavior (bool): Whether intermediate queries should be the context examples.
         rotate_encodings (bool): Determines if image encodings are rotated. True enables rotation
                                  based on class labels, while False bypasses rotation.
@@ -79,10 +82,7 @@ class BaseEmbContextsDatasetV2(Dataset, ABC):
         tokens_data = {k: tokens_data[k] for k in tokens_data.keys()}
 
         tokens_generator = TokenGenerator(tokens_data=tokens_data,
-                                          are_x_spurious_tokens_fixed=False,
-                                          are_c_spurious_tokens_fixed=True,
-                                          are_class_tokens_fixed=True,
-                                          token_generation_mode='opposite')
+                                          sp_token_generation_mode='opposite')
 
         (self._x_spurious_tokens_generator,
          self._c_spurious_tokens_generator,

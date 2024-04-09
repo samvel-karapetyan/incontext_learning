@@ -24,6 +24,7 @@ class ImagenetEmbContextsDataModuleV2(pl.LightningDataModule):
                  context_class_size: int,
                  minority_group_proportion: float,
                  spurious_setting: str,
+                 sp_token_generation_mode: str,
                  v1_behavior: bool,
                  rotate_encodings: bool,
                  n_rotation_matrices: int,
@@ -44,6 +45,7 @@ class ImagenetEmbContextsDataModuleV2(pl.LightningDataModule):
         self._context_class_size = context_class_size
         self._minority_group_proportion = minority_group_proportion
         self._spurious_setting = spurious_setting
+        self._sp_token_generation_mode = sp_token_generation_mode
         self._v1_behavior = v1_behavior
         self._rotate_encodings = rotate_encodings
         self._n_rotation_matrices = n_rotation_matrices
@@ -66,6 +68,7 @@ class ImagenetEmbContextsDataModuleV2(pl.LightningDataModule):
             context_class_size=self._context_class_size,
             minority_group_proportion=self._minority_group_proportion,
             spurious_setting=self._spurious_setting,
+            sp_token_generation_mode=self._sp_token_generation_mode,
             v1_behavior=self._v1_behavior,
             rotate_encodings=False,
             label_noise_ratio_interval=None,
