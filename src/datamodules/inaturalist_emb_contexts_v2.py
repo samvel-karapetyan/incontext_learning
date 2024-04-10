@@ -36,7 +36,7 @@ class INaturalistEmbContextsDataModuleV2(pl.LightningDataModule):
                  rotate_encodings: bool,
                  n_rotation_matrices: int,
                  label_noise_ratio_interval: list,
-                 input_noise_std_interval: list,
+                 input_noise_norm_interval: list,
                  permute_input_dim: bool,
                  ask_context_prob: float,
                  *args, **kwargs):
@@ -56,7 +56,7 @@ class INaturalistEmbContextsDataModuleV2(pl.LightningDataModule):
             rotate_encodings=rotate_encodings,
             n_rotation_matrices=n_rotation_matrices,
             label_noise_ratio_interval=label_noise_ratio_interval,
-            input_noise_std_interval=input_noise_std_interval,
+            input_noise_norm_interval=input_noise_norm_interval,
             permute_input_dim=permute_input_dim,
             ask_context_prob=ask_context_prob,
         )

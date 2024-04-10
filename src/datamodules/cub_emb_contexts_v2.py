@@ -29,7 +29,7 @@ class CUBEmbContextsDataModuleV2(pl.LightningDataModule):
                  rotate_encodings: bool,
                  n_rotation_matrices: int,
                  label_noise_ratio_interval: list,
-                 input_noise_std_interval: list,
+                 input_noise_norm_interval: list,
                  permute_input_dim: bool,
                  ask_context_prob: float,
                  *args, **kwargs):
@@ -50,7 +50,7 @@ class CUBEmbContextsDataModuleV2(pl.LightningDataModule):
         self._rotate_encodings = rotate_encodings
         self._n_rotation_matrices = n_rotation_matrices
         self._label_noise_ratio_interval = label_noise_ratio_interval
-        self._input_noise_std_interval = input_noise_std_interval
+        self._input_noise_norm_interval = input_noise_norm_interval
         self._permute_input_dim = permute_input_dim
         self._ask_context_prob = ask_context_prob
 
@@ -72,7 +72,7 @@ class CUBEmbContextsDataModuleV2(pl.LightningDataModule):
             v1_behavior=self._v1_behavior,
             rotate_encodings=False,
             label_noise_ratio_interval=None,
-            input_noise_std_interval=None,
+            input_noise_norm_interval=None,
             permute_input_dim=False,
             ask_context_prob=None,
             saved_data_path=self._saved_data_path)
