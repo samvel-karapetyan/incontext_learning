@@ -78,7 +78,7 @@ class BaseEmbContextsDatasetV2(Dataset, ABC):
             os.environ.get('DATA_ROOT_DIR'),
             'inaturalist2017/avg_norms',
             f"{encoding_extractor}_l2.npz")
-        tokens_data = np.load(token_data_path, mmap_mode="r")
+        tokens_data = np.load(token_data_path)
         # Convert tokens_data to a dictionary to resolve "Bad CRC-32" error in multi-worker mode.
         tokens_data = {k: tokens_data[k] for k in tokens_data.keys()}
 
