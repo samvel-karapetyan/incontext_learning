@@ -66,27 +66,9 @@ class WaterbirdsEmbContextsDataModuleV2(pl.LightningDataModule):
         )
 
         # Initializing dataset parameters
-        self._root_dir = root_dir
-        self._encoding_extractor = encoding_extractor
-        self._saved_val_sets_path = saved_val_sets_path
-        self._batch_size = batch_size
-        self._num_workers = num_workers
-        self._context_class_size = context_class_size
-        self._group_proportions = group_proportions
-        self._spurious_setting = spurious_setting
-        self._sp_token_generation_mode = sp_token_generation_mode
-        self._v1_behavior = v1_behavior
-        self._rotate_encodings = rotate_encodings
-        self._n_rotation_matrices = n_rotation_matrices
-        self._randomly_swap_labels = randomly_swap_labels
-        self._label_noise_ratio_interval = label_noise_ratio_interval
-        self._input_noise_std_interval = input_noise_std_interval
-        self._permute_input_dim = permute_input_dim
-        self._ask_context_prob = ask_context_prob
-
-        self._saved_val_sets_path = saved_val_sets_path
         self._train_len = train_len
         self._eval_len = eval_len
+        self._saved_val_sets_path = saved_val_sets_path
         self._batch_size = batch_size
         self._num_workers = num_workers
 
