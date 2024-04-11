@@ -60,7 +60,7 @@ class WaterbirdsEmbContextsDatasetV2(BaseEmbContextsDatasetV2):
                  n_rotation_matrices: Optional[int] = None,
                  randomly_swap_labels: bool = False,
                  label_noise_ratio_interval: Optional[list] = None,
-                 input_noise_std_interval: Optional[list] = None,
+                 input_noise_norm_interval: Optional[list] = None,
                  permute_input_dim: bool = False,
                  ask_context_prob: Optional[float] = None,
                  saved_data_path: Optional[str] = None):
@@ -86,7 +86,7 @@ class WaterbirdsEmbContextsDatasetV2(BaseEmbContextsDatasetV2):
         randomly_swap_labels (bool): Whether to randomly swap labels (0 -> 1 and 1 -> 0) when creating an ILC instance.
         label_noise_ratio_interval (list or None): Interval for the ratio of label noise. 
                                 If None, no label noise is added.
-        input_noise_std_interval (list or None): Interval for the standard deviation of Gaussian noise.
+        input_noise_norm_interval (list or None): Interval for the norm of Gaussian noise.
                                 If None, no Gaussian noise is added to representations.
         permute_input_dim (bool): Determines if image encodings are permuted. 
                                 True enables permutation, while False bypasses it.
@@ -104,7 +104,7 @@ class WaterbirdsEmbContextsDatasetV2(BaseEmbContextsDatasetV2):
             rotate_encodings=rotate_encodings,
             n_rotation_matrices=n_rotation_matrices,
             label_noise_ratio_interval=label_noise_ratio_interval,
-            input_noise_std_interval=input_noise_std_interval,
+            input_noise_norm_interval=input_noise_norm_interval,
             permute_input_dim=permute_input_dim,
             ask_context_prob=ask_context_prob,
             saved_data_path=saved_data_path,

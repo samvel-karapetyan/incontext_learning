@@ -28,7 +28,7 @@ class BaseEmbContextsDatasetV2(Dataset, ABC):
                  rotate_encodings: bool = False,
                  n_rotation_matrices: Optional[int] = None,
                  label_noise_ratio_interval: Optional[list] = None,
-                 input_noise_std_interval: Optional[list] = None,
+                 input_noise_norm_interval: Optional[list] = None,
                  permute_input_dim: bool = False,
                  ask_context_prob: Optional[float] = None,
                  saved_data_path: Optional[str] = None,
@@ -49,7 +49,7 @@ class BaseEmbContextsDatasetV2(Dataset, ABC):
         n_rotation_matrices (int): Specifies the number of rotation matrices to generate and store.
         label_noise_ratio_interval (list or None): Interval for the ratio of label noise. 
                                 If None, no label noise is added.
-        input_noise_std_interval (list or None): Interval for the standard deviation of Gaussian noise.
+        input_noise_norm_interval (list or None): Interval for the norm of Gaussian noise.
                                 If None, no Gaussian noise is added to representations.
         permute_input_dim (bool): Determines if image encodings are permuted. 
                                 True enables permutation, while False bypasses it.
@@ -68,7 +68,7 @@ class BaseEmbContextsDatasetV2(Dataset, ABC):
         self._rotate_encodings = rotate_encodings
         self._n_rotation_matrices = n_rotation_matrices
         self._label_noise_ratio_interval = label_noise_ratio_interval
-        self._input_noise_std_interval = input_noise_std_interval
+        self._input_noise_norm_interval = input_noise_norm_interval
         self._permute_input_dim = permute_input_dim
         self._ask_context_prob = ask_context_prob
         self._saved_data_path = saved_data_path
@@ -270,13 +270,15 @@ class BaseEmbContextsDatasetV2(Dataset, ABC):
             self,
             context_img_encodings: np.ndarray
     ) -> np.ndarray:
-        if self._input_noise_std_interval:
-            low, high = self._input_noise_std_interval
+        if self._input_noise_norm_interval:
+            low, high = self._input_noise_norm_interval
 
-            input_noise_std = np.random.uniform(low=low, high=high)
+            input_noise_norm = np.random.uniform(low=low, high=high)
+            seq_len, input_dim = context_img_encodings.shape
+
             input_noise = np.random.normal(
-                scale=input_noise_std, size=context_img_encodings.shape,
-            ).astype(context_img_encodings.dtype)
+                scale=1/np.sqrt(input_dim), size=(seq_len, input_dim),
+            ).astype(context_img_encodings.dtype) * input_noise_norm
 
             context_img_encodings = context_img_encodings + input_noise
 

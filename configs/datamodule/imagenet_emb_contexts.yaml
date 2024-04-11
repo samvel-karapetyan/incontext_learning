@@ -22,7 +22,7 @@ rotate_encodings: False
 n_rotation_matrices: 1000  # 1000 works well, but is slow. Reduce for efficiency when experimenting
 
 label_noise_ratio_interval: null  # [min_ratio, max_ratio], the label noise ratio is uniformly sampled from this interval
-input_noise_std_interval: null  # [min_std, max_std], the standard deviation of the Gaussian noise will be uniformly sampled from this interval
+input_noise_norm_interval: null  # [min_norm, max_norm], the norm of the Gaussian noise will be uniformly sampled from this interval
 permute_input_dim: False
 
 ask_context_prob: null
