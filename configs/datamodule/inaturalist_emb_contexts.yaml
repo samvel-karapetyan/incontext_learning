@@ -24,6 +24,7 @@ n_rotation_matrices: 1000  # 1000 works well, but is slow. Reduce for efficiency
 
 label_noise_ratio_interval: null  # [min_ratio, max_ratio], the label noise ratio is uniformly sampled from this interval
 input_noise_norm_interval: null  # [min_norm, max_norm], the norm of the Gaussian noise will be uniformly sampled from this interval
+
 permute_input_dim: False
 
 ask_context_prob: null
