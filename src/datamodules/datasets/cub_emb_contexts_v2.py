@@ -159,11 +159,8 @@ class CUBEmbContextsDatasetV2(BaseEmbContextsDatasetV2):
 
         Returns: np.ndarray of shape (num_examples, dim).
         """
-        img_encodings = []
-        for example in examples:
-            image_id = example[0]
-            img_encodings.append(self._encodings[self._encodings_indices_map[image_id]])
-        return np.stack(img_encodings)
+        indices = examples[:, 0]
+        return self._encodings[self._encodings_indices_map[indices]]
 
     def _prepare_context_image_encodings(
             self,
