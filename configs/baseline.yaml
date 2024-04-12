@@ -10,23 +10,28 @@ v1_behavior: False  # True of False should have no effect, because we throw inte
 
 n_repeat: 5
 
+device: cpu  # Use 'cpu' to run on the CPU, or specify the CUDA device index (an integer)
+
 methods:
   knn:
     _target_: src.baseline_methods.KNN
     n_neighbors: 1
+    device: ${device}
   erm:
     _target_: src.baseline_methods.ERM
     n_epochs: 100
     lr: 0.01
+    device: ${device}
   dro:
     _target_: src.baseline_methods.DRO
     n_epochs: 100
     lr: 0.01
     group_weight_step: 0.01
+    device: ${device}
 
 datamodule: # overriding default context_class_size, batch_size
   context_class_size: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 25, 30, 35, 40, 45, 50]
-  batch_size: 1 # do not modify
+  batch_size: 1  # do not modify
 
 defaults:
   - datamodule: waterbirds_emb_contexts # Options: 'inaturalist_emb_contexts', 'waterbirds_emb_contexts', 'cub_emb_contexts', 'imagenet_emb_contexts'
