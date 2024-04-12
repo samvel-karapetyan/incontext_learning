@@ -35,9 +35,10 @@ def _sample(
         random_items = np.random.choice(all_group_items, group_count, replace=False)
         indices.extend(random_items)
 
-    labels = [dataset[idx][1] for idx in indices]
-    spurious_labels = [dataset[idx][2] for idx in indices]
-    examples = list(zip(indices, spurious_labels, labels))
+    examples = []
+    for idx in indices:
+        _, label, sp, _ = dataset[idx]
+        examples.append((idx, sp, label))
     random.shuffle(examples)
     return examples
 
