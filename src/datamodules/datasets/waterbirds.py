@@ -8,6 +8,8 @@ from wilds.datasets.wilds_dataset import WILDSSubset
 
 log = logging.getLogger(__name__)
 
+Examples = np.ndarray  # shaped (num_examples, 3) with each row being a triplet (index, spurious_label, class_label)
+
 
 class WaterbirdsSubsetForEncodingExtraction(Dataset):
     def __init__(self, wilds_waterbirds_subset: WILDSSubset):
@@ -50,12 +52,12 @@ class WaterbirdsSubsetExtracted(Dataset):
             row_indices[idx] = encoding_row_index
         self._encodings = encodings[row_indices]
 
-    def __getitem__(self, idx):
-        x = self._encodings[idx]
-        y = self._wilds_waterbirds_subset.y_array[idx]
-        metadata = self._wilds_waterbirds_subset.metadata_array[idx]
-        c = metadata[0]
-        return x, y, c, idx
+    def __getitem__(self, indices) -> (np.ndarray, Examples):
+        x = self._encodings[indices]
+        y = self._wilds_waterbirds_subset.y_array[indices]
+        c = self._wilds_waterbirds_subset.metadata_array[indices, 0]
+        examples = np.stack([indices, c, y], axis=1)
+        return x, examples
 
     def __len__(self):
         return len(self._wilds_waterbirds_subset)

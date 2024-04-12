@@ -34,11 +34,7 @@ def _sample(
         random_items = np.random.choice(all_group_items, group_count, replace=False)
         indices.extend(random_items)
 
-    examples = []
-    for idx in indices:
-        _, label, sp, _ = dataset[idx]
-        examples.append((idx, sp, label))
-    examples = np.array(examples)
+    _, examples = dataset[indices]
     return np.random.permutation(examples)
 
 
@@ -117,13 +113,17 @@ class WaterbirdsEmbContextsDatasetV2(BaseEmbContextsDatasetV2):
                                       encoding_extractor=encoding_extractor)
 
         train_set = dataset.get_subset("train")
-        train_groups = np.stack([(2 * y + c) for _, y, c, _ in train_set])
-
         val_set = dataset.get_subset("val")
-        val_groups = np.stack([(2 * y + c) for _, y, c, _ in val_set])
-
         test_set = dataset.get_subset("test")
-        test_groups = np.stack([(2 * y + c) for _, y, c, _ in test_set])
+
+        def get_groups(ds):
+            all_indices = np.arange(len(ds))
+            _, examples = ds[all_indices]
+            return 2 * examples[:, 2] + examples[:, 1]  # 2 * y + c
+
+        train_groups = get_groups(train_set)
+        val_groups = get_groups(val_set)
+        test_groups = get_groups(test_set)
 
         self._context_split = context_split
         if context_split == 'train':
@@ -183,15 +183,13 @@ class WaterbirdsEmbContextsDatasetV2(BaseEmbContextsDatasetV2):
             context: Examples,
     ) -> np.ndarray:
         """Returns a matrix of shape [2*C, D] containing context example encodings."""
-        return np.stack(
-            [self._context_set[idx][0] for idx, _, _ in context]
-        )
+        indices = context[:, 0]
+        return self._context_set[indices][0]
 
     def _prepare_query_image_encodings(
             self,
             queries: Examples,
     ) -> np.ndarray:
         """Returns a matrix of shape [2*C, D] containing query example encodings."""
-        return np.stack(
-            [self._query_set[idx][0] for idx, _, _ in queries]
-        )
+        indices = queries[:, 0]
+        return self._query_set[indices][0]
