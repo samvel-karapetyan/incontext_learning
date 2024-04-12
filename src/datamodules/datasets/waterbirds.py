@@ -39,19 +39,22 @@ class WaterbirdsSubsetExtracted(Dataset):
                  encodings: np.ndarray,
                  index_map: np.ndarray):
         self._wilds_waterbirds_subset = wilds_waterbirds_subset
-        self._encodings = encodings
-        self._index_map = index_map
+
+        # permute rows of `encodings` such that the i-th row corresponds to the i-th example of the subset
+        n = len(wilds_waterbirds_subset)
+        row_indices = np.zeros(n, dtype=np.int32)
+        for idx in range(n):
+            idx_within_full_waterbirds = wilds_waterbirds_subset.indices[idx]
+            encoding_row_index = index_map[idx_within_full_waterbirds]
+            assert encoding_row_index != -1
+            row_indices[idx] = encoding_row_index
+        self._encodings = encodings[row_indices]
 
     def __getitem__(self, idx):
+        x = self._encodings[idx]
         y = self._wilds_waterbirds_subset.y_array[idx]
         metadata = self._wilds_waterbirds_subset.metadata_array[idx]
         c = metadata[0]
-
-        idx_within_full_waterbirds = self._wilds_waterbirds_subset.indices[idx]
-        encoding_row_index = self._index_map[idx_within_full_waterbirds]
-        assert encoding_row_index != -1
-        x = self._encodings[encoding_row_index]
-
         return x, y, c, idx
 
     def __len__(self):
