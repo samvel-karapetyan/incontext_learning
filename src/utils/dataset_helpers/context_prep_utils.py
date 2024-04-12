@@ -96,6 +96,6 @@ def get_group_counts_based_on_proportions(
     group_counts = [int(num_examples * p) for p in group_proportions]
     cur_sum = sum(group_counts)
     while cur_sum < num_examples:
-        group_counts[2 * np.random.randint(2) + np.random.randint(2)] += 1
+        group_counts[np.random.randint(len(group_proportions))] += 1
         cur_sum += 1
     return group_counts
