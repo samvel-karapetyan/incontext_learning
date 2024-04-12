@@ -67,14 +67,8 @@ class BaseMethod(ABC):
                 if input_seq.shape[0] != 1:
                     raise ValueError("Dataloader should have batch_size 1.")
 
-                # for preparing context information we need to deduce spurious_setting from query_indices
-                if query_indices[0] == 2:  # no_spurious or sum
-                    context_x = input_seq[0, ::3]
-                elif query_indices[0] == 3:  # separate_token or sum_with_spurious
-                    context_x = input_seq[0, ::4]
-                else:
-                    raise ValueError("Could not decide spurious setting from query_indices: ", query_indices)
-
+                # Prepare context information
+                context_x = input_seq[0, ::3]
                 context_c = context[0, :, 1]
                 context_y = context[0, :, 2]
 
@@ -143,3 +137,6 @@ class BaseMethod(ABC):
         groups: torch.Tensor of shape (num_examples,) containing groups of training examples (numbers in {0, 1, 2, 3}).
         """
         pass
+
+    def tensors_to_device(self, *args, device="cpu"):
+        return [tens.to(device) for tens in args]

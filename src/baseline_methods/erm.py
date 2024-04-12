@@ -8,10 +8,12 @@ class ERM(BaseMethod):
     """Empirical Risk Minimization (ERM) method for binary classification."""
     def __init__(self,
                  n_epochs: int = 100,
-                 lr: float = 0.01):
+                 lr: float = 0.01,
+                 device: str = "cpu"):
         super(ERM, self).__init__()
         self._n_epochs = n_epochs
         self._lr = lr
+        self._device = device
 
     def predict(
             self,
@@ -20,7 +22,9 @@ class ERM(BaseMethod):
             x_test: torch.Tensor,
             **kwargs,
     ) -> torch.Tensor:
-        model = nn.Linear(x_train.shape[1], 1)
+        x_train, y_train, x_test = self.tensors_to_device(x_train, y_train, x_test, device=self._device)
+
+        model = nn.Linear(x_train.shape[1], 1, device=self._device)
 
         # Loss and optimizer
         criterion = nn.BCEWithLogitsLoss()
@@ -38,7 +42,7 @@ class ERM(BaseMethod):
         # Testing
         model.eval()
         with torch.no_grad():
-            test_pred = model(x_test)
+            test_pred = model(x_test).detach().cpu()
             test_pred_label = torch.sigmoid(test_pred).squeeze(0)  # Convert to probability
 
         return test_pred_label

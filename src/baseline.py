@@ -13,15 +13,19 @@ log = logging.getLogger(__name__)
 
 
 def baseline(config: DictConfig):
-    
+    log.info(f"Calculating baselines for <{config.datamodule.name}>")
     context_class_sizes = list(config.datamodule.context_class_size) \
         if isinstance(config.datamodule.context_class_size, Iterable) \
         else [config.datamodule.context_class_size]
+    
+    assert config.spurious_setting in ["no_spurious", "sum"]
     
     baseline_methods = {method_name: instantiate(method_config)
                         for method_name, method_config in config.methods.items()}
 
     for method_name, method in baseline_methods.items():    
+        log.info(f"Starting to calculate metrics using {method_name.upper()}")
+
         val_sets = [f"val_{x}" for x in config.datamodule.val_sets] if config.datamodule.val_sets else ['val']
         list_of_results = run_evaluations_with_repetitions(method,
                                                            datamodule_config=config.datamodule,

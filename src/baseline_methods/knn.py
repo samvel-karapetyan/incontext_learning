@@ -5,9 +5,12 @@ from src.baseline_methods.base_method import BaseMethod
 
 class KNN(BaseMethod):
     """K-Nearest Neighbors (KNN) method for classification."""
-    def __init__(self, n_neighbors: int = 1):
+    def __init__(self, 
+                 n_neighbors: int = 1, 
+                 device: str = "cpu"):
         super(KNN, self).__init__()
         self._n_neighbors = n_neighbors
+        self._device = device
 
     def predict(
             self,
@@ -16,6 +19,8 @@ class KNN(BaseMethod):
             x_test: torch.Tensor,
             **kwargs,
     ) -> torch.Tensor:
+        x_train, y_train, x_test = self.tensors_to_device(x_train, y_train, x_test, device=self._device)
+
         # Compute distances between test point and all training points
         distances = torch.cdist(x_test, x_train)
 
@@ -27,4 +32,4 @@ class KNN(BaseMethod):
 
         # Perform majority voting to determine the predicted label
         pred, _ = torch.mode(neighbor_labels, dim=1)
-        return pred
+        return pred.detach().cpu()
