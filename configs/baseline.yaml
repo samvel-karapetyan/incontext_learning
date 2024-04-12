@@ -1,0 +1,41 @@
+name: baseline
+seed: 0
+print_config: True
+ignore_warnings: False
+
+spurious_setting: no_spurious # Options: 'no_spurious'(x), 'sum'(x+c)
+sp_token_generation_mode: opposite  # Options: 'opposite' and 'random'
+
+v1_behavior: False  # True of False should have no effect, because we throw intermediate predictions
+
+n_repeat: 5
+
+methods:
+  knn:
+    _target_: src.baseline_methods.KNN
+    n_neighbors: 1
+  erm:
+    _target_: src.baseline_methods.ERM
+    n_epochs: 100
+    lr: 0.01
+  dro:
+    _target_: src.baseline_methods.DRO
+    n_epochs: 100
+    lr: 0.01
+    group_weight_step: 0.01
+
+datamodule: # overriding default context_class_size, batch_size
+  context_class_size: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 25, 30, 35, 40, 45, 50]
+  batch_size: 1 # do not modify
+
+defaults:
+  - datamodule: waterbirds_emb_contexts # Options: 'inaturalist_emb_contexts', 'waterbirds_emb_contexts', 'cub_emb_contexts', 'imagenet_emb_contexts'
+  - trainer: default
+  - override hydra/job_logging: custom
+  - _self_
+
+hydra:
+  run:
+    dir: ${oc.env:OUTPUT_DIR}/runs/${name}/${now:%Y-%m-%d_%H-%M-%S}
+  job:
+    chdir: True

@@ -138,8 +138,8 @@ def aggregate_results_by_set_and_class_size(list_of_results, val_sets, context_c
                 "context_class_size": context_class_sizes,
                 'mean': np.mean([combined_res[set_name][metric_name] for combined_res in list_of_results],
                                 axis=0),
-                'sem': st.sem([combined_res[set_name][metric_name] for combined_res in list_of_results],
-                              axis=0)
+                'sem': np.nan_to_num(st.sem([combined_res[set_name][metric_name] for combined_res in list_of_results],
+                              axis=0)) # nan_to_num handles cases where n_repeat=1, and st.sem returns nans.
             })
             for metric_name in list_of_results[0][set_name]
         }

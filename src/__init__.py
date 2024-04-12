@@ -3,3 +3,4 @@ from src.compute_encodings_avg_norm_and_generate_tokens import compute_encodings
 from src.generate_and_save_val_sets import generate_and_save_val_sets
 from src.train import train
 from src.evaluate import evaluate
+from src.baseline import baseline
