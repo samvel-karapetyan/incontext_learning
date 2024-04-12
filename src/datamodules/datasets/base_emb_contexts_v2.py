@@ -171,23 +171,23 @@ class BaseEmbContextsDatasetV2(Dataset, ABC):
         for i in range(len(context)):
             # Add current context related tokens.
             _, sp, label = context[i]
-            input_seq += get_context_example_tokens(
+            input_seq.extend(get_context_example_tokens(
                 img_encoding=context_img_encodings[i],
                 x_spurious_token=x_spurious_tokens[sp],
                 c_spurious_token=c_spurious_tokens[sp],
                 class_token=class_tokens[label],
                 spurious_setting=self._spurious_setting,
-            )
+            ))
 
             # Add current query related token.
             # NOTE: no matter what spurious setting we use, query spurious label
             #       and class label will not get their own tokens.
             _, sp, _ = queries[i]
-            input_seq += get_query_example_tokens(
+            input_seq.extend(get_query_example_tokens(
                 img_encoding=query_img_encodings[i],
                 x_spurious_token=x_spurious_tokens[sp],
                 spurious_setting=self._spurious_setting,
-            )
+            ))
 
         input_seq = np.stack(input_seq)
 
