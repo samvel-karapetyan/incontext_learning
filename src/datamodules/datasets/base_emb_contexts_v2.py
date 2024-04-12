@@ -12,7 +12,7 @@ from src.utils.dataset_helpers.context_prep_utils import get_context_example_tok
 
 log = logging.getLogger(__name__)
 
-Example = tuple[int, int, int]  # (index, spurious_label, class_label)
+Examples = np.ndarray  # shaped (num_examples, 3) with each row being a triplet (index, spurious_label, class_label)
 
 
 class BaseEmbContextsDatasetV2(Dataset, ABC):
@@ -96,7 +96,7 @@ class BaseEmbContextsDatasetV2(Dataset, ABC):
         else:
             self._img_encoding_transform = IdentityTransform()
 
-    def __getitem__(self, idx) -> (np.ndarray, np.ndarray, np.ndarray, np.ndarray):
+    def __getitem__(self, idx) -> (np.ndarray, Examples, Examples, np.ndarray):
         """Returns a dataset example given the example index.
 
         If 'self._saved_data_path' is None, it generates a new data item.
@@ -200,21 +200,21 @@ class BaseEmbContextsDatasetV2(Dataset, ABC):
                 f"Invalid spurious setting: '{self._spurious_setting}'. "
                 f"Expected 'no_spurious', 'sum', 'separate_token' or 'sum_with_spurious'.")
 
-        return input_seq, np.array(context), np.array(queries), query_indices
+        return input_seq, context, queries, query_indices
 
     def __len__(self):
         """Returns the total number of ICL instances."""
         return self._data_length
 
     @abstractmethod
-    def _generate_context_and_queries(self) -> (list[Example], list[Example]):
-        """Should sample context and query examples; and return (context, queries) pair."""
+    def _generate_context_and_queries(self) -> (Examples, Examples):
+        """Should sample context and query examples; and return a (context, queries) pair."""
         pass
 
     @abstractmethod
     def _prepare_context_image_encodings(
             self,
-            context: list[Example]
+            context: Examples,
     ) -> np.ndarray:
         """Should return a np.ndarray of stacked embeddings of context examples."""
         pass
@@ -222,7 +222,7 @@ class BaseEmbContextsDatasetV2(Dataset, ABC):
     @abstractmethod
     def _prepare_query_image_encodings(
             self,
-            queries: list[Example]
+            queries: Examples,
     ) -> np.ndarray:
         """Should return a np.ndarray of stacked embeddings of queries."""
         pass
@@ -253,7 +253,7 @@ class BaseEmbContextsDatasetV2(Dataset, ABC):
 
     def _maybe_add_label_noise(
             self,
-            context: list[Example],
+            context: Examples,
     ) -> None:
         if self._label_noise_ratio_interval:
             low, high = self._label_noise_ratio_interval
@@ -261,10 +261,7 @@ class BaseEmbContextsDatasetV2(Dataset, ABC):
             flip_p = np.random.uniform(low=low, high=high)
             label_noise_count = int(flip_p * len(context))
             label_noise_indices = np.random.choice(len(context), label_noise_count, replace=False)
-
-            for i in label_noise_indices:
-                idx, sp, label = context[i]
-                context[i] = (idx, sp, 1 - label)
+            context[label_noise_indices, 2] = 1 - context[label_noise_indices, 2]
 
     def _maybe_add_input_noise(
             self,

@@ -1,6 +1,5 @@
 from typing import Optional
 import logging
-import random
 
 import numpy as np
 
@@ -10,7 +9,7 @@ from src.utils.dataset_helpers.context_prep_utils import get_group_counts_based_
 
 log = logging.getLogger(__name__)
 
-Example = tuple[int, int, int]  # (index, spurious_label, class_label)
+Examples = np.ndarray  # shaped (num_examples, 3) with each row being a triplet (index, spurious_label, class_label)
 
 
 def _sample(
@@ -19,7 +18,7 @@ def _sample(
         num_examples: int,
         group_proportions: list[float],
         remaining_mask: Optional[np.ndarray] = None,
-) -> list[Example]:
+) -> Examples:
     """Samples a subset of examples given a dataset and groups of its examples."""
 
     if remaining_mask is None:
@@ -39,8 +38,8 @@ def _sample(
     for idx in indices:
         _, label, sp, _ = dataset[idx]
         examples.append((idx, sp, label))
-    random.shuffle(examples)
-    return examples
+    examples = np.array(examples)
+    return np.random.permutation(examples)
 
 
 class WaterbirdsEmbContextsDatasetV2(BaseEmbContextsDatasetV2):
@@ -149,11 +148,11 @@ class WaterbirdsEmbContextsDatasetV2(BaseEmbContextsDatasetV2):
         else:
             raise ValueError()
 
-    def _generate_context_and_queries(self) -> (list[Example], list[Example]):
+    def _generate_context_and_queries(self) -> (Examples, Examples):
         """Samples context and query examples.
 
         Returns:
-            a pair (context, queries), where both are lists of 2 * context_class_size (id, spurious, label) triplets.
+            a pair (context, queries), where both are of type Examples.
         """
 
         context = _sample(dataset=self._context_set,
@@ -163,8 +162,7 @@ class WaterbirdsEmbContextsDatasetV2(BaseEmbContextsDatasetV2):
 
         if self._context_split == self._query_split:
             remaining_mask = np.ones(len(self._context_set), dtype=bool)
-            for idx, _, _ in context:
-                remaining_mask[idx] = False
+            remaining_mask[context[:, 0]] = False
         else:
             remaining_mask = None
 
@@ -175,14 +173,14 @@ class WaterbirdsEmbContextsDatasetV2(BaseEmbContextsDatasetV2):
                           remaining_mask=remaining_mask)
 
         if self._randomly_swap_labels and np.random.rand() < 0.5:
-            context = [(idx, sp, 1 - label) for idx, sp, label in context]
-            queries = [(idx, sp, 1 - label) for idx, sp, label in queries]
+            context[:, 2] = 1 - context[:, 2]
+            queries[:, 2] = 1 - queries[:, 2]
 
         return context, queries
 
     def _prepare_context_image_encodings(
             self,
-            context: list[Example]
+            context: Examples,
     ) -> np.ndarray:
         """Returns a matrix of shape [2*C, D] containing context example encodings."""
         return np.stack(
@@ -191,7 +189,7 @@ class WaterbirdsEmbContextsDatasetV2(BaseEmbContextsDatasetV2):
 
     def _prepare_query_image_encodings(
             self,
-            queries: list[Example]
+            queries: Examples,
     ) -> np.ndarray:
         """Returns a matrix of shape [2*C, D] containing query example encodings."""
         return np.stack(

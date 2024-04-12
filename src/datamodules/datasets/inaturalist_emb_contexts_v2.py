@@ -3,14 +3,13 @@ import logging
 import os
 import pandas as pd
 import numpy as np
-import random
 
 from src.datamodules.datasets.base_emb_contexts_v2 import BaseEmbContextsDatasetV2
 from src.utils.dataset_helpers.context_prep_utils import generate_spurious_labels, prepare_context_or_query
 
 log = logging.getLogger(__name__)
 
-Example = tuple[int, int, int]  # (index, spurious_label, class_label)
+Examples = np.ndarray  # shaped (num_examples, 3) with each row being a triplet (index, spurious_label, class_label)
 
 
 class INaturalistEmbContextsDatasetV2(BaseEmbContextsDatasetV2):
@@ -98,11 +97,11 @@ class INaturalistEmbContextsDatasetV2(BaseEmbContextsDatasetV2):
 
         self._minority_group_proportion = minority_group_proportion
 
-    def _generate_context_and_queries(self) -> (list[Example], list[Example]):
+    def _generate_context_and_queries(self) -> (Examples, Examples):
         """Samples context and query examples.
 
         Returns:
-            a pair (context, queries), where both are lists of 2 * context_class_size (id, spurious, label) triplets.
+            a pair (context, queries), where both are of type Examples.
         """
         # Randomly selecting two categories
         if self._class1_split != self._class2_split:
@@ -157,7 +156,7 @@ class INaturalistEmbContextsDatasetV2(BaseEmbContextsDatasetV2):
 
     def _prepare_image_encodings(
             self,
-            examples: list[Example],
+            examples: Examples,
     ) -> np.ndarray:
         """
         Transforms image encodings based on their labels using the appropriate encoding transformer.
@@ -175,12 +174,12 @@ class INaturalistEmbContextsDatasetV2(BaseEmbContextsDatasetV2):
 
     def _prepare_context_image_encodings(
             self,
-            context: list[Example]
+            context: Examples,
     ) -> np.ndarray:
         return self._prepare_image_encodings(context)
 
     def _prepare_query_image_encodings(
             self,
-            queries: list[Example]
+            queries: Examples,
     ) -> np.ndarray:
         return self._prepare_image_encodings(queries)

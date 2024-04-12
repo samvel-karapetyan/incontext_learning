@@ -1,8 +1,6 @@
-import random
-
 import numpy as np
 
-Example = tuple[int, int, int]  # (index, spurious_label, class_label)
+Examples = np.ndarray  # shaped (num_examples, 3) with each row being a triplet (index, spurious_label, class_label)
 
 
 def prepare_context_or_query(
@@ -11,17 +9,14 @@ def prepare_context_or_query(
         cat1_spurious_labels: list[int],
         cat2_spurious_labels: list[int],
         cat1_class_label: int,
-        cat2_class_label: int) -> list[Example]:
+        cat2_class_label: int) -> Examples:
     """Combines and shuffles list of examples from 2 classes."""
     cat1_class_labels = [cat1_class_label] * len(cat1_indices)
     cat2_class_labels = [cat2_class_label] * len(cat2_indices)
-    cat1_examples = list(zip(
-        cat1_indices, cat1_spurious_labels, cat1_class_labels))
-    cat2_examples = list(zip(
-        cat2_indices, cat2_spurious_labels, cat2_class_labels))
-    examples = cat1_examples + cat2_examples
-    random.shuffle(examples)
-    return examples
+    cat1_examples = np.stack([cat1_indices, cat1_spurious_labels, cat1_class_labels], axis=1)
+    cat2_examples = np.stack([cat2_indices, cat2_spurious_labels, cat2_class_labels], axis=1)
+    examples = np.concatenate([cat1_examples, cat2_examples], axis=0)
+    return np.random.permutation(examples)
 
 
 def generate_spurious_labels(
@@ -91,11 +86,11 @@ def get_query_example_tokens(
 def get_group_counts_based_on_proportions(
         num_examples: int,
         group_proportions: list[float]) -> list[int]:
-    """Computes group sizes based on proprtions."""
+    """Computes group sizes based on proportions."""
     assert np.allclose(np.sum(group_proportions), 1.0)
     group_counts = [int(num_examples * p) for p in group_proportions]
     cur_sum = sum(group_counts)
     while cur_sum < num_examples:
-        group_counts[np.random.randint(len(group_proportions))] += 1
+        group_counts[2 * np.random.randint(2) + np.random.randint(2)] += 1
         cur_sum += 1
     return group_counts
