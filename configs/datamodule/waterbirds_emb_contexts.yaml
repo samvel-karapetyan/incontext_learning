@@ -8,7 +8,7 @@ root_dir: ${oc.env:DATA_ROOT_DIR}
 encoding_extractor: dinov2_vitb14
 saved_val_sets_path: null # ${datamodule.root_dir}/waterbirds/context_val_sets_${datamodule.context_class_size}/${datamodule.encoding_extractor}
 
-train_len: ${trainer.max_steps}
+train_len: 2000000
 eval_len: 1024 # 2^n, because CombinedDataloader removes the last non-full batch
 
 batch_size: 32
