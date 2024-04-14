@@ -1,16 +1,26 @@
+from tqdm import tqdm
 import logging
 import random
 import numpy as np
-
-from tqdm import tqdm
-from scipy.stats import special_ortho_group
+import torch
 
 log = logging.getLogger(__name__)
 
 
+class IdentityTransform:
+    def __call__(self, image_enc: np.ndarray, **kwargs) -> np.ndarray:
+        return image_enc
+
+
+def generate_rot_matrix(d, device) -> np.ndarray:
+    a = torch.randn((d, d), dtype=torch.float, device=device)
+    q, r = torch.linalg.qr(a)
+    return q.cpu().numpy()
+
+
 class EncodingRotator:
     """
-    A class that applies random rotation to encoding vectors or matricesl.
+    A class that applies random rotation to encoding vectors or matrices.
 
     This class uses a set of predefined rotation matrices to transform encoding vectors or matrices.
     These rotation matrices are generated at initialization and stored to optimize performance,
@@ -29,9 +39,11 @@ class EncodingRotator:
             emb_size (int): The dimensionality of the rotation matrices and the encoding vectors they will transform.
         """
         log.info(f"Generating {n_matrices} rotation matrices")
-        self.rotation_matrices = [special_ortho_group.rvs(emb_size) for _ in tqdm(range(n_matrices))]
+        device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        self.rotation_matrices = [generate_rot_matrix(emb_size, device)
+                                  for _ in tqdm(range(n_matrices))]
 
-    def __call__(self, image_enc):
+    def __call__(self, image_enc: np.ndarray) -> np.ndarray:
         """
         Applies a random rotation transformation to an encoding vector or matrix.
 
@@ -45,4 +57,4 @@ class EncodingRotator:
             numpy.ndarray: The rotated encoding vector or matrix, having the same type and shape as the input.
         """
         rotation_matrix = random.choice(self.rotation_matrices)
-        return np.dot(image_enc, rotation_matrix).astype(image_enc.dtype)
+        return np.matmul(image_enc, rotation_matrix).astype(image_enc.dtype)

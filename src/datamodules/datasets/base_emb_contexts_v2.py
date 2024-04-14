@@ -5,8 +5,7 @@ import os
 import numpy as np
 
 from torch.utils.data import Dataset
-from src.utils.dataset_helpers import TokenGenerator
-from src.utils.dataset_helpers.encoding_transforms import EncodingRotator, IdentityTransform
+from src.utils.dataset_helpers import TokenGenerator, EncodingRotator, IdentityTransform
 from src.utils.dataset_helpers.context_prep_utils import get_context_example_tokens,\
     get_query_example_tokens
 
