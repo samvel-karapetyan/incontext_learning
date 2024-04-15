@@ -18,6 +18,7 @@ def _sample(
         num_examples: int,
         group_proportions: list[float],
         remaining_mask: Optional[np.ndarray] = None,
+        replace: bool = False,
 ) -> Examples:
     """Samples a subset of examples given a dataset and groups of its examples."""
 
@@ -31,7 +32,7 @@ def _sample(
     indices = []
     for i, group_count in enumerate(group_counts):
         all_group_items = np.where(remaining_mask & (dataset_groups == i))[0]
-        random_items = np.random.choice(all_group_items, group_count, replace=False)
+        random_items = np.random.choice(all_group_items, group_count, replace=replace)
         indices.extend(random_items)
 
     _, examples = dataset[indices]
@@ -158,7 +159,8 @@ class WaterbirdsEmbContextsDatasetV2(BaseEmbContextsDatasetV2):
         context = _sample(dataset=self._context_set,
                           dataset_groups=self._context_groups,
                           num_examples=2 * self._context_class_size,
-                          group_proportions=self._group_proportions)
+                          group_proportions=self._group_proportions,
+                          replace=(self._context_class_size > 50))
 
         if self._context_split == self._query_split:
             remaining_mask = np.ones(len(self._context_set), dtype=bool)
@@ -170,7 +172,8 @@ class WaterbirdsEmbContextsDatasetV2(BaseEmbContextsDatasetV2):
                           dataset_groups=self._query_groups,
                           num_examples=2 * self._context_class_size,
                           group_proportions=[0.25, 0.25, 0.25, 0.25],
-                          remaining_mask=remaining_mask)
+                          remaining_mask=remaining_mask,
+                          replace=(self._context_class_size > 50))
 
         if self._randomly_swap_labels and np.random.rand() < 0.5:
             context[:, 2] = 1 - context[:, 2]
