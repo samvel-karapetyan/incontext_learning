@@ -60,9 +60,11 @@ def get_context_example_tokens(
         return [img_encoding, c_spurious_token, class_token]
     if spurious_setting == 'sum_with_spurious':
         return [img_encoding + x_spurious_token, c_spurious_token, class_token]
+    if spurious_setting == 'waterbirds_sum':
+        return [img_encoding + c_spurious_token, class_token]
     raise ValueError(
         f"Invalid spurious setting: '{spurious_setting}'. "
-        f"Expected 'no_spurious', 'sum', 'separate_token' or 'sum_with_spurious'.")
+        f"Expected 'no_spurious', 'sum', 'separate_token', 'sum_with_spurious' or 'waterbirds_sum'.")
 
 
 def get_query_example_tokens(
@@ -78,9 +80,11 @@ def get_query_example_tokens(
         return [img_encoding]
     if spurious_setting == 'sum_with_spurious':
         return [img_encoding + x_spurious_token]
+    if spurious_setting == 'waterbirds_sum':
+        return [img_encoding]
     raise ValueError(
         f"Invalid spurious setting: '{spurious_setting}'. "
-        f"Expected 'no_spurious', 'sum', 'separate_token' or 'sum_with_spurious'.")
+        f"Expected 'no_spurious', 'sum', 'separate_token', 'sum_with_spurious' or 'waterbirds_sum'.")
 
 
 def get_group_counts_based_on_proportions(

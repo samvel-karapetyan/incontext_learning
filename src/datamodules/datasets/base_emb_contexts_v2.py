@@ -38,8 +38,8 @@ class BaseEmbContextsDatasetV2(Dataset, ABC):
         data_length (int): The length of the dataset.
         context_class_size (int): The size of each class in the context.
         spurious_setting (str): Determines the handling mode of spurious tokens in the dataset instances.
-                                Options include 'no_spurious'(x), 'sum'(x+c), 'separate_token'(x, c)
-                                or 'sum_with_spurious'(x+c, c).
+                                Options include 'no_spurious'(x), 'sum'(x+c), 'separate_token'(x, c),
+                                'sum_with_spurious'(x+c, c), or 'waterbirds_sum'(x+c').
         sp_token_generation_mode (str): Specifies whether the representations of two spurious labels should be
                                         'opposite' or 'random'.
         v1_behavior (bool): Whether intermediate queries should be the context examples.
@@ -190,14 +190,14 @@ class BaseEmbContextsDatasetV2(Dataset, ABC):
 
         input_seq = np.stack(input_seq)
 
-        if self._spurious_setting in ['no_spurious', 'sum']:
+        if self._spurious_setting in ['no_spurious', 'sum', 'waterbirds_sum']:
             query_indices = np.arange(2, input_seq.shape[0], 3)
         elif self._spurious_setting in ['separate_token', 'sum_with_spurious']:
             query_indices = np.arange(3, input_seq.shape[0], 4)
         else:
             raise ValueError(
                 f"Invalid spurious setting: '{self._spurious_setting}'. "
-                f"Expected 'no_spurious', 'sum', 'separate_token' or 'sum_with_spurious'.")
+                f"Expected 'no_spurious', 'sum', 'separate_token', 'sum_with_spurious', or 'waterbirds_sum'.")
 
         return input_seq, context, queries, query_indices
 

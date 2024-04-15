@@ -72,8 +72,8 @@ class WaterbirdsEmbContextsDatasetV2(BaseEmbContextsDatasetV2):
         context_class_size (int): The size of each class in the context.
         group_proportions (list[float]): Proportions for the 4 groups.
         spurious_setting (str): Determines the handling mode of spurious tokens in the dataset instances.
-                                Options include 'no_spurious'(x), 'sum'(x+c), 'separate_token'(x, c)
-                                or 'sum_with_spurious'(x+c, c).
+                                Options include 'no_spurious'(x), 'sum'(x+c), 'separate_token'(x, c),
+                                'sum_with_spurious'(x+c, c), or 'waterbirds_sum'(x+c').
         sp_token_generation_mode (str): Specifies whether the representations of two spurious labels should be
                                         'opposite' or 'random'.
         v1_behavior (bool): Whether intermediate queries should be the context examples.
@@ -155,7 +155,6 @@ class WaterbirdsEmbContextsDatasetV2(BaseEmbContextsDatasetV2):
         Returns:
             a pair (context, queries), where both are of type Examples.
         """
-
         context = _sample(dataset=self._context_set,
                           dataset_groups=self._context_groups,
                           num_examples=2 * self._context_class_size,
