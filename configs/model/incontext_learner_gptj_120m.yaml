@@ -4,7 +4,7 @@ network:
   _target_: src.models.incontext_learner_v2.GPTJModelV2
   config:
     _target_: transformers.GPTJConfig
-    n_positions: 2048  # for reference, setting class_context_size=50 with sum_with_spurious results in 400 tokens.
+    n_positions: 4096  # can fit context_class_size = 2048 / 3 ~= 682
     n_embd: 768
     n_layer: 12
     n_head: 12
