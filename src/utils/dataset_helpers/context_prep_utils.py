@@ -45,6 +45,21 @@ def generate_spurious_labels(
     return spurious_tokens
 
 
+def encode_context_x(token: np.ndarray) -> np.ndarray:
+    token[:3] = np.array([1.0, 0.0, 0.0], dtype=token.dtype)
+    return token
+
+
+def encode_annotation(token: np.ndarray) -> np.ndarray:
+    token[:3] = np.array([0.0, 1.0, 0.0], dtype=token.dtype)
+    return token
+
+
+def encode_query_x(token: np.ndarray) -> np.ndarray:
+    token[:3] = np.array([0.0, 0.0, 1.0], dtype=token.dtype)
+    return token
+
+
 def get_context_example_tokens(
         img_encoding: np.ndarray,
         x_spurious_token: np.ndarray,
@@ -52,19 +67,15 @@ def get_context_example_tokens(
         class_token: np.ndarray,
         spurious_setting: str,
 ) -> list[np.ndarray]:
-    if spurious_setting == 'no_spurious':
-        return [img_encoding, class_token]
-    if spurious_setting == 'sum':
-        return [img_encoding + x_spurious_token, class_token]
-    if spurious_setting == 'separate_token':
-        return [img_encoding, c_spurious_token, class_token]
-    if spurious_setting == 'sum_with_spurious':
-        return [img_encoding + x_spurious_token, c_spurious_token, class_token]
-    if spurious_setting == 'waterbirds_sum':
-        return [img_encoding + c_spurious_token, class_token]
-    raise ValueError(
-        f"Invalid spurious setting: '{spurious_setting}'. "
-        f"Expected 'no_spurious', 'sum', 'separate_token', 'sum_with_spurious' or 'waterbirds_sum'.")
+    if spurious_setting in ['inat_no_spurious', 'wb_erm']:
+        return [encode_context_x(img_encoding), encode_annotation(class_token)]
+    if spurious_setting == 'inat_sum_erm':
+        return [encode_context_x(img_encoding + x_spurious_token), encode_annotation(class_token)]
+    if spurious_setting == 'wb_dro':
+        return [encode_context_x(img_encoding), encode_annotation(class_token + c_spurious_token)]
+    if spurious_setting == 'inat_sum_dro':
+        return [encode_context_x(img_encoding + x_spurious_token), encode_annotation(class_token + c_spurious_token)]
+    raise ValueError(f"Invalid spurious setting: '{spurious_setting}'.")
 
 
 def get_query_example_tokens(
@@ -72,19 +83,13 @@ def get_query_example_tokens(
         x_spurious_token: np.ndarray,
         spurious_setting: str,
 ) -> list[np.ndarray]:
-    if spurious_setting == 'no_spurious':
-        return [img_encoding]
-    if spurious_setting == 'sum':
-        return [img_encoding + x_spurious_token]
-    if spurious_setting == 'separate_token':
-        return [img_encoding]
-    if spurious_setting == 'sum_with_spurious':
-        return [img_encoding + x_spurious_token]
-    if spurious_setting == 'waterbirds_sum':
-        return [img_encoding]
-    raise ValueError(
-        f"Invalid spurious setting: '{spurious_setting}'. "
-        f"Expected 'no_spurious', 'sum', 'separate_token', 'sum_with_spurious' or 'waterbirds_sum'.")
+    if spurious_setting in ['wb_erm', 'wb_dro']:
+        return [encode_query_x(img_encoding)]
+    if spurious_setting == 'inat_no_spurious':
+        return [encode_query_x(img_encoding)]
+    if spurious_setting in ['inat_sum_erm', 'inat_sum_dro']:
+        return [encode_query_x(img_encoding + x_spurious_token)]
+    raise ValueError(f"Invalid spurious setting: '{spurious_setting}'.")
 
 
 def get_group_counts_based_on_proportions(

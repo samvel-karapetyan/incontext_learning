@@ -41,8 +41,6 @@ class CUBEmbContextsDatasetV2(BaseEmbContextsDatasetV2):
         context_class_size (int): The size of each class in the context.
         minority_group_proportion (float): The proportion of the minority group in the context per class.
         spurious_setting (str): Determines the handling mode of spurious tokens in the dataset instances.
-                                Options include 'no_spurious'(x), 'sum'(x+c), 'separate_token'(x, c),
-                                'sum_with_spurious'(x+c, c), or 'waterbirds_sum'(x+c').
         sp_token_generation_mode (str): Specifies whether the representations of two spurious labels should be
                                         'opposite' or 'random'.
         v1_behavior (bool): Whether intermediate queries should be the context examples.

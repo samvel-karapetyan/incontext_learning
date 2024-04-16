@@ -38,8 +38,6 @@ class BaseEmbContextsDatasetV2(Dataset, ABC):
         data_length (int): The length of the dataset.
         context_class_size (int): The size of each class in the context.
         spurious_setting (str): Determines the handling mode of spurious tokens in the dataset instances.
-                                Options include 'no_spurious'(x), 'sum'(x+c), 'separate_token'(x, c),
-                                'sum_with_spurious'(x+c, c), or 'waterbirds_sum'(x+c').
         sp_token_generation_mode (str): Specifies whether the representations of two spurious labels should be
                                         'opposite' or 'random'.
         v1_behavior (bool): Whether intermediate queries should be the context examples.
@@ -167,6 +165,7 @@ class BaseEmbContextsDatasetV2(Dataset, ABC):
         )
 
         input_seq = []
+        query_indices = []
         for i in range(len(context)):
             # Add current context related tokens.
             _, sp, label = context[i]
@@ -182,24 +181,17 @@ class BaseEmbContextsDatasetV2(Dataset, ABC):
             # NOTE: no matter what spurious setting we use, query spurious label
             #       and class label will not get their own tokens.
             _, sp, _ = queries[i]
-            input_seq.extend(get_query_example_tokens(
+            query_tokens = get_query_example_tokens(
                 img_encoding=query_img_encodings[i],
                 x_spurious_token=x_spurious_tokens[sp],
-                spurious_setting=self._spurious_setting,
-            ))
+                spurious_setting=self._spurious_setting)
+            assert len(query_tokens) == 1
+            query_indices.append(len(input_seq))
+            input_seq.extend(query_tokens)
 
         input_seq = np.stack(input_seq)
 
-        if self._spurious_setting in ['no_spurious', 'sum', 'waterbirds_sum']:
-            query_indices = np.arange(2, input_seq.shape[0], 3)
-        elif self._spurious_setting in ['separate_token', 'sum_with_spurious']:
-            query_indices = np.arange(3, input_seq.shape[0], 4)
-        else:
-            raise ValueError(
-                f"Invalid spurious setting: '{self._spurious_setting}'. "
-                f"Expected 'no_spurious', 'sum', 'separate_token', 'sum_with_spurious', or 'waterbirds_sum'.")
-
-        return input_seq, context, queries, query_indices
+        return input_seq, context, queries, np.array(query_indices)
 
     def __len__(self):
         """Returns the total number of ICL instances."""
