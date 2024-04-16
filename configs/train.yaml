@@ -11,7 +11,7 @@ v1_behavior: False
 
 defaults:
   - datamodule: waterbirds_emb_contexts  # Options: inaturalist_emb_contexts, waterbirds_emb_contexts
-  - model: incontext_learner_gptj_v2
+  - model: incontext_learner_gptj_80m
   - optimizer: adam
   - scheduler: warmup_cosine_annealing
   - trainer: default
