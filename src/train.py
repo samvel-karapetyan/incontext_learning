@@ -1,6 +1,7 @@
 import logging
 
 from hydra.utils import instantiate
+from pytorch_lightning.utilities import model_summary
 from omegaconf import DictConfig
 
 from src.utils import log_hyperparameters, setup_aim_logger
@@ -14,6 +15,7 @@ def train(config: DictConfig):
                         optimizer_conf=config.optimizer,
                         scheduler_conf=config.scheduler
                         )
+    log.info(repr(model_summary.summarize(model)))
     log.info(f"Instantiating datamodule <{config.datamodule._target_}>")
     datamodule = instantiate(config.datamodule)
 
