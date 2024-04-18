@@ -42,7 +42,8 @@ class WaterbirdsEmbContextsDataModuleV2(pl.LightningDataModule):
                  input_noise_norm_interval: list,
                  permute_input_dim: bool,
                  ask_context_prob: float,
-                 *args, **kwargs):
+                 val_sets: list[str],
+                 **kwargs):
         super(WaterbirdsEmbContextsDataModuleV2, self).__init__()
 
         self._core_params = dict(
@@ -71,6 +72,7 @@ class WaterbirdsEmbContextsDataModuleV2(pl.LightningDataModule):
         self._saved_val_sets_path = saved_val_sets_path
         self._batch_size = batch_size
         self._num_workers = num_workers
+        self._val_sets = val_sets
 
         # Placeholders for dataset splits
         self._train_dataset_for_fit = None
@@ -138,27 +140,20 @@ class WaterbirdsEmbContextsDataModuleV2(pl.LightningDataModule):
         return DataLoader(self._train_dataset_for_fit, batch_size=self._batch_size, num_workers=self._num_workers)
 
     def val_dataloader(self):
-        """Creates a combined dataloader for all validation datasets.
-
-        Returns:
-            CombinedLoader: A combined DataLoader for "train", "train_val", 
-                        "train_test" and "val" validation sets.
-        """
-        train_dataloader = DataLoader(self._train_dataset_for_eval,
-                                      batch_size=self._batch_size,
-                                      num_workers=self._num_workers)
-        train_val_dataloader = DataLoader(self._train_val_dataset,
-                                          batch_size=self._batch_size,
-                                          num_workers=self._num_workers)
-        train_test_dataloader = DataLoader(self._train_test_dataset,
+        """Creates a combined dataloader for all validation datasets."""
+        all_loaders = {
+            self.ValSets.TRAIN: DataLoader(self._train_dataset_for_eval,
                                            batch_size=self._batch_size,
-                                           num_workers=self._num_workers)
-        val_dataloader = DataLoader(self._val_dataset,
-                                    batch_size=self._batch_size,
-                                    num_workers=self._num_workers)
-
-        return CombinedLoader({self.ValSets.TRAIN: train_dataloader,
-                               self.ValSets.TRAIN_VAL: train_val_dataloader,
-                               self.ValSets.TRAIN_TEST: train_test_dataloader,
-                               self.ValSets.VAL: val_dataloader},
-                              mode="sequential")
+                                           num_workers=self._num_workers),
+            self.ValSets.TRAIN_VAL: DataLoader(self._train_val_dataset,
+                                               batch_size=self._batch_size,
+                                               num_workers=self._num_workers),
+            self.ValSets.TRAIN_TEST: DataLoader(self._train_test_dataset,
+                                                batch_size=self._batch_size,
+                                                num_workers=self._num_workers),
+            self.ValSets.VAL: DataLoader(self._val_dataset,
+                                         batch_size=self._batch_size,
+                                         num_workers=self._num_workers)
+        }
+        selected_loaders = {k: v for k, v in all_loaders.items() if k in self._val_sets}
+        return CombinedLoader(selected_loaders, mode="sequential")
