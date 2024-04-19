@@ -3,7 +3,6 @@ import logging
 
 import pytorch_lightning as pl
 
-from enum import Enum
 from torch.utils.data import DataLoader
 from pytorch_lightning.utilities import CombinedLoader
 
@@ -15,12 +14,6 @@ log = logging.getLogger(__name__)
 
 class WaterbirdsEmbContextsDataModuleV2(pl.LightningDataModule):
     """A PyTorch Lightning data module for Waterbirds in-context learning instances."""
-    class ValSets(Enum):
-        """Enum of validation splits of WaterbirdsEmbContextsDataModuleV2."""
-        TRAIN = "train"
-        TRAIN_VAL = "train_val"
-        TRAIN_TEST = "train_test"
-        VAL = "val"
 
     def __init__(self,
                  root_dir: str,
@@ -142,18 +135,18 @@ class WaterbirdsEmbContextsDataModuleV2(pl.LightningDataModule):
     def val_dataloader(self):
         """Creates a combined dataloader for all validation datasets."""
         all_loaders = {
-            self.ValSets.TRAIN: DataLoader(self._train_dataset_for_eval,
+            'train': DataLoader(self._train_dataset_for_eval,
                                            batch_size=self._batch_size,
                                            num_workers=self._num_workers),
-            self.ValSets.TRAIN_VAL: DataLoader(self._train_val_dataset,
-                                               batch_size=self._batch_size,
-                                               num_workers=self._num_workers),
-            self.ValSets.TRAIN_TEST: DataLoader(self._train_test_dataset,
-                                                batch_size=self._batch_size,
-                                                num_workers=self._num_workers),
-            self.ValSets.VAL: DataLoader(self._val_dataset,
-                                         batch_size=self._batch_size,
-                                         num_workers=self._num_workers)
+            'train_val': DataLoader(self._train_val_dataset,
+                                    batch_size=self._batch_size,
+                                    num_workers=self._num_workers),
+            'train_test': DataLoader(self._train_test_dataset,
+                                     batch_size=self._batch_size,
+                                     num_workers=self._num_workers),
+            'val': DataLoader(self._val_dataset,
+                              batch_size=self._batch_size,
+                              num_workers=self._num_workers)
         }
         selected_loaders = {k: v for k, v in all_loaders.items() if k in self._val_sets}
         return CombinedLoader(selected_loaders, mode="sequential")
