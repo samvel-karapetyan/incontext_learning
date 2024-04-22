@@ -175,7 +175,7 @@ class WaterbirdsEmbContextsDatasetV2(BaseEmbContextsDatasetV2):
                           num_examples=num_query_examples,
                           group_proportions=self._query_group_proportions,
                           remaining_mask=remaining_mask,
-                          replace=False)
+                          replace=True)  # NOTE: it is ok to repeat queries. This allows larger context sizes.
 
         if self._randomly_swap_labels and np.random.rand() < 0.5:
             context[:, 2] = 1 - context[:, 2]
