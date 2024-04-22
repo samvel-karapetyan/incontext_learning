@@ -22,10 +22,11 @@ class CUBEmbContextsDataModuleV2(pl.LightningDataModule):
                  batch_size: int,
                  num_workers: Optional[int],
                  context_class_size: int,
-                 minority_group_proportion: float,
+                 context_minority_group_proportion: float,
+                 query_minority_group_proportion: float,
                  spurious_setting: str,
                  sp_token_generation_mode: str,
-                 v1_behavior: bool,
+                 use_context_as_intermediate_queries: bool,
                  rotate_encodings: bool,
                  n_rotation_matrices: int,
                  label_noise_ratio_interval: list,
@@ -43,10 +44,11 @@ class CUBEmbContextsDataModuleV2(pl.LightningDataModule):
         self._batch_size = batch_size
         self._num_workers = num_workers
         self._context_class_size = context_class_size
-        self._minority_group_proportion = minority_group_proportion
+        self._context_minority_group_proportion = context_minority_group_proportion
+        self._query_minority_group_proportion = query_minority_group_proportion
         self._spurious_setting = spurious_setting
         self._sp_token_generation_mode = sp_token_generation_mode
-        self._v1_behavior = v1_behavior
+        self._use_context_as_intermediate_queries = use_context_as_intermediate_queries
         self._rotate_encodings = rotate_encodings
         self._n_rotation_matrices = n_rotation_matrices
         self._label_noise_ratio_interval = label_noise_ratio_interval
@@ -66,10 +68,11 @@ class CUBEmbContextsDataModuleV2(pl.LightningDataModule):
             encoding_extractor=self._encoding_extractor,
             data_length=self._data_length,
             context_class_size=self._context_class_size,
-            minority_group_proportion=self._minority_group_proportion,
+            context_minority_group_proportion=self._context_minority_group_proportion,
+            query_minority_group_proportion=self._query_minority_group_proportion,
             spurious_setting=self._spurious_setting,
             sp_token_generation_mode=self._sp_token_generation_mode,
-            v1_behavior=self._v1_behavior,
+            use_context_as_intermediate_queries=self._use_context_as_intermediate_queries,
             rotate_encodings=False,
             label_noise_ratio_interval=None,
             input_noise_norm_interval=None,

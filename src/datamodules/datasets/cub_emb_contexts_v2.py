@@ -21,10 +21,11 @@ class CUBEmbContextsDatasetV2(BaseEmbContextsDatasetV2):
                  encoding_extractor: str,
                  data_length: int,
                  context_class_size: int,
-                 minority_group_proportion: float,
+                 context_minority_group_proportion: float,
+                 query_minority_group_proportion: float,
                  spurious_setting: str,
                  sp_token_generation_mode: str,
-                 v1_behavior: bool = False,
+                 use_context_as_intermediate_queries: bool = False,
                  rotate_encodings: bool = False,
                  n_rotation_matrices: Optional[int] = None,
                  label_noise_ratio_interval: Optional[list] = None,
@@ -39,11 +40,12 @@ class CUBEmbContextsDatasetV2(BaseEmbContextsDatasetV2):
         encoding_extractor (str): The name of the encoding extractor used.
         data_length (int): The length of the dataset.
         context_class_size (int): The size of each class in the context.
-        minority_group_proportion (float): The proportion of the minority group in the context per class.
+        context_minority_group_proportion (float): The proportion of the minority group in the context per class.
+        query_minority_group_proportion (float): The proportion of the minority group in the context per class.
         spurious_setting (str): Determines the handling mode of spurious tokens in the dataset instances.
         sp_token_generation_mode (str): Specifies whether the representations of two spurious labels should be
                                         'opposite' or 'random'.
-        v1_behavior (bool): Whether intermediate queries should be the context examples.
+        use_context_as_intermediate_queries (bool): Whether intermediate queries should be the context examples.
         rotate_encodings (bool): Determines if image encodings are rotated. True enables rotation
                                  based on class labels, while False bypasses rotation.
         n_rotation_matrices (int): Specifies the number of rotation matrices to generate and store.
@@ -63,7 +65,7 @@ class CUBEmbContextsDatasetV2(BaseEmbContextsDatasetV2):
             context_class_size=context_class_size,
             spurious_setting=spurious_setting,
             sp_token_generation_mode=sp_token_generation_mode,
-            v1_behavior=v1_behavior,
+            use_context_as_intermediate_queries=use_context_as_intermediate_queries,
             rotate_encodings=rotate_encodings,
             n_rotation_matrices=n_rotation_matrices,
             label_noise_ratio_interval=label_noise_ratio_interval,
@@ -89,9 +91,14 @@ class CUBEmbContextsDatasetV2(BaseEmbContextsDatasetV2):
 
         self._categories = self._dataframe["category"].unique()
 
-        self._minority_group_proportion = minority_group_proportion
+        self._context_minority_group_proportion = context_minority_group_proportion
+        self._query_minority_group_proportion = query_minority_group_proportion
 
-    def _generate_context_and_queries(self) -> (Examples, Examples):
+    def _generate_context_and_queries(
+            self,
+            num_context_examples: int,
+            num_query_examples: int,
+    ) -> (Examples, Examples):
         """Samples context and query examples.
 
         Returns:
@@ -100,14 +107,20 @@ class CUBEmbContextsDatasetV2(BaseEmbContextsDatasetV2):
         # Randomly selecting two categories
         category1, category2 = np.random.choice(self._categories, size=2, replace=False)
 
-        # Sampling 2 * context_class_size examples from each category (half for context and half for queries)
+        context_cat1_size = num_context_examples // 2
+        context_cat2_size = (num_context_examples + 1) // 2
+        query_cat1_size = num_query_examples // 2
+        query_cat2_size = (num_query_examples + 1) // 2
+
         df = self._dataframe  # shorthand
-        cat1_indices = df.loc[df["category"] == category1, "image_id"].sample(2 * self._context_class_size).tolist()
-        cat2_indices = df.loc[df["category"] == category2, "image_id"].sample(2 * self._context_class_size).tolist()
-        cat1_context_indices = cat1_indices[:self._context_class_size]
-        cat1_query_indices = cat1_indices[self._context_class_size:]
-        cat2_context_indices = cat2_indices[:self._context_class_size]
-        cat2_query_indices = cat2_indices[self._context_class_size:]
+        cat1_indices = df.loc[df["category"] == category1, "image_id"].sample(
+            context_cat1_size + query_cat1_size).tolist()
+        cat2_indices = df.loc[df["category"] == category2, "image_id"].sample(
+            context_cat2_size + query_cat2_size).tolist()
+        cat1_context_indices = cat1_indices[:context_cat1_size]
+        cat1_query_indices = cat1_indices[context_cat1_size:]
+        cat2_context_indices = cat2_indices[:context_cat2_size]
+        cat2_query_indices = cat2_indices[context_cat2_size:]
 
         # Shuffling class and spurious labels
         class_labels, spurious_labels = [0, 1], [0, 1]
@@ -116,15 +129,15 @@ class CUBEmbContextsDatasetV2(BaseEmbContextsDatasetV2):
 
         # Generate spurious labels for context examples
         cat1_context_spurious_labels = generate_spurious_labels(
-            spurious_label1, spurious_label2, self._context_class_size, self._minority_group_proportion)
+            spurious_label1, spurious_label2, self._context_class_size, self._context_minority_group_proportion)
         cat2_context_spurious_labels = generate_spurious_labels(
-            spurious_label2, spurious_label1, self._context_class_size, self._minority_group_proportion)
+            spurious_label2, spurious_label1, self._context_class_size, self._context_minority_group_proportion)
 
-        # Generate spurious labels for queries. Here we use balanced sampling (no minority / majority).
+        # Generate spurious labels for queries
         cat1_query_spurious_labels = generate_spurious_labels(
-            spurious_label1, spurious_label2, self._context_class_size, 0.5)
+            spurious_label1, spurious_label2, self._context_class_size, self._query_minority_group_proportion)
         cat2_query_spurious_labels = generate_spurious_labels(
-            spurious_label2, spurious_label1, self._context_class_size, 0.5)
+            spurious_label2, spurious_label1, self._context_class_size, self._query_minority_group_proportion)
 
         # Prepare full context information
         context = prepare_context_or_query(

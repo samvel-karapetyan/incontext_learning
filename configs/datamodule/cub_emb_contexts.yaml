@@ -2,7 +2,8 @@ _target_: src.datamodules.CUBEmbContextsDataModuleV2
 name: cub_emb_contexts
 
 context_class_size: 50
-minority_group_proportion: 0.1
+context_minority_group_proportion: 0.1
+query_minority_group_proportion: 0.5
 
 dataset_path: ${oc.env:DATA_ROOT_DIR}/cub
 encoding_extractor: dinov2_vitb14
@@ -16,7 +17,7 @@ num_workers: 4
 spurious_setting: ${spurious_setting}  # Use the global value of 'spurious_setting'
 sp_token_generation_mode: ${sp_token_generation_mode}  # Use the global value of 'sp_token_generation_mode'
 
-v1_behavior: ${v1_behavior}
+use_context_as_intermediate_queries: ${use_context_as_intermediate_queries}
 
 rotate_encodings: False
 n_rotation_matrices: 1000  # 1000 works well, but is slow. Reduce for efficiency when experimenting

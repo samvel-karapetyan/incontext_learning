@@ -29,10 +29,11 @@ class INaturalistEmbContextsDataModuleV2(pl.LightningDataModule):
                  batch_size: int,
                  num_workers: Optional[int],
                  context_class_size: int,
-                 minority_group_proportion: float,
+                 context_minority_group_proportion: float,
+                 query_minority_group_proportion: float,
                  spurious_setting: str,
                  sp_token_generation_mode: str,
-                 v1_behavior: bool,
+                 use_context_as_intermediate_queries: bool,
                  rotate_encodings: bool,
                  n_rotation_matrices: int,
                  label_noise_ratio_interval: list,
@@ -46,10 +47,11 @@ class INaturalistEmbContextsDataModuleV2(pl.LightningDataModule):
             dataset_path=dataset_path,
             encoding_extractor=encoding_extractor,
             context_class_size=context_class_size,
-            minority_group_proportion=minority_group_proportion,
+            context_minority_group_proportion=context_minority_group_proportion,
+            query_minority_group_proportion=query_minority_group_proportion,
             spurious_setting=spurious_setting,
             sp_token_generation_mode=sp_token_generation_mode,
-            v1_behavior=v1_behavior,
+            use_context_as_intermediate_queries=use_context_as_intermediate_queries,
         )
 
         self._aug_params = dict(
