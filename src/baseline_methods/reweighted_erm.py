@@ -3,14 +3,13 @@ import torch.nn as nn
 
 from src.baseline_methods.base_method import BaseMethod
 
-
-class ERM(BaseMethod):
-    """Empirical Risk Minimization (ERM) method for binary classification."""
+class ReweightedERM(BaseMethod):
+    """Reweighted Empirical Risk Minimization (ERM) method for binary classification."""
     def __init__(self,
                  n_epochs: int = 100,
                  lr: float = 0.01,
                  device: str = "cpu"):
-        super(ERM, self).__init__()
+        super(ReweightedERM, self).__init__()
         self._n_epochs = n_epochs
         self._lr = lr
         self._device = device
@@ -27,8 +26,11 @@ class ERM(BaseMethod):
         model = nn.Linear(x_train.shape[1], 1, device=self._device)
 
         # Loss and optimizer
-        criterion = nn.BCEWithLogitsLoss()
+        criterion = nn.BCEWithLogitsLoss(reduction='none')  # Use reduction='none' to get individual losses
         optimizer = torch.optim.Adam(model.parameters(), lr=self._lr)
+
+        # Initialize sample weights
+        sample_weights = torch.ones_like(y_train, dtype=torch.float32)
 
         # Training loop
         for _ in range(self._n_epochs):
@@ -36,6 +38,12 @@ class ERM(BaseMethod):
             optimizer.zero_grad()
             outputs = model(x_train)
             loss = criterion(outputs, y_train.unsqueeze(1).float())
+            
+            # Reweighting step
+            sample_weights = torch.exp(loss.detach())  # Update weights based on loss
+            sample_weights /= torch.sum(sample_weights)  # Normalize weights
+            
+            loss = torch.sum(loss * sample_weights)  # Weighted loss
             loss.backward()
             optimizer.step()
 
