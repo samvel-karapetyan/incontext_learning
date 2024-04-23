@@ -22,7 +22,7 @@ def log_hyperparameters(
         hparams["seed"] = config["seed"]
     hparams["spurious_setting"] = config["spurious_setting"]
     hparams["sp_token_generation_mode"] = config["sp_token_generation_mode"]
-    hparams["v1_behavior"] = config["v1_behavior"]
+    hparams["use_context_as_intermediate_queries"] = config["use_context_as_intermediate_queries"]
     hparams["datamodule"] = config["datamodule"]
     hparams["model"] = config["model"]
     hparams["optimizer"] = config["optimizer"]

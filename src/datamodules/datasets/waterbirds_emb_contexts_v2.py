@@ -49,10 +49,11 @@ class WaterbirdsEmbContextsDatasetV2(BaseEmbContextsDatasetV2):
                  context_split: str,
                  query_split: str,
                  context_class_size: int,
-                 group_proportions: list[float],
+                 context_group_proportions: list[float],
+                 query_group_proportions: list[float],
                  spurious_setting: str,
                  sp_token_generation_mode: str,
-                 v1_behavior: bool = False,
+                 use_context_as_intermediate_queries: bool = False,
                  rotate_encodings: bool = False,
                  n_rotation_matrices: Optional[int] = None,
                  randomly_swap_labels: bool = False,
@@ -70,11 +71,12 @@ class WaterbirdsEmbContextsDatasetV2(BaseEmbContextsDatasetV2):
         context_split (str): The split where context examples are selected from ('train' or 'val').
         query_split (str): The split where query examples are selected from ('train' or 'val').
         context_class_size (int): The size of each class in the context.
-        group_proportions (list[float]): Proportions for the 4 groups.
+        context_group_proportions(list[float]): Proportions for the 4 groups in contexts.
+        query_group_proportions (list[float]): Proportions for the 4 groups in queries.
         spurious_setting (str): Determines the handling mode of spurious tokens in the dataset instances.
         sp_token_generation_mode (str): Specifies whether the representations of two spurious labels should be
                                         'opposite' or 'random'.
-        v1_behavior (bool): Whether intermediate queries should be the context examples.
+        use_context_as_intermediate_queries (bool): Whether intermediate queries should be the context examples.
         rotate_encodings (bool): Determines if image encodings are rotated. True enables rotation
                                  based on class labels, while False bypasses rotation.
         n_rotation_matrices (int): Specifies the number of rotation matrices to generate and store.
@@ -97,7 +99,7 @@ class WaterbirdsEmbContextsDatasetV2(BaseEmbContextsDatasetV2):
             context_class_size=context_class_size,
             spurious_setting=spurious_setting,
             sp_token_generation_mode=sp_token_generation_mode,
-            v1_behavior=v1_behavior,
+            use_context_as_intermediate_queries=use_context_as_intermediate_queries,
             rotate_encodings=rotate_encodings,
             n_rotation_matrices=n_rotation_matrices,
             label_noise_ratio_interval=label_noise_ratio_interval,
@@ -107,7 +109,8 @@ class WaterbirdsEmbContextsDatasetV2(BaseEmbContextsDatasetV2):
             saved_data_path=saved_data_path,
         )
 
-        self._group_proportions = group_proportions
+        self._context_group_proportions = context_group_proportions
+        self._query_group_proportions = query_group_proportions
         self._randomly_swap_labels = randomly_swap_labels
 
         dataset = WaterbirdsExtracted(root_dir,
@@ -122,34 +125,34 @@ class WaterbirdsEmbContextsDatasetV2(BaseEmbContextsDatasetV2):
             _, examples = ds[all_indices]
             return 2 * examples[:, 2] + examples[:, 1]  # 2 * y + c
 
-        train_groups = get_groups(train_set)
-        val_groups = get_groups(val_set)
-        test_groups = get_groups(test_set)
-
         self._context_split = context_split
         if context_split == 'train':
             self._context_set = train_set
-            self._context_groups = train_groups
+            self._context_groups = get_groups(train_set)
         elif context_split == 'val':
             self._context_set = val_set
-            self._context_groups = val_groups
+            self._context_groups = get_groups(val_set)
         else:
             raise ValueError()
 
         self._query_split = query_split
         if query_split == 'train':
             self._query_set = train_set
-            self._query_groups = train_groups
+            self._query_groups = get_groups(train_set)
         elif query_split == 'val':
             self._query_set = val_set
-            self._query_groups = val_groups
+            self._query_groups = get_groups(val_set)
         elif query_split == 'test':
             self._query_set = test_set
-            self._query_groups = test_groups
+            self._query_groups = get_groups(test_set)
         else:
             raise ValueError()
 
-    def _generate_context_and_queries(self) -> (Examples, Examples):
+    def _generate_context_and_queries(
+            self,
+            num_context_examples: int,
+            num_query_examples: int,
+    ) -> (Examples, Examples):
         """Samples context and query examples.
 
         Returns:
@@ -157,9 +160,9 @@ class WaterbirdsEmbContextsDatasetV2(BaseEmbContextsDatasetV2):
         """
         context = _sample(dataset=self._context_set,
                           dataset_groups=self._context_groups,
-                          num_examples=2 * self._context_class_size,
-                          group_proportions=self._group_proportions,
-                          replace=(self._context_class_size > 50))
+                          num_examples=num_context_examples,
+                          group_proportions=self._context_group_proportions,
+                          replace=False)
 
         if self._context_split == self._query_split:
             remaining_mask = np.ones(len(self._context_set), dtype=bool)
@@ -169,16 +172,17 @@ class WaterbirdsEmbContextsDatasetV2(BaseEmbContextsDatasetV2):
 
         queries = _sample(dataset=self._query_set,
                           dataset_groups=self._query_groups,
-                          num_examples=2 * self._context_class_size,
-                          group_proportions=[0.25, 0.25, 0.25, 0.25],
+                          num_examples=num_query_examples,
+                          group_proportions=self._query_group_proportions,
                           remaining_mask=remaining_mask,
-                          replace=(self._context_class_size > 50))
+                          replace=True)  # NOTE: it is ok to repeat queries. This allows larger context sizes.
 
         if self._randomly_swap_labels and np.random.rand() < 0.5:
             context[:, 2] = 1 - context[:, 2]
             queries[:, 2] = 1 - queries[:, 2]
 
         return context, queries
+
 
     def _prepare_context_image_encodings(
             self,

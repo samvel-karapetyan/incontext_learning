@@ -24,10 +24,11 @@ class WaterbirdsEmbContextsDataModuleV2(pl.LightningDataModule):
                  batch_size: int,
                  num_workers: Optional[int],
                  context_class_size: int,
-                 group_proportions: list[float],
+                 context_group_proportions: list[float],
+                 query_group_proportions: list[float],
                  spurious_setting: str,
                  sp_token_generation_mode: str,
-                 v1_behavior: bool,
+                 use_context_as_intermediate_queries: bool,
                  rotate_encodings: bool,
                  n_rotation_matrices: int,
                  randomly_swap_labels: bool,
@@ -43,10 +44,11 @@ class WaterbirdsEmbContextsDataModuleV2(pl.LightningDataModule):
             root_dir=root_dir,
             encoding_extractor=encoding_extractor,
             context_class_size=context_class_size,
-            group_proportions=group_proportions,
+            context_group_proportions=context_group_proportions,
+            query_group_proportions=query_group_proportions,
             spurious_setting=spurious_setting,
             sp_token_generation_mode=sp_token_generation_mode,
-            v1_behavior=v1_behavior,
+            use_context_as_intermediate_queries=use_context_as_intermediate_queries,
         )
 
         self._aug_params = dict(

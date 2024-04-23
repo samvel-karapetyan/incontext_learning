@@ -23,7 +23,7 @@ class BaseEmbContextsDatasetV2(Dataset, ABC):
                  context_class_size: int,
                  spurious_setting: str,
                  sp_token_generation_mode: str,
-                 v1_behavior: bool = False,
+                 use_context_as_intermediate_queries: bool = False,
                  rotate_encodings: bool = False,
                  n_rotation_matrices: Optional[int] = None,
                  label_noise_ratio_interval: Optional[list] = None,
@@ -40,7 +40,7 @@ class BaseEmbContextsDatasetV2(Dataset, ABC):
         spurious_setting (str): Determines the handling mode of spurious tokens in the dataset instances.
         sp_token_generation_mode (str): Specifies whether the representations of two spurious labels should be
                                         'opposite' or 'random'.
-        v1_behavior (bool): Whether intermediate queries should be the context examples.
+        use_context_as_intermediate_queries (bool): Whether intermediate queries should be the context examples.
         rotate_encodings (bool): Determines if image encodings are rotated. True enables rotation
                                  based on class labels, while False bypasses rotation.
         n_rotation_matrices (int): Specifies the number of rotation matrices to generate and store.
@@ -61,7 +61,7 @@ class BaseEmbContextsDatasetV2(Dataset, ABC):
         self._context_class_size = context_class_size
         self._spurious_setting = spurious_setting
         self._sp_token_generation_mode = sp_token_generation_mode
-        self._v1_behavior = v1_behavior
+        self._use_context_as_intermediate_queries = use_context_as_intermediate_queries
         self._rotate_encodings = rotate_encodings
         self._n_rotation_matrices = n_rotation_matrices
         self._label_noise_ratio_interval = label_noise_ratio_interval
@@ -86,7 +86,7 @@ class BaseEmbContextsDatasetV2(Dataset, ABC):
          self._c_spurious_tokens_generator,
          self._class_tokens_generator) = tokens_generator()
 
-        self._v1_behavior = v1_behavior
+        self._use_context_as_intermediate_queries = use_context_as_intermediate_queries
 
         if rotate_encodings:
             self._img_encoding_transform = EncodingRotator(n_rotation_matrices, tokens_data["token_len"].item())
@@ -116,27 +116,36 @@ class BaseEmbContextsDatasetV2(Dataset, ABC):
         c_spurious_tokens = next(self._c_spurious_tokens_generator)
         class_tokens = next(self._class_tokens_generator)
 
-        # generate context and query examples
-        context, queries = self._generate_context_and_queries()
-        assert len(context) == len(queries)
+        # The following code block produces 2*self._context_class_size context and queries examples.
+        # Some queries will be (0, 0, 0) implying that the query in the corresponding position is empty.
+        # These empty queries are mapped to the next context example and this mapping is specified in
+        # the `query_to_context_map` of length 2*self._context_class_size. The value -1 in this array
+        # means that the corresponding query is not replaced.
 
-        # Deciding which queries should be replaced with which context examples.
-        # This depends on v1 behavior and self.ask_context_prob.
-        # Setting -1 indicates keeping the original query.
-        query_to_context_map = -np.ones(len(context), dtype=np.int32)  # keeping all original queries
+        if self._use_context_as_intermediate_queries:
+            context, last_query = self._generate_context_and_queries(
+                num_context_examples=2 * self._context_class_size,
+                num_query_examples=1,
+            )
+            queries = np.zeros_like(context)
+            queries[-1:] = last_query
+            query_to_context_map = np.concatenate([
+                np.arange(1, len(context)),  # points to next context example
+                np.array([-1]),              # points to the single query example
+            ], axis=0)
+        else:
+            context, queries = self._generate_context_and_queries(
+                num_context_examples=2 * self._context_class_size,
+                num_query_examples=2 * self._context_class_size,
+            )
+            query_to_context_map = -np.ones(len(context), dtype=np.int32)  # keeping sampled queries
 
+        # if specified, occasionally queries past context examples to speed up learning induction heads
         if self._ask_context_prob is not None:
             for q_idx in range(len(context)):
                 if np.random.rand() < self._ask_context_prob:
                     c_idx = np.random.randint(q_idx + 1)  # selecting one of previous context examples
                     query_to_context_map[q_idx] = c_idx
-
-        # When v1 behavior is enabled, we need to replace the remaining original queries
-        # with corresponding context examples.
-        if self._v1_behavior:
-            for q_idx in range(len(context) - 1):  # excluding the last query
-                if query_to_context_map[q_idx] == -1:
-                    query_to_context_map[q_idx] = q_idx + 1  # next unseen context example
 
         # construct context and query image encodings
         # update `queries`
@@ -198,8 +207,12 @@ class BaseEmbContextsDatasetV2(Dataset, ABC):
         return self._data_length
 
     @abstractmethod
-    def _generate_context_and_queries(self) -> (Examples, Examples):
-        """Should sample context and query examples; and return a (context, queries) pair."""
+    def _generate_context_and_queries(
+            self,
+            num_context_examples: int,
+            num_query_examples: int,
+    ) -> (Examples, Examples):
+        """Should sample context and query examples with configured group proportions."""
         pass
 
     @abstractmethod

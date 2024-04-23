@@ -4,10 +4,10 @@ print_config: True
 ignore_warnings: False
 
 
-spurious_setting: wb_dro # Options: wb_erm, wb_dro, inat_no_spurious, inat_sum_erm, inat_sum_dro
+spurious_setting: wb_erm # Options: wb_erm, wb_dro, inat_no_spurious, inat_sum_erm, inat_sum_dro
 sp_token_generation_mode: opposite  # Options: opposite and random
 
-v1_behavior: False
+use_context_as_intermediate_queries: False
 
 defaults:
   - datamodule: waterbirds_emb_contexts  # Options: inaturalist_emb_contexts, waterbirds_emb_contexts
