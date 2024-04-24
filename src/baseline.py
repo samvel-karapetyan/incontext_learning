@@ -40,7 +40,7 @@ def baseline(config: DictConfig):
             single_method = dict(zip(method_config.keys(), single_method_params))
 
             selected_params = "_".join([
-                str(single_method[param_name] )
+                str(single_method[param_name])
                 for param_name in method_hyperparams[method_name]
             ])
 

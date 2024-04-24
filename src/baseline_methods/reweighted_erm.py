@@ -1,7 +1,9 @@
+from typing import Optional
 import torch
 import torch.nn as nn
 
 from src.baseline_methods.base_method import BaseMethod
+
 
 class ReweightedERM(BaseMethod):
     """Reweighted Empirical Risk Minimization (ERM) method for binary classification."""
@@ -19,8 +21,9 @@ class ReweightedERM(BaseMethod):
             x_train: torch.Tensor,
             y_train: torch.Tensor,
             x_test: torch.Tensor,
-            **kwargs,
+            groups: Optional[torch.Tensor] = None,
     ) -> torch.Tensor:
+        assert groups is not None
         x_train, y_train, x_test = self.tensors_to_device(x_train, y_train, x_test, device=self._device)
 
         model = nn.Linear(x_train.shape[1], 1, device=self._device)
@@ -29,8 +32,13 @@ class ReweightedERM(BaseMethod):
         criterion = nn.BCEWithLogitsLoss(reduction='none')  # Use reduction='none' to get individual losses
         optimizer = torch.optim.Adam(model.parameters(), lr=self._lr)
 
-        # Initialize sample weights
-        sample_weights = torch.ones_like(y_train, dtype=torch.float32)
+        # compute sample weights based on group counts
+        group_counts = torch.zeros(4, dtype=torch.float32)
+        for g_idx in range(4):
+            group_counts[g_idx] = torch.sum(groups == g_idx)
+        sample_weights = 1.0 / group_counts[groups]
+        sample_weights = sample_weights.to(self._device)
+        sample_weights /= sample_weights.sum()
 
         # Training loop
         for _ in range(self._n_epochs):
@@ -38,11 +46,6 @@ class ReweightedERM(BaseMethod):
             optimizer.zero_grad()
             outputs = model(x_train)
             loss = criterion(outputs, y_train.unsqueeze(1).float())
-            
-            # Reweighting step
-            sample_weights = torch.exp(loss.detach())  # Update weights based on loss
-            sample_weights /= torch.sum(sample_weights)  # Normalize weights
-            
             loss = torch.sum(loss * sample_weights)  # Weighted loss
             loss.backward()
             optimizer.step()
