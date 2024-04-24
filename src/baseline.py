@@ -1,8 +1,9 @@
 import logging
 import matplotlib
+from itertools import product
 
 from hydra.utils import instantiate
-from omegaconf import DictConfig
+from omegaconf import DictConfig, ListConfig
 from collections.abc import Iterable
 
 from src.evaluate import transform_and_filter_results, aggregate_results_by_set_and_class_size,\
@@ -18,10 +19,37 @@ def baseline(config: DictConfig):
         if isinstance(config.datamodule.context_class_size, Iterable) \
         else [config.datamodule.context_class_size]
     
-    assert config.spurious_setting in ["no_spurious", "sum"]
+    assert config.spurious_setting in ["wb_erm", "inat_no_spurious", "inat_sum_erm"]
     
-    baseline_methods = {method_name: instantiate(method_config)
-                        for method_name, method_config in config.methods.items()}
+    baseline_methods = dict()
+
+    # parameters to mention in the file name
+    method_hyperparams = {
+        method_name: [param_name for param_name, param in method_config.items() if isinstance(param, ListConfig)]
+        for method_name, method_config in config.methods.items() 
+    }
+
+    for method_name, method_config in config.methods.items():
+        # constructing a grid for the method
+        method_grid = list(product(*[
+            list(param) if isinstance(param, ListConfig) else [param] 
+            for param in method_config.values()
+        ]))
+
+        for single_method_params in method_grid:
+            single_method = dict(zip(method_config.keys(), single_method_params))
+
+            selected_params = "_".join([
+                str(single_method[param_name])
+                for param_name in method_hyperparams[method_name]
+            ])
+
+            if selected_params:
+                single_method_name = f"{method_name}_{selected_params}"
+            else:
+                single_method_name = method_name
+            
+            baseline_methods.update({single_method_name: instantiate(single_method)})
 
     for method_name, method in baseline_methods.items():    
         log.info(f"Starting to calculate metrics using {method_name.upper()}")

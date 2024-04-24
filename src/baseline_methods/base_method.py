@@ -34,7 +34,7 @@ class BaseMethod(ABC):
 
         if isinstance(dataloader, CombinedLoader):
             # Create a dictionary of dataloaders for each split
-            dataloaders = {split.name.lower(): loader for split, loader in dataloader.iterables.items()}
+            dataloaders = {split.lower(): loader for split, loader in dataloader.iterables.items()}
         else:
             # Otherwise, create a dictionary with a single "test" split
             dataloaders = {"test": dataloader}
