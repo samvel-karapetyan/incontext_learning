@@ -30,6 +30,8 @@ def baseline(config: DictConfig):
     }
 
     for method_name, method_config in config.methods.items():
+        if method_name not in config.selected_methods:
+            continue
         # constructing a grid for the method
         method_grid = list(product(*[
             list(param) if isinstance(param, ListConfig) else [param] 

@@ -35,6 +35,8 @@ methods:
     group_weight_step: 0.01
     device: ${device}
 
+selected_methods: [knn, erm, reweighted_erm, dro]
+
 datamodule: # overriding default context_class_size, batch_size
   context_class_size: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 25, 30, 35, 40, 45, 50]
   batch_size: 1  # do not modify
