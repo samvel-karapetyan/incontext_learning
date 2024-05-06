@@ -12,7 +12,7 @@ n_repeat: 5
 
 device: cpu  # Use 'cpu' to run on the CPU, or specify the CUDA device index (an integer)
 
-methods: 
+methods:
   # Perform grid search if *parameter* is a list, otherwise set hyperparameters to the given constant
   knn:
     _target_: src.baseline_methods.KNN
@@ -20,19 +20,19 @@ methods:
     device: ${device}
   erm:
     _target_: src.baseline_methods.ERM
-    n_epochs: 100
-    lr: 0.01
+    n_epochs: [50, 100, 200]
+    lr: [0.1, 0.01, 0.001]
     device: ${device}
   reweighted_erm:
     _target_: src.baseline_methods.ReweightedERM
-    n_epochs: 100
-    lr: 0.01
+    n_epochs: [50, 100, 200]
+    lr: [0.1, 0.01, 0.001]
     device: ${device}
   dro:
     _target_: src.baseline_methods.DRO
-    n_epochs: 100
-    lr: 0.01
-    group_weight_step: 0.01
+    n_epochs: [50, 100, 200]
+    lr: [0.1, 0.01, 0.001]
+    group_weight_step: [1, 0.1, 0.01, 0.001]
     device: ${device}
 
 selected_methods: [knn, erm, reweighted_erm, dro]
