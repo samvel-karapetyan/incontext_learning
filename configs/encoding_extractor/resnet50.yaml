@@ -1,0 +1,6 @@
+_target_: src.encoding_extractors.ResNet50 # TODO CHECK
+
+name: resnet50
+pretrained: True
+input_size: 224
+embedding_size: 2048
