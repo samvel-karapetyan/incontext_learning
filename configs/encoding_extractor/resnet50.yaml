@@ -1,0 +1,4 @@
+_target_: src.encoding_extractors.ResNet50
+
+name: resnet50
+pretrained: True
