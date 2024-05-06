@@ -105,7 +105,7 @@ def run_evaluations_with_repetitions(method, datamodule_config, context_class_si
             # Instantiate data module from configuration
             log.info(f"Instantiating datamodule <{datamodule_config._target_}>")
             datamodule = instantiate(datamodule_config)
-            datamodule.setup()
+            datamodule.setup(stage='test')
 
             # eval_results = trainer.validate(model, datamodule=datamodule)
             eval_results = method.validate(datamodule)
