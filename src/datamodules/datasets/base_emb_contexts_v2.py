@@ -30,7 +30,6 @@ class BaseEmbContextsDatasetV2(Dataset, ABC):
                  input_noise_norm_interval: Optional[list] = None,
                  permute_input_dim: bool = False,
                  ask_context_prob: Optional[float] = None,
-                 saved_data_path: Optional[str] = None,
                  ):
         """
         Arguments:
@@ -52,7 +51,6 @@ class BaseEmbContextsDatasetV2(Dataset, ABC):
                                 True enables permutation, while False bypasses it.
         ask_context_prob (float or None). If specified, defines the probability with which a query is set to be one
                                           of previous context examples.
-        saved_data_path (str or None): Path for loading data; if None, new data is generated.
         """
         super(BaseEmbContextsDatasetV2, self).__init__()
 
@@ -68,7 +66,6 @@ class BaseEmbContextsDatasetV2(Dataset, ABC):
         self._input_noise_norm_interval = input_noise_norm_interval
         self._permute_input_dim = permute_input_dim
         self._ask_context_prob = ask_context_prob
-        self._saved_data_path = saved_data_path
 
         # Loading tokens data
         token_data_path = os.path.join(
@@ -96,9 +93,6 @@ class BaseEmbContextsDatasetV2(Dataset, ABC):
     def __getitem__(self, idx) -> (np.ndarray, Examples, Examples, np.ndarray):
         """Returns a dataset example given the example index.
 
-        If 'self._saved_data_path' is None, it generates a new data item.
-        If 'self._saved_data_path' is not None, it loads the data item from the saved path.
-
         Args:
             idx (int): The index of the item to retrieve.
 
@@ -107,9 +101,6 @@ class BaseEmbContextsDatasetV2(Dataset, ABC):
             (2 * context_class_size, 3) describing context/query examples with (id, spurious, class) tuples.
             query_indices specifies positions of input_seq corresponding to query tokens.
         """
-        if self._saved_data_path is not None:
-            # TODO(hrayr): implement loading from a cached dataset
-            raise NotImplementedError('loading from saved data is not implemented yet.')
 
         # get spurious and class tokens
         x_spurious_tokens = next(self._x_spurious_tokens_generator)

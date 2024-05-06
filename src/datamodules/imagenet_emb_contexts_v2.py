@@ -18,7 +18,6 @@ class ImagenetEmbContextsDataModuleV2(pl.LightningDataModule):
                  dataset_path: str,
                  encoding_extractor: str,
                  data_length: int,
-                 saved_data_path: Optional[str],
                  batch_size: int,
                  num_workers: Optional[int],
                  context_class_size: int,
@@ -40,7 +39,6 @@ class ImagenetEmbContextsDataModuleV2(pl.LightningDataModule):
         self._dataset_path = dataset_path
         self._encoding_extractor = encoding_extractor
         self._data_length = data_length
-        self._saved_data_path = saved_data_path
         self._batch_size = batch_size
         self._num_workers = num_workers
         self._context_class_size = context_class_size
@@ -77,8 +75,7 @@ class ImagenetEmbContextsDataModuleV2(pl.LightningDataModule):
             label_noise_ratio_interval=None,
             input_noise_norm_interval=None,
             permute_input_dim=False,
-            ask_context_prob=None,
-            saved_data_path=self._saved_data_path)
+            ask_context_prob=None)
 
     def val_dataloader(self):
         return DataLoader(self._dataset, batch_size=self._batch_size, num_workers=self._num_workers)

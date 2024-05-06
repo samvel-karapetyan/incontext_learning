@@ -23,7 +23,6 @@ class INaturalistEmbContextsDataModuleV2(pl.LightningDataModule):
     def __init__(self,
                  dataset_path: str,
                  encoding_extractor: str,
-                 saved_val_sets_path: Optional[str],
                  train_len: int,
                  eval_len: int,
                  batch_size: int,
@@ -63,7 +62,6 @@ class INaturalistEmbContextsDataModuleV2(pl.LightningDataModule):
             ask_context_prob=ask_context_prob,
         )
 
-        self._saved_val_sets_path = saved_val_sets_path
         self._train_len = train_len
         self._eval_len = eval_len
         self._batch_size = batch_size
@@ -90,35 +88,23 @@ class INaturalistEmbContextsDataModuleV2(pl.LightningDataModule):
                 class2_split="inner_train",
             )
 
-        # saved_data_path = self._saved_val_sets_path and os.path.join(self._saved_val_sets_path,
-        #                                                              self.ValSets.INNER.value)
-        saved_data_path = None
         self._inner_val_set = INaturalistEmbContextsDatasetV2(
             **self._core_params,
             data_length=self._eval_len,
             class1_split="inner_val",
-            class2_split="inner_val",
-            saved_data_path=saved_data_path)
+            class2_split="inner_val")
 
-        # saved_data_path = self._saved_val_sets_path and os.path.join(self._saved_val_sets_path,
-        #                                                              self.ValSets.OUTER.value)
-        saved_data_path = None
         self._outer_val_set = INaturalistEmbContextsDatasetV2(
             **self._core_params,
             data_length=self._eval_len,
             class1_split="outer",
-            class2_split="outer",
-            saved_data_path=saved_data_path)
+            class2_split="outer")
 
-        # saved_data_path = self._saved_val_sets_path and os.path.join(self._saved_val_sets_path,
-        #                                                              self.ValSets.INNER_OUTER.value)
-        saved_data_path = None
         self._inner_outer_val_set = INaturalistEmbContextsDatasetV2(
             **self._core_params,
             data_length=self._eval_len,
             class1_split="inner_val",
-            class2_split="outer",
-            saved_data_path=saved_data_path)
+            class2_split="outer")
 
     def train_dataloader(self):
         return DataLoader(self._train_set, batch_size=self._batch_size, num_workers=self._num_workers)

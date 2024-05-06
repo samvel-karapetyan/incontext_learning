@@ -33,7 +33,6 @@ class ImagenetEmbContextsDatasetV2(BaseEmbContextsDatasetV2):
                  input_noise_norm_interval: Optional[list] = None,
                  permute_input_dim: bool = False,
                  ask_context_prob: Optional[float] = None,
-                 saved_data_path: Optional[str] = None,
                  ):
         """
         Arguments:
@@ -58,7 +57,6 @@ class ImagenetEmbContextsDatasetV2(BaseEmbContextsDatasetV2):
                                 True enables permutation, while False bypasses it.
         ask_context_prob (float or None). If specified, defines the probability with which a query is set to be one
                                           of previous context examples.
-        saved_data_path (str or None): Path for loading data; if None, new data is generated.
         """
         super(ImagenetEmbContextsDatasetV2, self).__init__(
             encoding_extractor=encoding_extractor,
@@ -73,7 +71,6 @@ class ImagenetEmbContextsDatasetV2(BaseEmbContextsDatasetV2):
             input_noise_norm_interval=input_noise_norm_interval,
             permute_input_dim=permute_input_dim,
             ask_context_prob=ask_context_prob,
-            saved_data_path=saved_data_path,
         )
 
         # Prepare encodings and data files

@@ -7,7 +7,6 @@ query_minority_group_proportion: 0.5
 
 dataset_path: ${oc.env:IMAGENET_DIR}
 encoding_extractor: dinov2_vitb14
-saved_data_path: null # ${datamodule.dataset_path}/context_val_sets_${datamodule.context_class_size}_${datamodule.minority_group_proportion}/${datamodule.encoding_extractor}
 
 data_length: 1024
 

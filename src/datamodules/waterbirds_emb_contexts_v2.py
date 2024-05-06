@@ -20,7 +20,6 @@ class WaterbirdsEmbContextsDataModuleV2(pl.LightningDataModule):
                  encoding_extractor: str,
                  train_len: int,
                  eval_len: int,
-                 saved_val_sets_path: Optional[str],
                  batch_size: int,
                  num_workers: Optional[int],
                  context_class_size: int,
@@ -64,7 +63,6 @@ class WaterbirdsEmbContextsDataModuleV2(pl.LightningDataModule):
         # Initializing dataset parameters
         self._train_len = train_len
         self._eval_len = eval_len
-        self._saved_val_sets_path = saved_val_sets_path
         self._batch_size = batch_size
         self._num_workers = num_workers
         self._val_sets = val_sets
@@ -87,48 +85,32 @@ class WaterbirdsEmbContextsDataModuleV2(pl.LightningDataModule):
                 query_split='train',
             )
 
-        # saved_data_path = self._saved_val_sets_path and os.path.join(self._saved_val_sets_path,
-        #                                                              self.ValSets.TRAIN.value)
-        saved_data_path = None
         self._train_dataset_for_eval = WaterbirdsEmbContextsDatasetV2(
             **self._core_params,
             data_length=self._eval_len,
             context_split='train',
             query_split='train',
-            saved_data_path=saved_data_path,
         )
 
-        # saved_data_path = self._saved_val_sets_path and os.path.join(self._saved_val_sets_path,
-        #                                                              self.ValSets.TRAIN_VAL.value)
-        saved_data_path = None
         self._train_val_dataset = WaterbirdsEmbContextsDatasetV2(
             **self._core_params,
             data_length=self._eval_len,
             context_split='train',
             query_split='val',
-            saved_data_path=saved_data_path,
         )
 
-        # saved_data_path = self._saved_val_sets_path and os.path.join(self._saved_val_sets_path,
-        #                                                              self.ValSets.TRAIN_TEST.value)
-        saved_data_path = None
         self._train_test_dataset = WaterbirdsEmbContextsDatasetV2(
             **self._core_params,
             data_length=self._eval_len,
             context_split='train',
             query_split='test',
-            saved_data_path=saved_data_path,
         )
 
-        # saved_data_path = self._saved_val_sets_path and os.path.join(self._saved_val_sets_path,
-        #                                                              self.ValSets.VAL.value)
-        saved_data_path = None
         self._val_dataset = WaterbirdsEmbContextsDatasetV2(
             **self._core_params,
             data_length=self._eval_len,
             context_split='val',
             query_split='val',
-            saved_data_path=saved_data_path,
         )
 
     def train_dataloader(self):
