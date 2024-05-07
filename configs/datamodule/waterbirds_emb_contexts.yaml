@@ -8,7 +8,7 @@ context_group_proportions: [0.45, 0.05, 0.05, 0.45]
 query_group_proportions: [0.25, 0.25, 0.25, 0.25]
 
 root_dir: ${oc.env:DATA_ROOT_DIR}
-encoding_extractor: dinov2_vitb14
+encoding_extractor: ${encoding_extractor.name}
 
 train_len: 2000000
 eval_len: 1024 # 2^n, because CombinedDataloader removes the last non-full batch

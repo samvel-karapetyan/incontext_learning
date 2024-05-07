@@ -1,5 +1,7 @@
 _target_: src.models.InContextLearnerV2
 
+embedding_size: ${encoding_extractor.embedding_size}
+
 network:
   _target_: src.models.incontext_learner_v2.GPTJModelV2
   config:

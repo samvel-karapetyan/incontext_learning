@@ -6,7 +6,7 @@ context_minority_group_proportion: 0.1
 query_minority_group_proportion: 0.5
 
 dataset_path: ${oc.env:DATA_ROOT_DIR}/cub
-encoding_extractor: dinov2_vitb14
+encoding_extractor: ${encoding_extractor.name}
 
 data_length: 1024
 

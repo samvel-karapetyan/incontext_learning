@@ -43,6 +43,7 @@ datamodule: # overriding default context_class_size, batch_size
 
 defaults:
   - datamodule: waterbirds_emb_contexts # Options: 'inaturalist_emb_contexts', 'waterbirds_emb_contexts', 'cub_emb_contexts', 'imagenet_emb_contexts'
+  - encoding_extractor: dinov2_vitb14 # Options: dinov2_vitb14, resnet50
   - trainer: default
   - override hydra/job_logging: custom
   - _self_
