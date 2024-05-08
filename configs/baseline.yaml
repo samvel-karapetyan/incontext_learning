@@ -32,10 +32,10 @@ methods:
     device: ${device}
   dro:
     _target_: src.baseline_methods.DRO
-    n_epochs: [50, 100, 200]
+    n_epochs: [100, 200]
     lr: [0.1, 0.01, 0.001]
-    group_weight_step: [1, 0.1, 0.01, 0.001]
-    weight_decay: 0.0
+    group_weight_step: [1, 0.1, 0.01]
+    weight_decay: [0.0, 1.0]
     device: ${device}
 
 selected_methods: [knn, erm, reweighted_erm, dro]
