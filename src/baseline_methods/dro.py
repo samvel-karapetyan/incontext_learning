@@ -11,12 +11,14 @@ class DRO(BaseMethod):
     def __init__(self,
                  n_epochs: int = 100,
                  lr: float = 0.01,
-                 group_weight_step: float = 0.01, 
+                 group_weight_step: float = 0.01,
+                 weight_decay: float = 0.0,
                  device: str = "cpu"):
         super(DRO, self).__init__()
         self._n_epochs = n_epochs
         self._lr = lr
         self._group_weight_step = group_weight_step
+        self._weight_decay = weight_decay
         self._device = device
 
     def predict(
@@ -42,7 +44,7 @@ class DRO(BaseMethod):
 
         # Loss and optimizer
         criterion = nn.BCEWithLogitsLoss(reduction='none')
-        optimizer = torch.optim.Adam(model.parameters(), lr=self._lr)
+        optimizer = torch.optim.AdamW(model.parameters(), lr=self._lr, weight_decay=self._weight_decay)
 
         # Initialize group weights
         group_weights = torch.ones(n_groups, dtype=torch.float32, device=self._device) / n_groups

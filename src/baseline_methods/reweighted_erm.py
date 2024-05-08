@@ -10,10 +10,12 @@ class ReweightedERM(BaseMethod):
     def __init__(self,
                  n_epochs: int = 100,
                  lr: float = 0.01,
+                 weight_decay: float = 0.0,
                  device: str = "cpu"):
         super(ReweightedERM, self).__init__()
         self._n_epochs = n_epochs
         self._lr = lr
+        self._weight_decay = weight_decay
         self._device = device
 
     def predict(
@@ -30,7 +32,7 @@ class ReweightedERM(BaseMethod):
 
         # Loss and optimizer
         criterion = nn.BCEWithLogitsLoss(reduction='none')  # Use reduction='none' to get individual losses
-        optimizer = torch.optim.Adam(model.parameters(), lr=self._lr)
+        optimizer = torch.optim.AdamW(model.parameters(), lr=self._lr, weight_decay=self._weight_decay)
 
         # compute sample weights based on group counts
         group_counts = torch.zeros(4, dtype=torch.float32)
