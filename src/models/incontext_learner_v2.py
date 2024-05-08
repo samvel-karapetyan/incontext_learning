@@ -201,6 +201,7 @@ class InContextLearnerV2(LightningModule):
     """
 
     def __init__(self,
+                 embedding_size: int,
                  network: GPTJModelV2,
                  loss_fn,
                  val_sets,
@@ -210,6 +211,7 @@ class InContextLearnerV2(LightningModule):
                  ):
         """
         Args:
+            embedding_size: The size of image representation.
             network: The neural network to be used.
             loss_fn: The loss function for training.
             val_sets: A list of validation dataset names.
@@ -219,6 +221,10 @@ class InContextLearnerV2(LightningModule):
         """
         super(InContextLearnerV2, self).__init__()
 
+        if embedding_size != network.embed_dim:
+          self._proj = nn.Linear(embedding_size, network.embed_dim)
+        else:
+          self._proj = None
         self._network = network
         self._fc = nn.Linear(network.embed_dim, 1)
 
@@ -252,6 +258,8 @@ class InContextLearnerV2(LightningModule):
 
         Returns: a torch tensor of shape (B, Q, 1) consisting of query prediction logits.
         """
+        if self._proj is not None:
+            input_embeds = self._proj(input_embeds)
         out = self._network(
             inputs_embeds=input_embeds,
             query_indices=query_indices,

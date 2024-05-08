@@ -1,15 +1,13 @@
-import torch.nn as nn
-
 from torchvision import models
+import torch
+import torch.nn as nn
 
 
 class ResNet50(nn.Module):
-    def __init__(self,
-                 pretrained: bool,
-                 *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         super().__init__()
 
-        self.model = models.resnet50(weights=models.ResNet50_Weights.IMAGENET1K_V1 if pretrained else None)
+        self.model = models.resnet50(weights=models.ResNet50_Weights.IMAGENET1K_V1)
 
     def forward(self, x):
         x = self.model.conv1(x)
