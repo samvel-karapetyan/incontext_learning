@@ -39,6 +39,9 @@ class INaturalistEmbContextsDataModuleV2(pl.LightningDataModule):
                  input_noise_norm_interval: list,
                  permute_input_dim: bool,
                  ask_context_prob: float,
+                 add_spurious_via_swapping: bool,
+                 swapping_minority_ratio: float,
+                 points_to_swap_range: list[int],
                  *args, **kwargs):
         super(INaturalistEmbContextsDataModuleV2, self).__init__()
 
@@ -51,6 +54,9 @@ class INaturalistEmbContextsDataModuleV2(pl.LightningDataModule):
             spurious_setting=spurious_setting,
             sp_token_generation_mode=sp_token_generation_mode,
             use_context_as_intermediate_queries=use_context_as_intermediate_queries,
+            add_spurious_via_swapping=add_spurious_via_swapping,
+            swapping_minority_ratio=swapping_minority_ratio,
+            points_to_swap_range=points_to_swap_range,
         )
 
         self._aug_params = dict(

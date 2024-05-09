@@ -62,7 +62,9 @@ class WaterbirdsEmbContextsDatasetV2(BaseEmbContextsDatasetV2):
                  input_noise_norm_interval: Optional[list] = None,
                  permute_input_dim: bool = False,
                  ask_context_prob: Optional[float] = None,
-                 ):
+                 add_spurious_via_swapping: Optional[bool] = False,
+                 swapping_minority_ratio: Optional[float] = None,
+                 points_to_swap_range: Optional[list] = None):
         """
         Args:
 
@@ -93,6 +95,7 @@ class WaterbirdsEmbContextsDatasetV2(BaseEmbContextsDatasetV2):
                                           of previous context examples.
         """
         assert spurious_setting in ['wb_erm', 'wb_dro']
+        assert not (add_spurious_via_swapping and any(context_group_proportions[1:3]))
 
         super(WaterbirdsEmbContextsDatasetV2, self).__init__(
             encoding_extractor=encoding_extractor,
@@ -107,6 +110,9 @@ class WaterbirdsEmbContextsDatasetV2(BaseEmbContextsDatasetV2):
             input_noise_norm_interval=input_noise_norm_interval,
             permute_input_dim=permute_input_dim,
             ask_context_prob=ask_context_prob,
+            add_spurious_via_swapping=add_spurious_via_swapping,
+            swapping_minority_ratio=swapping_minority_ratio,
+            points_to_swap_range=points_to_swap_range
         )
 
         self._context_group_proportions = context_group_proportions

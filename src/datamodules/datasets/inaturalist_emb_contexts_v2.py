@@ -33,6 +33,9 @@ class INaturalistEmbContextsDatasetV2(BaseEmbContextsDatasetV2):
                  input_noise_norm_interval: Optional[list] = None,
                  permute_input_dim: bool = False,
                  ask_context_prob: Optional[float] = None,
+                 add_spurious_via_swapping: Optional[bool] = False,
+                 swapping_minority_ratio: Optional[float] = None,
+                 points_to_swap_range: Optional[list] = None,
                  ):
         """
         Arguments:
@@ -75,6 +78,9 @@ class INaturalistEmbContextsDatasetV2(BaseEmbContextsDatasetV2):
             input_noise_norm_interval=input_noise_norm_interval,
             permute_input_dim=permute_input_dim,
             ask_context_prob=ask_context_prob,
+            add_spurious_via_swapping=add_spurious_via_swapping,
+            swapping_minority_ratio=swapping_minority_ratio,
+            points_to_swap_range=points_to_swap_range,
         )
 
         # Prepare encodings and data files

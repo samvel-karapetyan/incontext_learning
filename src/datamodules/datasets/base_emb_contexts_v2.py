@@ -5,7 +5,7 @@ import os
 import numpy as np
 
 from torch.utils.data import Dataset
-from src.utils.dataset_helpers import TokenGenerator, EncodingRotator, IdentityTransform
+from src.utils.dataset_helpers import TokenGenerator, EncodingRotator, IdentityTransform, PartlySwapper
 from src.utils.dataset_helpers.context_prep_utils import get_context_example_tokens,\
     get_query_example_tokens
 
@@ -30,6 +30,9 @@ class BaseEmbContextsDatasetV2(Dataset, ABC):
                  input_noise_norm_interval: Optional[list] = None,
                  permute_input_dim: bool = False,
                  ask_context_prob: Optional[float] = None,
+                 add_spurious_via_swapping: Optional[bool] = False,
+                 swapping_minority_ratio: Optional[float] = None,
+                 points_to_swap_range: Optional[list] = None,
                  ):
         """
         Arguments:
@@ -89,6 +92,11 @@ class BaseEmbContextsDatasetV2(Dataset, ABC):
             self._img_encoding_transform = EncodingRotator(n_rotation_matrices, tokens_data["token_len"].item())
         else:
             self._img_encoding_transform = IdentityTransform()
+
+        if add_spurious_via_swapping:
+            self._partly_swapper = PartlySwapper(swapping_minority_ratio, points_to_swap_range)
+        else:
+            self._partly_swapper = None
 
     def __getitem__(self, idx) -> (np.ndarray, Examples, Examples, np.ndarray):
         """Returns a dataset example given the example index.
@@ -152,6 +160,11 @@ class BaseEmbContextsDatasetV2(Dataset, ABC):
         context_img_encodings, query_img_encodings = self._maybe_rotate_embeddings(
             context_img_encodings=context_img_encodings,
             query_img_encodings=query_img_encodings)
+        
+        context_img_encodings, context[:, 1] = self._maybe_partly_swap_points(
+            context_img_encodings=context_img_encodings,
+            context_labels=context[:, 2],
+            context_spurs=context[:, 1])
 
         context_img_encodings, query_img_encodings = self._maybe_permute_embeddings(
             context_img_encodings=context_img_encodings,
@@ -232,6 +245,17 @@ class BaseEmbContextsDatasetV2(Dataset, ABC):
         joint = self._img_encoding_transform(joint)
         n = context_img_encodings.shape[0]
         return joint[:n], joint[n:]
+    
+    def _maybe_partly_swap_points(
+            self,
+            context_img_encodings: np.ndarray,
+            context_labels: np.ndarray,
+            context_spurs: np.ndarray
+    ) -> (np.ndarray, np.ndarray):
+        if self._partly_swapper is None:
+            return context_img_encodings, context_spurs
+            
+        return self._partly_swapper(context_img_encodings, context_labels, context_spurs)
     
     def _maybe_permute_embeddings(
             self,

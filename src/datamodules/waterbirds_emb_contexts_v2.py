@@ -37,6 +37,9 @@ class WaterbirdsEmbContextsDataModuleV2(pl.LightningDataModule):
                  permute_input_dim: bool,
                  ask_context_prob: float,
                  val_sets: list[str],
+                 add_spurious_via_swapping: bool,
+                 swapping_minority_ratio: float,
+                 points_to_swap_range: list[int],
                  **kwargs):
         super(WaterbirdsEmbContextsDataModuleV2, self).__init__()
 
@@ -50,6 +53,9 @@ class WaterbirdsEmbContextsDataModuleV2(pl.LightningDataModule):
             sp_token_generation_mode=sp_token_generation_mode,
             use_context_as_intermediate_queries=use_context_as_intermediate_queries,
             reverse_task=reverse_task,
+            add_spurious_via_swapping=add_spurious_via_swapping,
+            swapping_minority_ratio=swapping_minority_ratio,
+            points_to_swap_range=points_to_swap_range,
         )
 
         self._aug_params = dict(
