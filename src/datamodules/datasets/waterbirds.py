@@ -39,8 +39,10 @@ class WaterbirdsSubsetExtracted(Dataset):
     def __init__(self,
                  wilds_waterbirds_subset: WILDSSubset,
                  encodings: np.ndarray,
-                 index_map: np.ndarray):
+                 index_map: np.ndarray,
+                 reverse_task: bool = False):
         self._wilds_waterbirds_subset = wilds_waterbirds_subset
+        self._reverse_task = reverse_task
 
         # permute rows of `encodings` such that the i-th row corresponds to the i-th example of the subset
         n = len(wilds_waterbirds_subset)
@@ -56,7 +58,10 @@ class WaterbirdsSubsetExtracted(Dataset):
         x = self._encodings[indices]
         y = self._wilds_waterbirds_subset.y_array[indices]
         c = self._wilds_waterbirds_subset.metadata_array[indices, 0]
-        examples = np.stack([indices, c, y], axis=1)
+        if not self._reverse_task:
+            examples = np.stack([indices, c, y], axis=1)
+        else:
+            examples = np.stack([indices, y, c], axis=1)
         return x, examples
 
     def __len__(self):
@@ -66,9 +71,11 @@ class WaterbirdsSubsetExtracted(Dataset):
 class WaterbirdsExtracted:
     def __init__(self,
                  root_dir: str,
-                 encoding_extractor: str):
+                 encoding_extractor: str,
+                 reverse_task: bool = False):
         self._root_dir = root_dir
         self._encoding_extractor = encoding_extractor
+        self._reverse_task = reverse_task
         self._wilds_waterbirds = WaterbirdsDataset(root_dir=root_dir)
 
     def get_subset(self, split, *args, **kwargs) -> WaterbirdsSubsetExtracted:
@@ -78,4 +85,5 @@ class WaterbirdsExtracted:
             wilds_waterbirds_subset=self._wilds_waterbirds.get_subset(split, *args, **kwargs),
             encodings=encodings_data['encodings'],
             index_map=encodings_data['indices_map'],
+            reverse_task=self._reverse_task,
         )

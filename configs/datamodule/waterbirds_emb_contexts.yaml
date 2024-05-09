@@ -21,6 +21,8 @@ sp_token_generation_mode: ${sp_token_generation_mode}  # Use the global value of
 
 use_context_as_intermediate_queries: ${use_context_as_intermediate_queries}
 
+reverse_task: False
+
 rotate_encodings: False
 n_rotation_matrices: 10000  # produces roughly 40m different examples
 

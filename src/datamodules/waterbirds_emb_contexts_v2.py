@@ -28,6 +28,7 @@ class WaterbirdsEmbContextsDataModuleV2(pl.LightningDataModule):
                  spurious_setting: str,
                  sp_token_generation_mode: str,
                  use_context_as_intermediate_queries: bool,
+                 reverse_task: bool,
                  rotate_encodings: bool,
                  n_rotation_matrices: int,
                  randomly_swap_labels: bool,
@@ -48,6 +49,7 @@ class WaterbirdsEmbContextsDataModuleV2(pl.LightningDataModule):
             spurious_setting=spurious_setting,
             sp_token_generation_mode=sp_token_generation_mode,
             use_context_as_intermediate_queries=use_context_as_intermediate_queries,
+            reverse_task=reverse_task,
         )
 
         self._aug_params = dict(

@@ -54,6 +54,7 @@ class WaterbirdsEmbContextsDatasetV2(BaseEmbContextsDatasetV2):
                  spurious_setting: str,
                  sp_token_generation_mode: str,
                  use_context_as_intermediate_queries: bool = False,
+                 reverse_task: bool = False,
                  rotate_encodings: bool = False,
                  n_rotation_matrices: Optional[int] = None,
                  randomly_swap_labels: bool = False,
@@ -77,6 +78,7 @@ class WaterbirdsEmbContextsDatasetV2(BaseEmbContextsDatasetV2):
         sp_token_generation_mode (str): Specifies whether the representations of two spurious labels should be
                                         'opposite' or 'random'.
         use_context_as_intermediate_queries (bool): Whether intermediate queries should be the context examples.
+        reverse_task (bool): Whether to predict background instead of foreground.
         rotate_encodings (bool): Determines if image encodings are rotated. True enables rotation
                                  based on class labels, while False bypasses rotation.
         n_rotation_matrices (int): Specifies the number of rotation matrices to generate and store.
@@ -112,7 +114,8 @@ class WaterbirdsEmbContextsDatasetV2(BaseEmbContextsDatasetV2):
         self._randomly_swap_labels = randomly_swap_labels
 
         dataset = WaterbirdsExtracted(root_dir,
-                                      encoding_extractor=encoding_extractor)
+                                      encoding_extractor=encoding_extractor,
+                                      reverse_task=reverse_task)
 
         train_set = dataset.get_subset("train")
         val_set = dataset.get_subset("val")
