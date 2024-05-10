@@ -36,7 +36,8 @@ permute_input_dim: False
 ask_context_prob: null
 
 add_spurious_via_swapping: False
-swapping_minority_ratio: 0.1
+swapping_minority_proportion_context: 0.1
+swapping_minority_proportion_query: 0.5
 points_to_swap_range: [50, 100]
 
 val_sets: [train, train_val, train_test, val]  # the order here should match the order in the combined loader

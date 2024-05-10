@@ -34,7 +34,8 @@ class INaturalistEmbContextsDatasetV2(BaseEmbContextsDatasetV2):
                  permute_input_dim: bool = False,
                  ask_context_prob: Optional[float] = None,
                  add_spurious_via_swapping: Optional[bool] = False,
-                 swapping_minority_ratio: Optional[float] = None,
+                 swapping_minority_proportion_context: Optional[float] = None,
+                 swapping_minority_proportion_query: Optional[float] = None,
                  points_to_swap_range: Optional[list] = None,
                  ):
         """
@@ -62,8 +63,16 @@ class INaturalistEmbContextsDatasetV2(BaseEmbContextsDatasetV2):
                                 True enables permutation, while False bypasses it.
         ask_context_prob (float or None). If specified, defines the probability with which a query is set to be one
                                           of previous context examples.
+        add_spurious_via_swapping (bool): Determines if swap points of encodings. True enables swapping points
+                                          based on proportions, while False bypasses swapping.
+        swapping_minority_proportion_context (float): The proportion of the minority group's to create via swapping in context.
+        swapping_minority_proportion_query (float): The proportion of the minority group's to create via swapping in queries.
+        points_to_swap_range (list): A list containing the range of the number of points to swap in the selected vectors.
         """
         assert spurious_setting in ['inat_no_spurious', 'inat_sum_erm', 'inat_sum_dro']
+        assert not (add_spurious_via_swapping
+                    and context_minority_group_proportion != 0 
+                    and query_minority_group_proportion != 0)
 
         super(INaturalistEmbContextsDatasetV2, self).__init__(
             encoding_extractor=encoding_extractor,
@@ -79,7 +88,8 @@ class INaturalistEmbContextsDatasetV2(BaseEmbContextsDatasetV2):
             permute_input_dim=permute_input_dim,
             ask_context_prob=ask_context_prob,
             add_spurious_via_swapping=add_spurious_via_swapping,
-            swapping_minority_ratio=swapping_minority_ratio,
+            swapping_minority_proportion_context=swapping_minority_proportion_context,
+            swapping_minority_proportion_query=swapping_minority_proportion_query,
             points_to_swap_range=points_to_swap_range,
         )
 

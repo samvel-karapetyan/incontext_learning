@@ -40,7 +40,8 @@ class INaturalistEmbContextsDataModuleV2(pl.LightningDataModule):
                  permute_input_dim: bool,
                  ask_context_prob: float,
                  add_spurious_via_swapping: bool,
-                 swapping_minority_ratio: float,
+                 swapping_minority_proportion_context: float,
+                 swapping_minority_proportion_query: float,
                  points_to_swap_range: list[int],
                  *args, **kwargs):
         super(INaturalistEmbContextsDataModuleV2, self).__init__()
@@ -55,7 +56,8 @@ class INaturalistEmbContextsDataModuleV2(pl.LightningDataModule):
             sp_token_generation_mode=sp_token_generation_mode,
             use_context_as_intermediate_queries=use_context_as_intermediate_queries,
             add_spurious_via_swapping=add_spurious_via_swapping,
-            swapping_minority_ratio=swapping_minority_ratio,
+            swapping_minority_proportion_context=swapping_minority_proportion_context,
+            swapping_minority_proportion_query=swapping_minority_proportion_query,
             points_to_swap_range=points_to_swap_range,
         )
 
