@@ -131,15 +131,15 @@ class ImagenetEmbContextsDatasetV2(BaseEmbContextsDatasetV2):
 
         # Generate spurious labels for context examples
         cat1_context_spurious_labels = generate_spurious_labels(
-            spurious_label1, spurious_label2, self._context_class_size, self._context_minority_group_proportion)
+            spurious_label1, spurious_label2, context_cat1_size, self._context_minority_group_proportion)
         cat2_context_spurious_labels = generate_spurious_labels(
-            spurious_label2, spurious_label1, self._context_class_size, self._context_minority_group_proportion)
+            spurious_label2, spurious_label1, context_cat2_size, self._context_minority_group_proportion)
 
         # Generate spurious labels for queries
         cat1_query_spurious_labels = generate_spurious_labels(
-            spurious_label1, spurious_label2, self._context_class_size, self._query_minority_group_proportion)
+            spurious_label1, spurious_label2, query_cat1_size, self._query_minority_group_proportion)
         cat2_query_spurious_labels = generate_spurious_labels(
-            spurious_label2, spurious_label1, self._context_class_size, self._query_minority_group_proportion)
+            spurious_label2, spurious_label1, query_cat2_size, self._query_minority_group_proportion)
 
         # Prepare full context information
         context = prepare_context_or_query(
