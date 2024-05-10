@@ -19,6 +19,8 @@ import torchmetrics
 
 from src.utils.custom_metrics import MinorityMajorityAccuracy, GroupAccuracy, WorstGroupAccuracy
 
+torch.set_float32_matmul_precision('high')
+
 
 class GPTJModelV2(GPTJModel):
     def __init__(self, config):
@@ -206,8 +208,8 @@ class InContextLearnerV2(LightningModule):
                  loss_fn,
                  val_sets,
                  dataset_name: str,
-                 optimizer_conf = None,
-                 scheduler_conf = None
+                 optimizer_conf=None,
+                 scheduler_conf=None,
                  ):
         """
         Args:
@@ -225,7 +227,7 @@ class InContextLearnerV2(LightningModule):
           self._proj = nn.Linear(embedding_size, network.embed_dim)
         else:
           self._proj = None
-        self._network = network
+        self._network = torch.compile(network)
         self._fc = nn.Linear(network.embed_dim, 1)
 
         self._loss_fn = loss_fn
