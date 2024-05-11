@@ -119,10 +119,11 @@ class CUBEmbContextsDatasetV2(BaseEmbContextsDatasetV2):
         cat2_context_indices = cat2_indices[:context_cat2_size]
         cat2_query_indices = cat2_indices[context_cat2_size:]
 
-        # Shuffling class and spurious labels
-        class_labels, spurious_labels = [0, 1], [0, 1]
-        cat1_class_label, cat2_class_label = class_labels
-        spurious_label1, spurious_label2 = spurious_labels
+        # Shuffle the 2 classes to remove any bias for short context sizes
+        # Also ensure that (0, 0) and (1, 1) are majority groups
+        permutted_labels = np.random.permutation([0, 1])
+        cat1_class_label, cat2_class_label = permutted_labels
+        spurious_label1, spurious_label2 = permutted_labels
 
         # Generate spurious labels for context examples
         cat1_context_spurious_labels = generate_spurious_labels(

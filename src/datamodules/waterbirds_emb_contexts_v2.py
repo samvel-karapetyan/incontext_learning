@@ -122,8 +122,8 @@ class WaterbirdsEmbContextsDataModuleV2(pl.LightningDataModule):
         """Creates a combined dataloader for all validation datasets."""
         all_loaders = {
             'train': DataLoader(self._train_dataset_for_eval,
-                                           batch_size=self._batch_size,
-                                           num_workers=self._num_workers),
+                                batch_size=self._batch_size,
+                                num_workers=self._num_workers),
             'train_val': DataLoader(self._train_val_dataset,
                                     batch_size=self._batch_size,
                                     num_workers=self._num_workers),
