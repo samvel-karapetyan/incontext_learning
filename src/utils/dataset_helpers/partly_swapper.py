@@ -30,7 +30,7 @@ class PartlySwapper:
             labels: np.ndarray, 
             spurs: np.ndarray,
             minority_count: int,
-            selected_positions: np.ndarray,
+            selected_dims: np.ndarray,
             ):
         seq_len, n_dim = image_enc.shape
 
@@ -39,10 +39,10 @@ class PartlySwapper:
 
         # Creating masks over image_enc to easily apply swapping
         first_class_points_mask = np.in1d(np.arange(seq_len), selected_first_class).reshape(-1, 1) \
-            @ np.in1d(np.arange(n_dim), selected_positions).reshape(1, -1)
+            @ np.in1d(np.arange(n_dim), selected_dims).reshape(1, -1)
 
         sec_class_points_mask = np.in1d(np.arange(seq_len), selected_sec_class).reshape(-1, 1) \
-            @ np.in1d(np.arange(n_dim), selected_positions).reshape(1, -1)
+            @ np.in1d(np.arange(n_dim), selected_dims).reshape(1, -1)
 
         # Swapping points in the selected positions
         temp = image_enc[first_class_points_mask].copy()
@@ -76,32 +76,29 @@ class PartlySwapper:
         assert (context_labels == 0).sum() == (context_labels == 1).sum()
 
         assert (query_labels == query_spurs).all()
-        assert (query_labels == 0).sum() == (query_labels == 1).sum()
-        seq_len, n_dim = image_enc.shape
-
-        context_class_size = (context_labels == 0).sum()
-
-        context_minority_count = int(self._context_prop * context_class_size)
         points_to_swap = np.random.randint(low=self._low, high=self._high)
 
+        seq_len, n_dim = image_enc.shape
         # NOTE: First 3 points each representation denote type (image/label/query)
-        selected_positions = np.random.choice(np.arange(3, n_dim), size=points_to_swap, replace=False)
+        selected_dims = np.random.choice(np.arange(3, n_dim), size=points_to_swap, replace=False)
  
+        context_class_size = (context_labels == 0).sum()
+        context_minority_count = int(self._context_prop * context_class_size)
+
         image_enc, context_spurs = self._swap_points(
                                             image_enc=image_enc,
                                             labels=context_labels,
                                             spurs=context_spurs,
                                             minority_count=context_minority_count,
-                                            selected_positions=selected_positions)
+                                            selected_dims=selected_dims)
         
-        query_class_size = (query_labels == 0).sum()
-        query_minority_count = int(self._query_prop * query_class_size)
+        query_minority_count = int(0.5 * self._query_prop * seq_len)
 
         query_img_encodings, query_spurs = self._swap_points(
                                             image_enc=query_img_encodings,
                                             labels=query_labels,
                                             spurs=query_spurs,
                                             minority_count=query_minority_count,
-                                            selected_positions=selected_positions)
+                                            selected_dims=selected_dims)
 
         return image_enc, context_spurs, query_img_encodings, query_spurs

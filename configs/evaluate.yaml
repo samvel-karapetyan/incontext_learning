@@ -3,7 +3,7 @@ seed: 0
 print_config: True
 ignore_warnings: False
 
-spurious_setting: wb_dro # Options: wb_erm, wb_dro, inat_no_spurious, inat_sum_erm, inat_sum_dro
+spurious_setting: wb_erm # Options: wb_erm, wb_dro, inat_no_spurious, inat_sum_erm, inat_sum_dro, swap_erm, swap_dro
 sp_token_generation_mode: random  # Options: opposite and random. Only relevant for iNaturalist settings.
 
 use_context_as_intermediate_queries: False  # True or False should have no effect, because we throw intermediate predictions
