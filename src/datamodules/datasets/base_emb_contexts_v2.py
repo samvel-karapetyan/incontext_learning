@@ -5,7 +5,7 @@ import os
 import numpy as np
 
 from torch.utils.data import Dataset
-from src.utils.dataset_helpers import TokenGenerator, EncodingRotator, IdentityTransform
+from src.utils.dataset_helpers import TokenGenerator, EncodingRotator, IdentityTransform, PartlySwapper
 from src.utils.dataset_helpers.context_prep_utils import get_context_example_tokens,\
     get_query_example_tokens
 
@@ -30,6 +30,9 @@ class BaseEmbContextsDatasetV2(Dataset, ABC):
                  input_noise_norm_interval: Optional[list] = None,
                  permute_input_dim: bool = False,
                  ask_context_prob: Optional[float] = None,
+                 swapping_minority_proportion_context: Optional[float] = None,
+                 swapping_minority_proportion_query: Optional[float] = None,
+                 points_to_swap_range: Optional[list] = None,
                  ):
         """
         Arguments:
@@ -49,8 +52,11 @@ class BaseEmbContextsDatasetV2(Dataset, ABC):
                                 If None, no Gaussian noise is added to representations.
         permute_input_dim (bool): Determines if image encodings are permuted. 
                                 True enables permutation, while False bypasses it.
-        ask_context_prob (float or None). If specified, defines the probability with which a query is set to be one
+        ask_context_prob (float or None): If specified, defines the probability with which a query is set to be one
                                           of previous context examples.
+        swapping_minority_proportion_context (float): The proportion of the minority group's to create via swapping in context.
+        swapping_minority_proportion_query (float): The proportion of the minority group's to create via swapping in queries.
+        points_to_swap_range (list): A list containing the range of the number of points to swap in the selected vectors.
         """
         super(BaseEmbContextsDatasetV2, self).__init__()
 
@@ -89,6 +95,14 @@ class BaseEmbContextsDatasetV2(Dataset, ABC):
             self._img_encoding_transform = EncodingRotator(n_rotation_matrices, tokens_data["token_len"].item())
         else:
             self._img_encoding_transform = IdentityTransform()
+
+        if spurious_setting in ['swap_erm', 'swap_dro']:
+            self._partly_swapper = PartlySwapper(
+                                        swapping_minority_proportion_context, 
+                                        swapping_minority_proportion_query, 
+                                        points_to_swap_range)
+        else:   
+            self._partly_swapper = None
 
     def __getitem__(self, idx) -> (np.ndarray, Examples, Examples, np.ndarray):
         """Returns a dataset example given the example index.
@@ -152,6 +166,15 @@ class BaseEmbContextsDatasetV2(Dataset, ABC):
         context_img_encodings, query_img_encodings = self._maybe_rotate_embeddings(
             context_img_encodings=context_img_encodings,
             query_img_encodings=query_img_encodings)
+        
+        context_img_encodings, context[:, 1], query_img_encodings, queries[:, 1] = self._maybe_partly_swap_points(
+            context_img_encodings=context_img_encodings,
+            context_labels=context[:, 2],
+            context_spurs=context[:, 1],
+            query_img_encodings=query_img_encodings,
+            query_labels=queries[:, 2],
+            query_spurs=queries[:, 1],
+        )
 
         context_img_encodings, query_img_encodings = self._maybe_permute_embeddings(
             context_img_encodings=context_img_encodings,
@@ -232,6 +255,27 @@ class BaseEmbContextsDatasetV2(Dataset, ABC):
         joint = self._img_encoding_transform(joint)
         n = context_img_encodings.shape[0]
         return joint[:n], joint[n:]
+    
+    def _maybe_partly_swap_points(
+            self,
+            context_img_encodings: np.ndarray,
+            context_labels: np.ndarray,
+            context_spurs: np.ndarray,
+            query_img_encodings: np.ndarray,
+            query_labels: np.ndarray,
+            query_spurs: np.ndarray,
+    ) -> (np.ndarray, np.ndarray, np.ndarray, np.ndarray):
+        if self._partly_swapper is None:
+            return context_img_encodings, context_spurs, query_img_encodings, query_spurs
+            
+        return self._partly_swapper(
+            context_img_encodings, 
+            context_labels, 
+            context_spurs,
+            query_img_encodings,
+            query_labels,
+            query_spurs,
+        )
     
     def _maybe_permute_embeddings(
             self,
