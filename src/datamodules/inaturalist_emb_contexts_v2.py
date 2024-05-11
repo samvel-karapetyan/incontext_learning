@@ -3,7 +3,6 @@ import logging
 
 import pytorch_lightning as pl
 
-from enum import Enum
 from torch.utils.data import DataLoader
 from pytorch_lightning.utilities import CombinedLoader
 
@@ -14,11 +13,6 @@ log = logging.getLogger(__name__)
 
 class INaturalistEmbContextsDataModuleV2(pl.LightningDataModule):
     """A PyTorch Lightning data module for iNaturalist in-context learning instances."""
-    class ValSets(Enum):
-        """Enum of validation splits of INaturalistEmbContextsDataModuleV2."""
-        INNER = "inner"
-        OUTER = "outer"
-        INNER_OUTER = "inner_outer"
 
     def __init__(self,
                  dataset_path: str,
@@ -42,6 +36,7 @@ class INaturalistEmbContextsDataModuleV2(pl.LightningDataModule):
                  swapping_minority_proportion_context: float,
                  swapping_minority_proportion_query: float,
                  points_to_swap_range: list[int],
+                 val_sets: list[str],
                  *args, **kwargs):
         super(INaturalistEmbContextsDataModuleV2, self).__init__()
 
@@ -72,6 +67,7 @@ class INaturalistEmbContextsDataModuleV2(pl.LightningDataModule):
         self._eval_len = eval_len
         self._batch_size = batch_size
         self._num_workers = num_workers
+        self._val_sets = val_sets
 
         # Placeholders for dataset splits
         self._train_set = None
@@ -116,22 +112,17 @@ class INaturalistEmbContextsDataModuleV2(pl.LightningDataModule):
         return DataLoader(self._train_set, batch_size=self._batch_size, num_workers=self._num_workers)
 
     def val_dataloader(self):
-        """Creates a combined dataloader for all validation datasets.
-
-        Returns:
-            CombinedLoader: A combined DataLoader for "inner", "inner-outer", and "outer" validation sets.
-        """
-        inner_val_dataloader = DataLoader(self._inner_val_set,
-                                          batch_size=self._batch_size,
-                                          num_workers=self._num_workers)
-        inner_outer_val_dataloader = DataLoader(self._inner_outer_val_set,
-                                                batch_size=self._batch_size,
-                                                num_workers=self._num_workers)
-        outer_val_dataloader = DataLoader(self._outer_val_set,
-                                          batch_size=self._batch_size,
-                                          num_workers=self._num_workers)
-
-        return CombinedLoader({self.ValSets.INNER: inner_val_dataloader,
-                               self.ValSets.INNER_OUTER: inner_outer_val_dataloader,
-                               self.ValSets.OUTER: outer_val_dataloader},
-                              mode="sequential")
+        """Creates a combined dataloader for all validation datasets."""
+        all_loaders = {
+            'inner': DataLoader(self._inner_val_set,
+                                batch_size=self._batch_size,
+                                num_workers=self._num_workers),
+            'inner_outer': DataLoader(self._inner_outer_val_set,
+                                      batch_size=self._batch_size,
+                                      num_workers=self._num_workers),
+            'outer': DataLoader(self._outer_val_set,
+                                batch_size=self._batch_size,
+                                num_workers=self._num_workers)
+        }
+        selected_loaders = {k: v for k, v in all_loaders.items() if k in self._val_sets}
+        return CombinedLoader(selected_loaders, mode="sequential")
