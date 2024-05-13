@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from typing import Optional
 import logging
 import os
+
 import numpy as np
 
 from torch.utils.data import Dataset
@@ -117,9 +118,9 @@ class BaseEmbContextsDatasetV2(Dataset, ABC):
         """
 
         # get spurious and class tokens
-        x_spurious_tokens = next(self._x_spurious_tokens_generator)
-        c_spurious_tokens = next(self._c_spurious_tokens_generator)
-        class_tokens = next(self._class_tokens_generator)
+        x_spurious_tokens = self._x_spurious_tokens_generator()
+        c_spurious_tokens = self._c_spurious_tokens_generator()
+        class_tokens = self._class_tokens_generator()
 
         # The following code block produces 2*self._context_class_size context and queries examples.
         # Some queries will be (0, 0, 0) implying that the query in the corresponding position is empty.
