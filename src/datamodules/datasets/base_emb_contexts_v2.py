@@ -98,10 +98,10 @@ class BaseEmbContextsDatasetV2(Dataset, ABC):
 
         if spurious_setting in ['swap_erm', 'swap_dro']:
             self._partly_swapper = PartlySwapper(
-                                        swapping_minority_proportion_context, 
-                                        swapping_minority_proportion_query, 
-                                        points_to_swap_range)
-        else:   
+                swapping_minority_proportion_context,
+                swapping_minority_proportion_query,
+                points_to_swap_range)
+        else:
             self._partly_swapper = None
 
     def __getitem__(self, idx) -> (np.ndarray, Examples, Examples, np.ndarray):

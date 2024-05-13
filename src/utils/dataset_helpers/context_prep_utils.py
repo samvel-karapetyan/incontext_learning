@@ -4,15 +4,15 @@ Examples = np.ndarray  # shaped (num_examples, 3) with each row being a triplet 
 
 
 def prepare_context_or_query(
-        cat1_indices: list[int],
-        cat2_indices: list[int],
-        cat1_spurious_labels: list[int],
-        cat2_spurious_labels: list[int],
+        cat1_indices: np.ndarray,
+        cat2_indices: np.ndarray,
+        cat1_spurious_labels: np.ndarray,
+        cat2_spurious_labels: np.ndarray,
         cat1_class_label: int,
         cat2_class_label: int) -> Examples:
     """Combines and shuffles list of examples from 2 classes."""
-    cat1_class_labels = [cat1_class_label] * len(cat1_indices)
-    cat2_class_labels = [cat2_class_label] * len(cat2_indices)
+    cat1_class_labels = np.full(shape=(len(cat1_indices),), fill_value=cat1_class_label)
+    cat2_class_labels = np.full(shape=(len(cat2_indices),), fill_value=cat2_class_label)
     cat1_examples = np.stack([cat1_indices, cat1_spurious_labels, cat1_class_labels], axis=1)
     cat2_examples = np.stack([cat2_indices, cat2_spurious_labels, cat2_class_labels], axis=1)
     examples = np.concatenate([cat1_examples, cat2_examples], axis=0)
@@ -20,29 +20,14 @@ def prepare_context_or_query(
 
 
 def generate_spurious_labels(
-        primary_label: int,
-        secondary_label: int,
+        majority_sp_label: int,
+        minority_sp_label: int,
         class_size: int,
-        minority_proportion: float) -> list[int]:
-    """Generates spurious labels based on given labels and proportions.
-
-    Args:
-        primary_label (int): The primary label for the majority of tokens.
-        secondary_label (int): The secondary label for the minority of tokens.
-        class_size (int): The total number of examples in a class.
-        minority_proportion (float): The proportion of the minority group in the class.
-        extra_token (bool): Whether to add an extra token. Default is False.
-
-    Returns:
-        list: A list of spurious labels.
-    """
-    majority_count = int(class_size * (1 - minority_proportion))
-    minority_count = class_size - majority_count
-
-    spurious_tokens = [primary_label] * majority_count + \
-                      [secondary_label] * minority_count
-
-    return spurious_tokens
+        minority_proportion: float) -> np.ndarray:
+    """Generates spurious labels based on given spurious labels and proportions."""
+    return np.random.choice([majority_sp_label, minority_sp_label],
+                            size=(class_size,),
+                            p=(1 - minority_proportion, minority_proportion))
 
 
 def encode_context_x(token: np.ndarray) -> np.ndarray:
