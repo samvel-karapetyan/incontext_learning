@@ -191,7 +191,7 @@ class INaturalistEmbContextsDatasetV2(BaseEmbContextsDatasetV2):
         Returns: np.ndarray of shape (num_examples, dim).
         """
         indices = examples[:, 0]
-        return self._encodings[self._encodings_indices_map[indices]]
+        return self._encodings[self._encodings_indices_map[indices]].copy()
 
     def _prepare_context_image_encodings(
             self,

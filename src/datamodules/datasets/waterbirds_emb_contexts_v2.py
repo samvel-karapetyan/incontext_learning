@@ -195,7 +195,6 @@ class WaterbirdsEmbContextsDatasetV2(BaseEmbContextsDatasetV2):
 
         return context, queries
 
-
     def _prepare_context_image_encodings(
             self,
             context: Examples,

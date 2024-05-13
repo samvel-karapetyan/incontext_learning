@@ -62,7 +62,7 @@ class WaterbirdsSubsetExtracted(Dataset):
             examples = np.stack([indices, c, y], axis=1)
         else:
             examples = np.stack([indices, y, c], axis=1)
-        return x, examples
+        return np.copy(x), examples
 
     def __len__(self):
         return len(self._wilds_waterbirds_subset)
