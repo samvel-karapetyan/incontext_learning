@@ -291,43 +291,44 @@ class InContextLearnerV2(LightningModule):
         query_class_labels = queries[:, :, 2]
         loss = self._loss_fn(pred_y_logit, query_class_labels.float())
 
-        last_pred_y = nn.functional.sigmoid(pred_y_logit[:, -1])
-        last_spurious_class = queries[:, -1, 1]
-        last_class_labels = queries[:, -1, 2]
+        with torch.no_grad():
+            last_pred_y = nn.functional.sigmoid(pred_y_logit[:, -1])
+            last_spurious_class = queries[:, -1, 1]
+            last_class_labels = queries[:, -1, 2]
 
-        self.accuracy[set_name].update(last_pred_y, last_class_labels)
+            self.accuracy[set_name].update(last_pred_y, last_class_labels)
 
-        for min_maj_metric in [self.accuracy_minority[set_name],
-                               self.accuracy_majority[set_name]]:
-            min_maj_metric.update(
-                query_prediction_batch=last_pred_y,
-                query_target_batch=last_class_labels,
-                query_spurious_batch=last_spurious_class,
-                context_targets_batch=context[:, :, 2],
-                context_spurious_vals_batch=context[:, :, 1],
-            )
-
-        self.log(f"{set_name}_loss", loss, on_step=True, on_epoch=True, prog_bar=True)
-        self.log(f"{set_name}_accuracy", self.accuracy[set_name], on_step=False, on_epoch=True)
-        self.log(f"{set_name}_accuracy_minority", self.accuracy_minority[set_name], on_step=False, on_epoch=True)
-        self.log(f"{set_name}_accuracy_majority", self.accuracy_majority[set_name], on_step=False, on_epoch=True)
-
-        if self._dataset_name == "waterbirds_emb_contexts":
-            self.worst_group_accuracy[set_name].update(
-                preds=last_pred_y,
-                targets=last_class_labels,
-                spurious_labels=last_spurious_class,
-            )
-            self.log(f"{set_name}_worst_group_accuracy", self.worst_group_accuracy[set_name], on_step=False,
-                     on_epoch=True)
-
-            for i in range(4):
-                self.group_accuracies[i][set_name].update(
+            for min_maj_metric in [self.accuracy_minority[set_name],
+                                   self.accuracy_majority[set_name]]:
+                min_maj_metric.update(
                     query_prediction_batch=last_pred_y,
                     query_target_batch=last_class_labels,
-                    query_spurious_batch=last_spurious_class)
-                self.log(f"{set_name}_group_{i}_accuracy", self.group_accuracies[i][set_name], on_step=False,
+                    query_spurious_batch=last_spurious_class,
+                    context_targets_batch=context[:, :, 2],
+                    context_spurious_vals_batch=context[:, :, 1],
+                )
+
+            self.log(f"{set_name}_loss", loss, on_step=True, on_epoch=True, prog_bar=True)
+            self.log(f"{set_name}_accuracy", self.accuracy[set_name], on_step=False, on_epoch=True)
+            self.log(f"{set_name}_accuracy_minority", self.accuracy_minority[set_name], on_step=False, on_epoch=True)
+            self.log(f"{set_name}_accuracy_majority", self.accuracy_majority[set_name], on_step=False, on_epoch=True)
+
+            if self._dataset_name == "waterbirds_emb_contexts":
+                self.worst_group_accuracy[set_name].update(
+                    preds=last_pred_y,
+                    targets=last_class_labels,
+                    spurious_labels=last_spurious_class,
+                )
+                self.log(f"{set_name}_worst_group_accuracy", self.worst_group_accuracy[set_name], on_step=False,
                          on_epoch=True)
+
+                for i in range(4):
+                    self.group_accuracies[i][set_name].update(
+                        query_prediction_batch=last_pred_y,
+                        query_target_batch=last_class_labels,
+                        query_spurious_batch=last_spurious_class)
+                    self.log(f"{set_name}_group_{i}_accuracy", self.group_accuracies[i][set_name], on_step=False,
+                             on_epoch=True)
 
         return loss
 
