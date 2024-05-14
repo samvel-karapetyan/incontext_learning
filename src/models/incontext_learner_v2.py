@@ -26,6 +26,7 @@ class GPTJModelV2(GPTJModel):
     def __init__(self, config):
         super().__init__(config)
 
+    @torch.compile(fullgraph=True)
     def forward(
         self,
         input_ids: Optional[torch.LongTensor] = None,
@@ -85,12 +86,12 @@ class GPTJModelV2(GPTJModel):
         # is a query token attending to itself.
         if batch_size <= 0:
             raise ValueError("batch_size has to be defined and > 0")
-        attention_mask = torch.zeros((batch_size, 1, seq_len, seq_len),
+        attention_mask = torch.zeros((seq_len, seq_len),
                                      dtype=self.dtype,
                                      device=device)
-        attention_mask[:, :, :, query_indices] = torch.finfo(self.dtype).min
-        for q_idx in query_indices:
-            attention_mask[:, :, q_idx, q_idx] = 0
+        attention_mask[:, query_indices] = torch.finfo(self.dtype).min
+        attention_mask.fill_diagonal_(0)
+        attention_mask = attention_mask.reshape((1, 1, seq_len, seq_len)).tile((batch_size, 1, 1, 1))
 
         # Prepare head mask if needed
         # 1.0 in head_mask indicate we keep the head
@@ -227,7 +228,7 @@ class InContextLearnerV2(LightningModule):
           self._proj = nn.Linear(embedding_size, network.embed_dim)
         else:
           self._proj = None
-        self._network = torch.compile(network)
+        self._network = network
         self._fc = nn.Linear(network.embed_dim, 1)
 
         self._loss_fn = loss_fn
