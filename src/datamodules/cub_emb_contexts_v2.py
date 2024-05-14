@@ -1,4 +1,3 @@
-from typing import Optional
 import logging
 import pytorch_lightning as pl
 
@@ -19,7 +18,7 @@ class CUBEmbContextsDataModuleV2(pl.LightningDataModule):
                  encoding_extractor: str,
                  data_length: int,
                  batch_size: int,
-                 num_workers: Optional[int],
+                 num_workers: int,
                  context_class_size: int,
                  context_minority_group_proportion: float,
                  query_minority_group_proportion: float,

@@ -1,4 +1,3 @@
-from typing import Optional
 import logging
 
 import pytorch_lightning as pl
@@ -21,7 +20,7 @@ class WaterbirdsEmbContextsDataModuleV2(pl.LightningDataModule):
                  train_len: int,
                  eval_len: int,
                  batch_size: int,
-                 num_workers: Optional[int],
+                 num_workers: int,
                  context_class_size: int,
                  context_group_proportions: list[float],
                  query_group_proportions: list[float],
