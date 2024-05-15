@@ -26,6 +26,7 @@ class INaturalistEmbContextsDataModuleV2(pl.LightningDataModule):
                  spurious_setting: str,
                  sp_token_generation_mode: str,
                  use_context_as_intermediate_queries: bool,
+                 reverse_task: bool,
                  rotate_encodings: bool,
                  n_rotation_matrices: int,
                  label_noise_ratio_interval: list,
@@ -35,6 +36,7 @@ class INaturalistEmbContextsDataModuleV2(pl.LightningDataModule):
                  swapping_minority_proportion_context: float,
                  swapping_minority_proportion_query: float,
                  points_to_swap_range: list[int],
+                 random_task_switching: bool,
                  val_sets: list[str],
                  *args, **kwargs):
         super(INaturalistEmbContextsDataModuleV2, self).__init__()
@@ -48,6 +50,7 @@ class INaturalistEmbContextsDataModuleV2(pl.LightningDataModule):
             spurious_setting=spurious_setting,
             sp_token_generation_mode=sp_token_generation_mode,
             use_context_as_intermediate_queries=use_context_as_intermediate_queries,
+            reverse_task=reverse_task,
             swapping_minority_proportion_context=swapping_minority_proportion_context,
             swapping_minority_proportion_query=swapping_minority_proportion_query,
             points_to_swap_range=points_to_swap_range,
@@ -60,6 +63,7 @@ class INaturalistEmbContextsDataModuleV2(pl.LightningDataModule):
             input_noise_norm_interval=input_noise_norm_interval,
             permute_input_dim=permute_input_dim,
             ask_context_prob=ask_context_prob,
+            random_task_switching=random_task_switching,
         )
 
         self._train_len = train_len

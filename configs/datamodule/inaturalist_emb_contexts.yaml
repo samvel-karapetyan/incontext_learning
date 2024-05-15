@@ -19,6 +19,8 @@ sp_token_generation_mode: ${sp_token_generation_mode}  # Use the global value of
 
 use_context_as_intermediate_queries: ${use_context_as_intermediate_queries}
 
+reverse_task: False
+
 rotate_encodings: False
 n_rotation_matrices: 1000  # 1000 works well, but is slow. Reduce for efficiency when experimenting
 
@@ -32,5 +34,7 @@ ask_context_prob: null
 swapping_minority_proportion_context: 0.1
 swapping_minority_proportion_query: 0.5
 points_to_swap_range: [50, 100]
+
+random_task_switching: False
 
 val_sets: [inner, inner_outer, outer]  # the order here should match the order in the combined loader
