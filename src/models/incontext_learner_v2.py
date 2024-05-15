@@ -212,6 +212,7 @@ class InContextLearnerV2(LightningModule):
                  dataset_name: str,
                  optimizer_conf=None,
                  scheduler_conf=None,
+                 input_layer_norm: bool = False,
                  ):
         """
         Args:
@@ -225,10 +226,16 @@ class InContextLearnerV2(LightningModule):
         """
         super(InContextLearnerV2, self).__init__()
 
+        if input_layer_norm:
+            self._input_ln = nn.LayerNorm(embedding_size, eps=1e-5)
+        else:
+            self._input_ln = None
+
         if embedding_size != network.embed_dim:
           self._proj = nn.Linear(embedding_size, network.embed_dim)
         else:
           self._proj = None
+
         self._network = network
         self._fc = nn.Linear(network.embed_dim, 1)
 
@@ -262,6 +269,8 @@ class InContextLearnerV2(LightningModule):
 
         Returns: a torch tensor of shape (B, Q, 1) consisting of query prediction logits.
         """
+        if self._input_ln is not None:
+            input_embeds = self._input_ln(input_embeds)
         if self._proj is not None:
             input_embeds = self._proj(input_embeds)
         out = self._network(

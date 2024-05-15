@@ -25,3 +25,5 @@ loss_fn:
 val_sets: ${datamodule.val_sets} # null if there is a single val set, otherwise this is the list of names of val sets
 
 dataset_name: ${datamodule.name}
+
+input_layer_norm: False
