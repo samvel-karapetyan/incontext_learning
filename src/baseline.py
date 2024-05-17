@@ -19,8 +19,8 @@ def baseline(config: DictConfig):
         if isinstance(config.datamodule.context_class_size, Iterable) \
         else [config.datamodule.context_class_size]
     
-    assert config.spurious_setting in ["wb_erm", "inat_no_spurious", "inat_sum_erm"]
-    
+    assert config.spurious_setting in ["wb_erm", "inat_no_spurious", "inat_sum_erm", "swap_erm"]
+
     baseline_methods = dict()
 
     # parameters to mention in the file name
