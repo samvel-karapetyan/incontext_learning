@@ -55,6 +55,7 @@ class WaterbirdsEmbContextsDatasetV2(BaseEmbContextsDatasetV2):
                  sp_token_generation_mode: str,
                  use_context_as_intermediate_queries: bool = False,
                  reverse_task: bool = False,
+                 modified: bool = False,
                  rotate_encodings: bool = False,
                  n_rotation_matrices: Optional[int] = None,
                  randomly_swap_labels: bool = False,
@@ -81,6 +82,8 @@ class WaterbirdsEmbContextsDatasetV2(BaseEmbContextsDatasetV2):
                                         'opposite' or 'random'.
         use_context_as_intermediate_queries (bool): Whether intermediate queries should be the context examples.
         reverse_task (bool): Whether to predict background instead of foreground.
+        modified (bool): Whether we explicitly add background information to image embeddings. Helpful to exacerbate
+                         the problem of spurious correlation in case of Dino-V2 embeddings.
         rotate_encodings (bool): Determines if image encodings are rotated. True enables rotation
                                  based on class labels, while False bypasses rotation.
         n_rotation_matrices (int): Specifies the number of rotation matrices to generate and store.
@@ -124,9 +127,16 @@ class WaterbirdsEmbContextsDatasetV2(BaseEmbContextsDatasetV2):
         self._query_group_proportions = query_group_proportions
         self._randomly_swap_labels = randomly_swap_labels
 
+        if modified:
+            # as we never use random class tokens, we can use them here
+            sp_vector_to_add = self._tokens_data['random_class_tokens'][0]
+        else:
+            sp_vector_to_add = None
+
         dataset = WaterbirdsExtracted(root_dir,
                                       encoding_extractor=encoding_extractor,
-                                      reverse_task=reverse_task)
+                                      reverse_task=reverse_task,
+                                      sp_vector_to_add=sp_vector_to_add)
 
         train_set = dataset.get_subset("train")
         val_set = dataset.get_subset("val")

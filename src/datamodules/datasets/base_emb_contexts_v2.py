@@ -81,9 +81,9 @@ class BaseEmbContextsDatasetV2(Dataset, ABC):
             f"{encoding_extractor}_l2.npz")
         tokens_data = np.load(token_data_path)
         # Convert tokens_data to a dictionary to resolve "Bad CRC-32" error in multi-worker mode.
-        tokens_data = {k: tokens_data[k] for k in tokens_data.keys()}
+        self._tokens_data = {k: tokens_data[k] for k in tokens_data.keys()}
 
-        tokens_generator = TokenGenerator(tokens_data=tokens_data,
+        tokens_generator = TokenGenerator(tokens_data=self._tokens_data,
                                           sp_token_generation_mode=self._sp_token_generation_mode)
 
         (self._x_spurious_tokens_generator,

@@ -23,6 +23,8 @@ use_context_as_intermediate_queries: ${use_context_as_intermediate_queries}
 
 reverse_task: False
 
+modified: False
+
 rotate_encodings: False
 n_rotation_matrices: 10000  # produces roughly 40m different examples
 

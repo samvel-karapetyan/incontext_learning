@@ -39,10 +39,10 @@ class TokenGenerator:
             return tokens
 
         def fixed_c_spurious_tokens_fn():
-            return self.tokens_data[f"opposite_spurious_tokens_2"]
+            return self.tokens_data["opposite_spurious_tokens_2"]
 
         def fixed_class_tokens_fn():
-            return self.tokens_data[f"opposite_class_tokens"]
+            return self.tokens_data["opposite_class_tokens"]
 
         x_spurious_tokens_fn = generate_random_sp_tokens
         c_spurious_tokens_fn = fixed_c_spurious_tokens_fn

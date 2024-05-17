@@ -1,3 +1,4 @@
+from typing import Optional
 import logging
 import os.path
 
@@ -40,9 +41,11 @@ class WaterbirdsSubsetExtracted(Dataset):
                  wilds_waterbirds_subset: WILDSSubset,
                  encodings: np.ndarray,
                  index_map: np.ndarray,
-                 reverse_task: bool = False):
+                 reverse_task: bool = False,
+                 sp_vector_to_add: Optional[np.ndarray] = None):
         self._wilds_waterbirds_subset = wilds_waterbirds_subset
         self._reverse_task = reverse_task
+        self._sp_vector_to_add = sp_vector_to_add
 
         # permute rows of `encodings` such that the i-th row corresponds to the i-th example of the subset
         n = len(wilds_waterbirds_subset)
@@ -55,14 +58,21 @@ class WaterbirdsSubsetExtracted(Dataset):
         self._encodings = encodings[row_indices]
 
     def __getitem__(self, indices) -> (np.ndarray, Examples):
-        x = self._encodings[indices]
-        y = self._wilds_waterbirds_subset.y_array[indices]
-        c = self._wilds_waterbirds_subset.metadata_array[indices, 0]
+        x = self._encodings[indices].copy()
+        y = self._wilds_waterbirds_subset.y_array[indices].numpy()
+        c = self._wilds_waterbirds_subset.metadata_array[indices, 0].numpy()
+
+        # add more background information if specified
+        if self._sp_vector_to_add is not None:
+            x += np.outer(2 * c - 1, self._sp_vector_to_add)
+
+        # reverse the task if specified
         if not self._reverse_task:
             examples = np.stack([indices, c, y], axis=1)
         else:
             examples = np.stack([indices, y, c], axis=1)
-        return np.copy(x), examples
+
+        return x, examples
 
     def __len__(self):
         return len(self._wilds_waterbirds_subset)
@@ -72,10 +82,12 @@ class WaterbirdsExtracted:
     def __init__(self,
                  root_dir: str,
                  encoding_extractor: str,
-                 reverse_task: bool = False):
+                 reverse_task: bool = False,
+                 sp_vector_to_add: Optional[np.ndarray] = None):
         self._root_dir = root_dir
         self._encoding_extractor = encoding_extractor
         self._reverse_task = reverse_task
+        self._sp_vector_to_add = sp_vector_to_add
         self._wilds_waterbirds = WaterbirdsDataset(root_dir=root_dir)
 
     def get_subset(self, split, *args, **kwargs) -> WaterbirdsSubsetExtracted:
@@ -86,4 +98,5 @@ class WaterbirdsExtracted:
             encodings=encodings_data['encodings'],
             index_map=encodings_data['indices_map'],
             reverse_task=self._reverse_task,
+            sp_vector_to_add=self._sp_vector_to_add,
         )
