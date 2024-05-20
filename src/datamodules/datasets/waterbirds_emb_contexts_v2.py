@@ -56,6 +56,7 @@ class WaterbirdsEmbContextsDatasetV2(BaseEmbContextsDatasetV2):
                  use_context_as_intermediate_queries: bool = False,
                  reverse_task: bool = False,
                  modified: bool = False,
+                 modified_scale: float = 1.0,
                  rotate_encodings: bool = False,
                  n_rotation_matrices: Optional[int] = None,
                  randomly_swap_labels: bool = False,
@@ -84,6 +85,7 @@ class WaterbirdsEmbContextsDatasetV2(BaseEmbContextsDatasetV2):
         reverse_task (bool): Whether to predict background instead of foreground.
         modified (bool): Whether we explicitly add background information to image embeddings. Helpful to exacerbate
                          the problem of spurious correlation in case of Dino-V2 embeddings.
+        modified_scale (float): The relative scale of background vector to be added.
         rotate_encodings (bool): Determines if image encodings are rotated. True enables rotation
                                  based on class labels, while False bypasses rotation.
         n_rotation_matrices (int): Specifies the number of rotation matrices to generate and store.
@@ -129,7 +131,7 @@ class WaterbirdsEmbContextsDatasetV2(BaseEmbContextsDatasetV2):
 
         if modified:
             # as we never use random class tokens, we can use them here
-            sp_vector_to_add = self._tokens_data['random_class_tokens'][0]
+            sp_vector_to_add = modified_scale * self._tokens_data['random_class_tokens'][0]
         else:
             sp_vector_to_add = None
 
