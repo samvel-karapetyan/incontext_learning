@@ -14,6 +14,19 @@ log = logging.getLogger(__name__)
 Examples = np.ndarray  # shaped (num_examples, 3) with each row being a triplet (index, spurious_label, class_label)
 
 
+def _sample(
+        df,
+        category: str,
+        num_context_examples: int,
+        num_query_examples: int,
+):
+    mask = (df["category"] == category)
+    context_indices = df.loc[mask, "id"].sample(num_context_examples, replace=False)
+    mask.loc[context_indices.index] = False
+    query_indices = df.loc[mask, "id"].sample(num_query_examples, replace=True)  # queries can repeat
+    return context_indices.tolist(), query_indices.tolist()
+
+
 class ImagenetEmbContextsDatasetV2(BaseEmbContextsDatasetV2):
     """A dataset class for ImageNet in-context learning instances."""
 
@@ -108,21 +121,24 @@ class ImagenetEmbContextsDatasetV2(BaseEmbContextsDatasetV2):
         # Randomly selecting two categories
         category1, category2 = np.random.choice(self._categories, size=2, replace=False)
 
+        # sampling context and query examples for each class
         context_cat1_size = num_context_examples // 2
         context_cat2_size = (num_context_examples + 1) // 2
         query_cat1_size = num_query_examples // 2
         query_cat2_size = (num_query_examples + 1) // 2
 
-        # Sampling 2 * context_class_size examples from each category (half for context and half for queries)
-        df = self._dataframe  # shorthand
-        cat1_indices = df.loc[df["category"] == category1, "id"].sample(
-            context_cat1_size + query_cat1_size).tolist()
-        cat2_indices = df.loc[df["category"] == category2, "id"].sample(
-            context_cat2_size + query_cat2_size).tolist()
-        cat1_context_indices = cat1_indices[:context_cat1_size]
-        cat1_query_indices = cat1_indices[context_cat1_size:]
-        cat2_context_indices = cat2_indices[:context_cat2_size]
-        cat2_query_indices = cat2_indices[context_cat2_size:]
+        cat1_context_indices, cat1_query_indices = _sample(
+            df=self._dataframe,
+            category=category1,
+            num_context_examples=context_cat1_size,
+            num_query_examples=query_cat1_size,
+        )
+        cat2_context_indices, cat2_query_indices = _sample(
+            df=self._dataframe,
+            category=category2,
+            num_context_examples=context_cat2_size,
+            num_query_examples=query_cat2_size,
+        )
 
         # Shuffle the 2 classes to remove any bias for short context sizes
         # Also ensure that (0, 0) and (1, 1) are majority groups
