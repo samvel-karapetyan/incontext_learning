@@ -73,6 +73,9 @@ class CelebASubsetExtracted(Dataset):
         y = self._wilds_celeba_subset.y_array[indices].numpy()
         c = self._wilds_celeba_subset.metadata_array[indices, 0].numpy()
 
+        # Swap spurious labels
+        c = 1 - c
+
         # add more background information if specified
         if self._sp_vector_to_add is not None:
             x += np.outer(2 * c - 1, self._sp_vector_to_add)
