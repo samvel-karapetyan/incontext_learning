@@ -38,9 +38,6 @@ class CelebAEmbContextsDataModuleV2(pl.LightningDataModule):
                  permute_input_dim: bool,
                  ask_context_prob: float,
                  val_sets: list[str],
-                 swapping_minority_proportion_context: float,
-                 swapping_minority_proportion_query: float,
-                 points_to_swap_range: list[int],
                  **kwargs):
         super(CelebAEmbContextsDataModuleV2, self).__init__()
 
@@ -56,9 +53,6 @@ class CelebAEmbContextsDataModuleV2(pl.LightningDataModule):
             reverse_task=reverse_task,
             modified=modified,
             modified_scale=modified_scale,
-            swapping_minority_proportion_context=swapping_minority_proportion_context,
-            swapping_minority_proportion_query=swapping_minority_proportion_query,
-            points_to_swap_range=points_to_swap_range,
         )
 
         self._aug_params = dict(

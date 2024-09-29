@@ -10,7 +10,7 @@ sp_token_generation_mode: opposite  # Options: opposite and random
 use_context_as_intermediate_queries: False
 
 defaults:
-  - datamodule: waterbirds_emb_contexts  # Options: inaturalist_emb_contexts, waterbirds_emb_contexts
+  - datamodule: waterbirds_emb_contexts  # Options: inaturalist_emb_contexts, waterbirds_emb_contexts, celeba_emb_contexts
   - encoding_extractor: dinov2_vitb14 # Options: dinov2_vitb14, resnet50
   - model: incontext_learner_gptj_80m
   - optimizer: adam

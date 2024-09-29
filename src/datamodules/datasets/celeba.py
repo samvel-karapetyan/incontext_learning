@@ -16,7 +16,7 @@ class CelebASubsetForEncodingExtraction(Dataset):
     def __init__(self, wilds_celeba_subset: WILDSSubset):
         self._wilds_celeba_subset = wilds_celeba_subset
 
-        if hasattr(self._wilds_celeba_subset, 'collate'): # necessary method for constructing subsets
+        if hasattr(self._wilds_celeba_subset, 'collate'):  # necessary method for constructing subsets
             setattr(self, 'collate', getattr(self._wilds_celeba_subset, 'collate'))
 
     def __getitem__(self, idx):
@@ -76,7 +76,7 @@ class CelebASubsetExtracted(Dataset):
         # Swap spurious labels
         c = 1 - c
 
-        # add more background information if specified
+        # add more spurious information if specified
         if self._sp_vector_to_add is not None:
             x += np.outer(2 * c - 1, self._sp_vector_to_add)
 

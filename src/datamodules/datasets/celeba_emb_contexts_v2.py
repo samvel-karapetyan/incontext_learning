@@ -64,9 +64,7 @@ class CelebAEmbContextsDatasetV2(BaseEmbContextsDatasetV2):
                  input_noise_norm_interval: Optional[list] = None,
                  permute_input_dim: bool = False,
                  ask_context_prob: Optional[float] = None,
-                 swapping_minority_proportion_context: Optional[float] = None,
-                 swapping_minority_proportion_query: Optional[float] = None,
-                 points_to_swap_range: Optional[list] = None):
+                 ):
         """
         Args:
 
@@ -98,11 +96,8 @@ class CelebAEmbContextsDatasetV2(BaseEmbContextsDatasetV2):
                                 True enables permutation, while False bypasses it.
         ask_context_prob (float or None): If specified, defines the probability with which a query is set to be one
                                           of previous context examples.
-        swapping_minority_proportion_context (float): The proportion of the minority group's to create via swapping in context.
-        swapping_minority_proportion_query (float): The proportion of the minority group's to create via swapping in queries.
-        points_to_swap_range (list): A list containing the range of the number of points to swap in the selected vectors.
         """
-        assert spurious_setting in ['wb_erm', 'wb_dro', 'swap_erm', 'swap_dro'] # wb_erm, wb_dro ~ celeba_erm, celeba_dro
+        assert spurious_setting in ['wb_erm', 'wb_dro']  # wb_erm, wb_dro ~ celeba_erm, celeba_dro
         assert not ((spurious_setting in ['swap_erm', 'swap_dro'])
                     and any(context_group_proportions[1:3]) 
                     and any(query_group_proportions[1:3]))
@@ -120,9 +115,6 @@ class CelebAEmbContextsDatasetV2(BaseEmbContextsDatasetV2):
             input_noise_norm_interval=input_noise_norm_interval,
             permute_input_dim=permute_input_dim,
             ask_context_prob=ask_context_prob,
-            swapping_minority_proportion_context=swapping_minority_proportion_context,
-            swapping_minority_proportion_query=swapping_minority_proportion_query,
-            points_to_swap_range=points_to_swap_range
         )
 
         self._context_group_proportions = context_group_proportions
@@ -136,9 +128,9 @@ class CelebAEmbContextsDatasetV2(BaseEmbContextsDatasetV2):
             sp_vector_to_add = None
 
         dataset = CelebAExtracted(root_dir,
-                                      encoding_extractor=encoding_extractor,
-                                      reverse_task=reverse_task,
-                                      sp_vector_to_add=sp_vector_to_add)
+                                  encoding_extractor=encoding_extractor,
+                                  reverse_task=reverse_task,
+                                  sp_vector_to_add=sp_vector_to_add)
 
         train_set = dataset.get_subset("train")
         val_set = dataset.get_subset("val")
