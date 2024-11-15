@@ -8,3 +8,5 @@ from src.datamodules.datasets.cub import CUBDataset
 from src.datamodules.datasets.cub_emb_contexts_v2 import CUBEmbContextsDatasetV2
 from src.datamodules.datasets.imagenet import ImagenetDataset
 from src.datamodules.datasets.imagenet_emb_contexts_v2 import ImagenetEmbContextsDatasetV2
+from src.datamodules.datasets.camelyon17 import Camelyon17ForEncodingExtraction, Camelyon17Extracted
+from src.datamodules.datasets.camelyon17_emb_contexts_v2 import Camelyon17EmbContextsDatasetV2

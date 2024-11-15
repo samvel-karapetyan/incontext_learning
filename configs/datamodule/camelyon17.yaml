@@ -1,0 +1,7 @@
+_target_: src.datamodules.Camelyon17DataModule
+name: camelyon17
+
+root_dir: ${oc.env:DATA_ROOT_DIR}
+resize_size: 224
+batch_size: 32
+num_workers: 0
