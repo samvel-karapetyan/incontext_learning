@@ -73,6 +73,7 @@ class Camelyon17SubsetExtracted(Dataset):
         x = self._encodings[indices].copy()
         y = self._wilds_camelyon17_subset.y_array[indices].numpy()
 
+        # metadata fields: ['hospital', 'slide', 'y', 'from_source_domain']
         hospital_id = self._wilds_camelyon17_subset.metadata_array[indices, 0].numpy()
         # Training and ID validation hospitals: 0, 3 and 4
         # OOD validation hospitals: 1
@@ -156,9 +157,9 @@ class Camelyon17Extracted:
                                       fill_value=-1)
             joint_index_map[:len(val_index_map)] = val_index_map
             for i in range(len(test_index_map)):
-                assert not ((joint_index_map[i] != -1) and (test_index_map[i] != -1))
                 if test_index_map[i] != -1:
-                    joint_index_map[i] = test_index_map[i]
+                    assert joint_index_map[i] == -1
+                    joint_index_map[i] = len(val_subset) + test_index_map[i]
 
             joint_y_array = torch.concat(
                 [val_subset._wilds_camelyon17_subset.y_array,

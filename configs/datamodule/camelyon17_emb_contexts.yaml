@@ -3,7 +3,6 @@ name: camelyon17_emb_contexts
 
 context_class_size: 50
 
-# train set proportions are [0.7295, 0.03837, 0.0116, 0.2204]
 context_group_proportions: [0.45, 0.05, 0.05, 0.45]
 query_group_proportions: [0.25, 0.25, 0.25, 0.25]
 
