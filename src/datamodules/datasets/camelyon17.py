@@ -1,5 +1,5 @@
 import dataclasses
-from typing import Optional, Union
+from typing import Optional
 import logging
 import os.path
 
@@ -39,8 +39,8 @@ class Camelyon17ForEncodingExtraction:
 
 
 @dataclasses.dataclass
-class MockWILDSSubset:
-    indices: np.ndarray
+class CustomExtractedWILDSSubset:
+    encodings: np.ndarray
     y_array: torch.Tensor
     metadata_array: torch.Tensor
 
@@ -50,36 +50,23 @@ class MockWILDSSubset:
 
 class Camelyon17SubsetExtracted(Dataset):
     def __init__(self,
-                 wilds_camelyon17_subset: Union[WILDSSubset, MockWILDSSubset],
-                 encodings: np.ndarray,
-                 index_map: np.ndarray,
+                 custom_subset: CustomExtractedWILDSSubset,
                  reverse_task: bool = False,
                  sp_vector_to_add: Optional[np.ndarray] = None):
-        self._wilds_camelyon17_subset = wilds_camelyon17_subset
+        self._custom_subset = custom_subset
         self._reverse_task = reverse_task
         self._sp_vector_to_add = sp_vector_to_add
 
-        # permute rows of `encodings` such that the i-th row corresponds to the i-th example of the subset
-        n = len(wilds_camelyon17_subset)
-        row_indices = np.zeros(n, dtype=np.int32)
-        for idx in range(n):
-            idx_within_full_camelyon17 = wilds_camelyon17_subset.indices[idx]
-            encoding_row_index = index_map[idx_within_full_camelyon17]
-            assert encoding_row_index != -1
-            row_indices[idx] = encoding_row_index
-        self._encodings = encodings[row_indices]
-
     def __getitem__(self, indices) -> (np.ndarray, Examples):
-        x = self._encodings[indices].copy()
-        y = self._wilds_camelyon17_subset.y_array[indices].numpy()
+        x = self._custom_subset.encodings[indices].copy()
+        y = self._custom_subset.y_array[indices].numpy()
 
         # metadata fields: ['hospital', 'slide', 'y', 'from_source_domain']
-        hospital_id = self._wilds_camelyon17_subset.metadata_array[indices, 0].numpy()
-        # Training and ID validation hospitals: 0, 3 and 4
-        # OOD validation hospitals: 1
-        # Test hospitals: 2
-        # NOTE: We set the spurious variable based on the hospital ID.
-        c = ((hospital_id == 4) | (hospital_id == 2)).astype(np.int32)
+        hospital_id = self._custom_subset.metadata_array[indices, 0].numpy()
+        # In our constructed train and val splits, we have hospitals 4 (from original train) and 2 (from original test)
+        # In our constructed test split, we have hospitals 0 (from original train 1) and 1 (from original val)
+        # Therefore, we map hospitals 1 and 4 to spurious=0 and hospitals 1 and 2 to spurious=1.
+        c = ((hospital_id == 1) | (hospital_id == 2)).astype(np.int32)
 
         # add more background information if specified
         if self._sp_vector_to_add is not None:
@@ -94,7 +81,55 @@ class Camelyon17SubsetExtracted(Dataset):
         return x, examples
 
     def __len__(self):
-        return len(self._wilds_camelyon17_subset)
+        return len(self._custom_subset)
+
+
+def _put_encodings_in_right_order(
+        indices_within_full_camelyon17: np.ndarray,
+        encodings: np.ndarray,
+        index_map: np.ndarray,
+) -> np.ndarray:
+    """Permutes rows of `encodings` such that the i-th row corresponds to the i-th example of the subset."""
+    n = len(indices_within_full_camelyon17)
+    row_indices = np.zeros(n, dtype=np.int32)
+    for idx in range(n):
+        idx_within_full_camelyon17 = indices_within_full_camelyon17[idx],
+        encoding_row_index = index_map[idx_within_full_camelyon17]
+        assert encoding_row_index != -1
+        row_indices[idx] = encoding_row_index
+    return encodings[row_indices]
+
+
+def _select_hospitals(
+        ds: CustomExtractedWILDSSubset,
+        selected_hospital_ids: list[int],
+) -> CustomExtractedWILDSSubset:
+    hospital_ids = ds.metadata_array[:, 0].numpy()
+    mask = np.zeros(hospital_ids.shape, dtype=np.bool_)
+    for h in selected_hospital_ids:
+        mask |= (hospital_ids == h)
+    return CustomExtractedWILDSSubset(
+        y_array=ds.y_array[mask],
+        metadata_array=ds.metadata_array[mask],
+        encodings=ds.encodings[mask],
+    )
+
+
+def _concatenate_custom_wilds_subsets(
+        part1: CustomExtractedWILDSSubset,
+        part2: CustomExtractedWILDSSubset,
+) -> CustomExtractedWILDSSubset:
+    return CustomExtractedWILDSSubset(
+        y_array=torch.concat(
+            [part1.y_array, part2.y_array], dim=0
+        ),
+        metadata_array=torch.concat(
+            [part1.metadata_array, part2.metadata_array], dim=0
+        ),
+        encodings=np.concatenate(
+            [part1.encodings, part2.encodings], axis=0
+        )
+    )
 
 
 class Camelyon17Extracted:
@@ -109,82 +144,123 @@ class Camelyon17Extracted:
         self._sp_vector_to_add = sp_vector_to_add
         self._wilds_camelyon17 = Camelyon17Dataset(root_dir=root_dir)
 
+    def _split_wilds_train_val(self,
+                               wilds_split: str,
+                               train_ratio: float,
+                               ) -> (CustomExtractedWILDSSubset, CustomExtractedWILDSSubset):
+        encodings_data = np.load(
+            os.path.join(self._root_dir, "camelyon17", self._encoding_extractor, wilds_split, "combined.npz"))
+        wilds_subset = self._wilds_camelyon17.get_subset(wilds_split)
+
+        rng = np.random.default_rng(seed=42)
+        perm = rng.permutation(len(wilds_subset))
+        train_count = int(train_ratio * len(wilds_subset))
+        train_indices = perm[:train_count]
+        val_indices = perm[train_count:]
+
+        encodings = _put_encodings_in_right_order(
+            indices_within_full_camelyon17=wilds_subset.indices,
+            encodings=encodings_data['encodings'],
+            index_map=encodings_data['indices_map'],
+        )
+
+        train_ds = CustomExtractedWILDSSubset(
+            y_array=wilds_subset.y_array[train_indices],
+            metadata_array=wilds_subset.metadata_array[train_indices],
+            encodings=encodings[train_indices],
+        )
+
+        val_ds = CustomExtractedWILDSSubset(
+            y_array=wilds_subset.y_array[val_indices],
+            metadata_array=wilds_subset.metadata_array[val_indices],
+            encodings=encodings[val_indices],
+        )
+
+        return train_ds, val_ds
+
+    def _select_wilds_subset(self,
+                             wilds_split: str) -> CustomExtractedWILDSSubset:
+        encodings_data = np.load(
+            os.path.join(self._root_dir, "camelyon17", self._encoding_extractor, wilds_split, "combined.npz"))
+        wilds_subset = self._wilds_camelyon17.get_subset(wilds_split)
+
+        encodings = _put_encodings_in_right_order(
+            indices_within_full_camelyon17=wilds_subset.indices,
+            encodings=encodings_data['encodings'],
+            index_map=encodings_data['indices_map'],
+        )
+
+        return CustomExtractedWILDSSubset(
+            y_array=wilds_subset.y_array,
+            metadata_array=wilds_subset.metadata_array,
+            encodings=encodings,
+        )
+
     def get_subset(self, split, *args, **kwargs) -> Camelyon17SubsetExtracted:
-        if split in ['train', 'val']:
-            if split == 'train':
-                wilds_split = 'train'
-            else:
-                wilds_split = 'id_val'
-            encodings_data = np.load(
-                os.path.join(self._root_dir, "camelyon17", self._encoding_extractor, wilds_split, "combined.npz"))
+        # 3 splits are allowed: train, val, and test
+        # * train and val are constructed by taking hospital 4 of the original train and hospital 2 of the
+        #   original test sets, then splitting by 80% vs 20% ratio.
+        # * test is constructed by taking the hospital  0 of the original train and hospital 1 of the original
+        #   OOD validation.
+        if split == 'train':
+            part1, _ = self._split_wilds_train_val(
+                wilds_split='train',
+                train_ratio=0.8,
+            )
+            part1 = _select_hospitals(
+                part1, selected_hospital_ids=[4])  # 105,821 examples of hospital 4
+
+            part2, _ = self._split_wilds_train_val(
+                wilds_split='test',
+                train_ratio=0.8,
+            )  # 68,043 examples of hospital 2
+
+            joint = _concatenate_custom_wilds_subsets(part1, part2)
+
             return Camelyon17SubsetExtracted(
-                wilds_camelyon17_subset=self._wilds_camelyon17.get_subset(wilds_split, *args, **kwargs),
-                encodings=encodings_data['encodings'],
-                index_map=encodings_data['indices_map'],
+                custom_subset=joint,
                 reverse_task=self._reverse_task,
                 sp_vector_to_add=self._sp_vector_to_add,
             )
+
+        if split == 'val':
+            _, part1 = self._split_wilds_train_val(
+                wilds_split='train',
+                train_ratio=0.8,
+            )
+            part1 = _select_hospitals(
+                part1, selected_hospital_ids=[4])  # 26,231 examples of hospital 4
+
+            _, part2 = self._split_wilds_train_val(
+                wilds_split='test',
+                train_ratio=0.8,
+            )  # 17,011 examples of hospital 2
+
+            joint = _concatenate_custom_wilds_subsets(part1, part2)
+
+            return Camelyon17SubsetExtracted(
+                custom_subset=joint,
+                reverse_task=self._reverse_task,
+                sp_vector_to_add=self._sp_vector_to_add,
+            )
+
         if split == 'test':
-            val_encodings_data = np.load(
-                os.path.join(self._root_dir, "camelyon17", self._encoding_extractor, "val", "combined.npz"))
-
-            val_subset = Camelyon17SubsetExtracted(
-                wilds_camelyon17_subset=self._wilds_camelyon17.get_subset('val', *args, **kwargs),
-                encodings=val_encodings_data['encodings'],
-                index_map=val_encodings_data['indices_map'],
-                reverse_task=self._reverse_task,
-                sp_vector_to_add=self._sp_vector_to_add,
+            part1 = self._select_wilds_subset(
+                wilds_split='train',
             )
+            part1 = _select_hospitals(
+                part1, selected_hospital_ids=[0])  # 53,425 examples of hospital 0
 
-            test_encodings_data = np.load(
-                os.path.join(self._root_dir, "camelyon17", self._encoding_extractor, "test", "combined.npz"))
+            part2 = self._select_wilds_subset(
+                wilds_split='val',
+            )  # 34,904 examples of hospital 1
 
-            test_subset = Camelyon17SubsetExtracted(
-                wilds_camelyon17_subset=self._wilds_camelyon17.get_subset('test', *args, **kwargs),
-                encodings=test_encodings_data['encodings'],
-                index_map=test_encodings_data['indices_map'],
-                reverse_task=self._reverse_task,
-                sp_vector_to_add=self._sp_vector_to_add,
-            )
-
-            joint_encodings = np.concatenate(
-                [val_encodings_data['encodings'], test_encodings_data['encodings']],
-                axis=0)
-
-            val_index_map = val_encodings_data['indices_map']
-            test_index_map = test_encodings_data['indices_map']
-            joint_index_map = np.full(shape=max(len(val_index_map), len(test_index_map)),
-                                      fill_value=-1)
-            joint_index_map[:len(val_index_map)] = val_index_map
-            for i in range(len(test_index_map)):
-                if test_index_map[i] != -1:
-                    assert joint_index_map[i] == -1
-                    joint_index_map[i] = len(val_subset) + test_index_map[i]
-
-            joint_y_array = torch.concat(
-                [val_subset._wilds_camelyon17_subset.y_array,
-                 test_subset._wilds_camelyon17_subset.y_array],
-                dim=0)
-
-            joint_metadata_array = torch.concat(
-                [val_subset._wilds_camelyon17_subset.metadata_array,
-                 test_subset._wilds_camelyon17_subset.metadata_array],
-                dim=0)
-
-            joint_indices_array = np.concatenate(
-                [val_subset._wilds_camelyon17_subset.indices,
-                 test_subset._wilds_camelyon17_subset.indices],
-                axis=0)
+            joint = _concatenate_custom_wilds_subsets(part1, part2)
 
             return Camelyon17SubsetExtracted(
-                wilds_camelyon17_subset=MockWILDSSubset(
-                    y_array=joint_y_array,
-                    metadata_array=joint_metadata_array,
-                    indices=joint_indices_array,
-                ),
-                encodings=joint_encodings,
-                index_map=joint_index_map,
+                custom_subset=joint,
                 reverse_task=self._reverse_task,
-                sp_vector_to_add=self._sp_vector_to_add)
+                sp_vector_to_add=self._sp_vector_to_add,
+            )
 
         raise ValueError(f'Unexpected value {split=}')
