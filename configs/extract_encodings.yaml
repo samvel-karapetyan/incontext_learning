@@ -6,7 +6,7 @@ ignore_warnings: False
 
 defaults:
   - datamodule: inaturalist2017 # Options: inaturalist2017, waterbirds
-  - encoding_extractor: dinov2_vitb14 # Options: dinov2_vitb14, resnet50
+  - encoding_extractor: dinov2_vitb14 # Options: dinov2_vitb14, resnet50, resnet18
   - override hydra/job_logging: custom
   - _self_
 
