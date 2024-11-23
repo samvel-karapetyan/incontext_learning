@@ -28,6 +28,7 @@ modified_scale: 1.0
 
 rotate_encodings: False
 n_rotation_matrices: 10000  # produces roughly 40m different examples
+allow_rotated_eval: False
 
 randomly_swap_labels: False
 

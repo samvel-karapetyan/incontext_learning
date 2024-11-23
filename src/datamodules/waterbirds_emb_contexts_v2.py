@@ -1,3 +1,4 @@
+import copy
 import logging
 
 import pytorch_lightning as pl
@@ -41,6 +42,7 @@ class WaterbirdsEmbContextsDataModuleV2(pl.LightningDataModule):
                  swapping_minority_proportion_context: float,
                  swapping_minority_proportion_query: float,
                  points_to_swap_range: list[int],
+                 allow_rotated_eval: bool,
                  **kwargs):
         super(WaterbirdsEmbContextsDataModuleV2, self).__init__()
 
@@ -60,6 +62,11 @@ class WaterbirdsEmbContextsDataModuleV2(pl.LightningDataModule):
             swapping_minority_proportion_query=swapping_minority_proportion_query,
             points_to_swap_range=points_to_swap_range,
         )
+
+        self._core_params_for_eval = copy.deepcopy(self._core_params)
+        if allow_rotated_eval:
+            self._core_params_for_eval['rotate_encodings'] = rotate_encodings
+            self._core_params_for_eval['n_rotation_matrices'] = n_rotation_matrices
 
         self._aug_params = dict(
             rotate_encodings=rotate_encodings,
@@ -97,28 +104,28 @@ class WaterbirdsEmbContextsDataModuleV2(pl.LightningDataModule):
             )
 
         self._train_dataset_for_eval = WaterbirdsEmbContextsDatasetV2(
-            **self._core_params,
+            **self._core_params_for_eval,
             data_length=self._eval_len,
             context_split='train',
             query_split='train',
         )
 
         self._train_val_dataset = WaterbirdsEmbContextsDatasetV2(
-            **self._core_params,
+            **self._core_params_for_eval,
             data_length=self._eval_len,
             context_split='train',
             query_split='val',
         )
 
         self._train_test_dataset = WaterbirdsEmbContextsDatasetV2(
-            **self._core_params,
+            **self._core_params_for_eval,
             data_length=self._eval_len,
             context_split='train',
             query_split='test',
         )
 
         self._val_dataset = WaterbirdsEmbContextsDatasetV2(
-            **self._core_params,
+            **self._core_params_for_eval,
             data_length=self._eval_len,
             context_split='val',
             query_split='val',
