@@ -19,7 +19,7 @@ datamodule: # overriding default context_class_size
 
 defaults:
   - datamodule: waterbirds_emb_contexts # Options: 'inaturalist_emb_contexts', 'waterbirds_emb_contexts', 'cub_emb_contexts', 'imagenet_emb_contexts'
-  - encoding_extractor: dinov2_vitb14 # Options: dinov2_vitb14, resnet50
+  - encoding_extractor: dinov2_vitb14 # Options: dinov2_vitb14, resnet50, resnet18
   - model: incontext_learner_gptj_80m
   - trainer: default
   - override hydra/job_logging: custom

@@ -2,4 +2,4 @@ _target_: src.encoding_extractors.ResNet18
 
 name: resnet18
 
-embedding_size: 2048
+embedding_size: 512
