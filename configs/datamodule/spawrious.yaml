@@ -1,0 +1,7 @@
+_target_: src.datamodules.SpawriousDataModule
+name: spawrious
+
+dataset_path: ${oc.env:DATA_ROOT_DIR}/spawrious224
+resize_size: 224
+batch_size: 32
+num_workers: 0

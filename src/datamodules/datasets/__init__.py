@@ -10,3 +10,5 @@ from src.datamodules.datasets.imagenet import ImagenetDataset
 from src.datamodules.datasets.imagenet_emb_contexts_v2 import ImagenetEmbContextsDatasetV2
 from src.datamodules.datasets.camelyon17 import Camelyon17ForEncodingExtraction, Camelyon17Extracted
 from src.datamodules.datasets.camelyon17_emb_contexts_v2 import Camelyon17EmbContextsDatasetV2
+from src.datamodules.datasets.spawrious import SpawriousForEncodingExtraction, SpawriousExtracted
+from src.datamodules.datasets.spawrious_emb_contexts_v2 import SpawriousEmbContextsDatasetV2

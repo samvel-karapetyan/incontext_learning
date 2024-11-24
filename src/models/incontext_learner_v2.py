@@ -26,7 +26,7 @@ class GPTJModelV2(GPTJModel):
     def __init__(self, config):
         super().__init__(config)
 
-    @torch.compile(fullgraph=True)
+    # @torch.compile(fullgraph=True)
     def forward(
         self,
         input_ids: Optional[torch.LongTensor] = None,
@@ -249,7 +249,8 @@ class InContextLearnerV2(LightningModule):
         self.accuracy_minority = dict()
         self.accuracy_majority = dict()
 
-        if dataset_name in ["waterbirds_emb_contexts", "celeba_emb_contexts", "camelyon17_emb_contexts"]:
+        if dataset_name in ["waterbirds_emb_contexts", "celeba_emb_contexts",
+                            "camelyon17_emb_contexts", "spawrious_emb_contexts"]:
             self.group_accuracies = [dict() for _ in range(4)]
             self.worst_group_accuracy = dict()
 
@@ -324,7 +325,8 @@ class InContextLearnerV2(LightningModule):
             self.log(f"{set_name}_accuracy_minority", self.accuracy_minority[set_name], on_step=False, on_epoch=True)
             self.log(f"{set_name}_accuracy_majority", self.accuracy_majority[set_name], on_step=False, on_epoch=True)
 
-            if self._dataset_name in ["waterbirds_emb_contexts", "celeba_emb_contexts", "camelyon17_emb_contexts"]:
+            if self._dataset_name in ["waterbirds_emb_contexts", "celeba_emb_contexts",
+                                      "camelyon17_emb_contexts", "spawrious_emb_contexts"]:
                 self.worst_group_accuracy[set_name].update(
                     preds=last_pred_y,
                     targets=last_class_labels,
@@ -377,7 +379,8 @@ class InContextLearnerV2(LightningModule):
         """Initializes metrics for training and validation."""
 
         for set_name in ["train"] + self._val_sets:
-            if self._dataset_name in ["waterbirds_emb_contexts", "celeba_emb_contexts", "camelyon17_emb_contexts"]:
+            if self._dataset_name in ["waterbirds_emb_contexts", "celeba_emb_contexts",
+                                      "camelyon17_emb_contexts", "spawrious_emb_contexts"]:
                 self.worst_group_accuracy[set_name] = WorstGroupAccuracy()
                 for i in range(4):
                     self.group_accuracies[i][set_name] = GroupAccuracy(group=i)
@@ -394,7 +397,8 @@ class InContextLearnerV2(LightningModule):
         setattr(self, f"{set_name}_accuracy_minority", self.accuracy_minority[set_name])
         setattr(self, f"{set_name}_accuracy_majority", self.accuracy_majority[set_name])
 
-        if self._dataset_name in ["waterbirds_emb_contexts", "celeba_emb_contexts", "camelyon17_emb_contexts"]:
+        if self._dataset_name in ["waterbirds_emb_contexts", "celeba_emb_contexts",
+                                  "camelyon17_emb_contexts", "spawrious_emb_contexts"]:
             setattr(self, f"{set_name}_worst_group_accuracy", self.worst_group_accuracy[set_name])
             for i in range(4):
                 setattr(self, f"{set_name}_group_{i}_accuracy", self.group_accuracies[i][set_name])

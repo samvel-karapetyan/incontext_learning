@@ -1,0 +1,7 @@
+_target_: src.encoding_extractors.ResNet18
+
+name: scratch_resnet18
+
+embedding_size: 512
+
+pretrained: False

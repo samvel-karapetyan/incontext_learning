@@ -4,10 +4,17 @@ import torch.nn as nn
 
 
 class ResNet18(nn.Module):
-    def __init__(self, *args, **kwargs):
+    def __init__(
+        self,
+        pretrained: bool = True,
+        *args, **kwargs
+    ):
         super().__init__()
 
-        self.model = models.resnet18(weights=models.ResNet18_Weights.IMAGENET1K_V1)
+        if pretrained:
+            self.model = models.resnet18(weights=models.ResNet18_Weights.IMAGENET1K_V1)
+        else:
+            self.model = models.resnet18()
 
     def forward(self, x):
         x = self.model.conv1(x)

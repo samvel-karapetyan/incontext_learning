@@ -10,3 +10,5 @@ from src.datamodules.imagenet import ImagenetDataModule
 from src.datamodules.imagenet_emb_contexts_v2 import ImagenetEmbContextsDataModuleV2
 from src.datamodules.camelyon17 import Camelyon17DataModule
 from src.datamodules.camelyon17_emb_contexts_v2 import Camelyon17EmbContextsDataModuleV2
+from src.datamodules.spawrious import SpawriousDataModule
+from src.datamodules.spawrious_emb_contexts_v2 import SpawriousEmbContextsDataModuleV2

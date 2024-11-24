@@ -5,8 +5,8 @@ ignore_warnings: False
 
 dataset: inaturalist2017
 data_path: ${oc.env:DATA_ROOT_DIR}/${dataset}
-encoding_extractor: resnet18 # Options: dinov2_vitb14, resnet50, resnet18
-split: null # e.g. for waterbirds you can set 'val'
+encoding_extractor: scratch_resnet18
+split: null
 
 hydra:
   run:
