@@ -1,5 +1,5 @@
 target: src.utils.schedulers.CosineAnnealingLRWithWarmup
 
 warmup_steps: 1000
-total_steps: ${datamodule.train_len} / ${datamodule.batch_size}
+total_steps: ${datamodule.train_len} / (${datamodule.batch_size} * ${trainer.accumulate_grad_batches})
 interval: step

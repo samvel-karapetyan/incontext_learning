@@ -28,8 +28,7 @@ class CosineAnnealingLRWithWarmup(_LRScheduler):
         self.warmup_steps = warmup_steps
 
         if isinstance(total_steps, str):
-            x, y = map(int, total_steps.split('/'))
-            self.total_steps = int(x / y)
+            self.total_steps = int(eval(total_steps))
         else:
             self.total_steps = total_steps
 
