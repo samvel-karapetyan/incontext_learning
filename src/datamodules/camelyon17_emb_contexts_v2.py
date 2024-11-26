@@ -23,7 +23,8 @@ class Camelyon17EmbContextsDataModuleV2(pl.LightningDataModule):
                  num_workers: int,
                  context_class_size: int,
                  context_group_proportions: list[float],
-                 query_group_proportions: list[float],
+                 train_query_group_proportions: list[float],
+                 eval_query_group_proportions: list[float],
                  spurious_setting: str,
                  sp_token_generation_mode: str,
                  use_context_as_intermediate_queries: bool,
@@ -45,8 +46,6 @@ class Camelyon17EmbContextsDataModuleV2(pl.LightningDataModule):
             root_dir=root_dir,
             encoding_extractor=encoding_extractor,
             context_class_size=context_class_size,
-            context_group_proportions=context_group_proportions,
-            query_group_proportions=query_group_proportions,
             spurious_setting=spurious_setting,
             sp_token_generation_mode=sp_token_generation_mode,
             use_context_as_intermediate_queries=use_context_as_intermediate_queries,
@@ -54,6 +53,10 @@ class Camelyon17EmbContextsDataModuleV2(pl.LightningDataModule):
             modified=modified,
             modified_scale=modified_scale,
         )
+
+        self.context_group_proportions = context_group_proportions
+        self.train_query_group_proportions = train_query_group_proportions
+        self.eval_query_group_proportions = eval_query_group_proportions
 
         self._aug_params = dict(
             rotate_encodings=rotate_encodings,
@@ -84,6 +87,8 @@ class Camelyon17EmbContextsDataModuleV2(pl.LightningDataModule):
         if stage == "fit":
             self._train_dataset_for_fit = Camelyon17EmbContextsDatasetV2(
                 **self._core_params,
+                context_group_proportions=self.context_group_proportions,
+                query_group_proportions=self.train_query_group_proportions,
                 **self._aug_params,
                 data_length=self._train_len,
                 context_split='train',
@@ -93,6 +98,8 @@ class Camelyon17EmbContextsDataModuleV2(pl.LightningDataModule):
         # to measure training performance (includes example memorization)
         self._train_dataset_for_eval = Camelyon17EmbContextsDatasetV2(
             **self._core_params,
+            context_group_proportions=self.context_group_proportions,
+            query_group_proportions=self.eval_query_group_proportions,
             data_length=self._eval_len,
             context_split='train',
             query_split='train',
@@ -101,6 +108,8 @@ class Camelyon17EmbContextsDataModuleV2(pl.LightningDataModule):
         # to measure ID generalization performance (catches example memorization)
         self._train_val_dataset = Camelyon17EmbContextsDatasetV2(
             **self._core_params,
+            context_group_proportions=self.context_group_proportions,
+            query_group_proportions=self.eval_query_group_proportions,
             data_length=self._eval_len,
             context_split='train',
             query_split='val',
@@ -109,6 +118,8 @@ class Camelyon17EmbContextsDataModuleV2(pl.LightningDataModule):
         # sort of domain generalization
         self._train_test_dataset = Camelyon17EmbContextsDatasetV2(
             **self._core_params,
+            context_group_proportions=self.context_group_proportions,
+            query_group_proportions=self.eval_query_group_proportions,
             data_length=self._eval_len,
             context_split='train',
             query_split='test',
@@ -117,6 +128,8 @@ class Camelyon17EmbContextsDataModuleV2(pl.LightningDataModule):
         # sort of domain adaptation
         self._test_dataset = Camelyon17EmbContextsDatasetV2(
             **self._core_params,
+            context_group_proportions=self.context_group_proportions,
+            query_group_proportions=self.eval_query_group_proportions,
             data_length=self._eval_len,
             context_split='test',
             query_split='test',
