@@ -63,10 +63,11 @@ class Camelyon17SubsetExtracted(Dataset):
 
         # metadata fields: ['hospital', 'slide', 'y', 'from_source_domain']
         hospital_id = self._custom_subset.metadata_array[indices, 0].numpy()
-        # In our constructed train and val splits, we have hospitals 4 (from original train) and 2 (from original test)
-        # In our constructed test split, we have hospitals 0 (from original train 1) and 1 (from original val)
-        # Therefore, we map hospitals 1 and 4 to spurious=0 and hospitals 1 and 2 to spurious=1.
-        c = ((hospital_id == 1) | (hospital_id == 2)).astype(np.int32)
+        # Our splits:
+        # * train: hospital 0 and hospital 3 of the original train split
+        # * val:   hospital 0 and hospital 3 of the original id_val split
+        # * test:  hospital 1 of the original val split and hospital 2 of the original test split
+        c = (hospital_id < 2)
 
         # add more background information if specified
         if self._sp_vector_to_add is not None:
@@ -144,40 +145,6 @@ class Camelyon17Extracted:
         self._sp_vector_to_add = sp_vector_to_add
         self._wilds_camelyon17 = Camelyon17Dataset(root_dir=root_dir)
 
-    def _split_wilds_train_val(self,
-                               wilds_split: str,
-                               train_ratio: float,
-                               ) -> (CustomExtractedWILDSSubset, CustomExtractedWILDSSubset):
-        encodings_data = np.load(
-            os.path.join(self._root_dir, "camelyon17", self._encoding_extractor, wilds_split, "combined.npz"))
-        wilds_subset = self._wilds_camelyon17.get_subset(wilds_split)
-
-        rng = np.random.default_rng(seed=42)
-        perm = rng.permutation(len(wilds_subset))
-        train_count = int(train_ratio * len(wilds_subset))
-        train_indices = perm[:train_count]
-        val_indices = perm[train_count:]
-
-        encodings = _put_encodings_in_right_order(
-            indices_within_full_camelyon17=wilds_subset.indices,
-            encodings=encodings_data['encodings'],
-            index_map=encodings_data['indices_map'],
-        )
-
-        train_ds = CustomExtractedWILDSSubset(
-            y_array=wilds_subset.y_array[train_indices],
-            metadata_array=wilds_subset.metadata_array[train_indices],
-            encodings=encodings[train_indices],
-        )
-
-        val_ds = CustomExtractedWILDSSubset(
-            y_array=wilds_subset.y_array[val_indices],
-            metadata_array=wilds_subset.metadata_array[val_indices],
-            encodings=encodings[val_indices],
-        )
-
-        return train_ds, val_ds
-
     def _select_wilds_subset(self,
                              wilds_split: str) -> CustomExtractedWILDSSubset:
         encodings_data = np.load(
@@ -197,63 +164,40 @@ class Camelyon17Extracted:
         )
 
     def get_subset(self, split, *args, **kwargs) -> Camelyon17SubsetExtracted:
-        # 3 splits are allowed: train, val, and test
-        # * train and val are constructed by taking hospital 4 of the original train and hospital 2 of the
-        #   original test sets, then splitting by 80% vs 20% ratio.
-        # * test is constructed by taking the hospital  0 of the original train and hospital 1 of the original
-        #   OOD validation.
-        if split == 'train':
-            part1, _ = self._split_wilds_train_val(
-                wilds_split='train',
-                train_ratio=0.8,
+        """Constructs our custom splits.
+
+        The following splits are defined:
+            * train: hospital 0 and hospital 3 of the original train split
+            * val:   hospital 0 and hospital 3 of the original id_val split
+            * test:  hospital 1 of the original val split and hospital 2 of the original test split
+        """
+        if split in ['train', 'val']:
+            if split == 'train':
+                wilds_split = 'train'
+            else:
+                wilds_split = 'id_val'
+
+            ds = self._select_wilds_subset(
+                wilds_split=wilds_split,
             )
-            part1 = _select_hospitals(
-                part1, selected_hospital_ids=[4])  # 105,821 examples of hospital 4
-
-            part2, _ = self._split_wilds_train_val(
-                wilds_split='test',
-                train_ratio=0.8,
-            )  # 68,043 examples of hospital 2
-
-            joint = _concatenate_custom_wilds_subsets(part1, part2)
+            ds = _select_hospitals(
+               ds, selected_hospital_ids=[0, 3]
+            )
 
             return Camelyon17SubsetExtracted(
-                custom_subset=joint,
-                reverse_task=self._reverse_task,
-                sp_vector_to_add=self._sp_vector_to_add,
-            )
-
-        if split == 'val':
-            _, part1 = self._split_wilds_train_val(
-                wilds_split='train',
-                train_ratio=0.8,
-            )
-            part1 = _select_hospitals(
-                part1, selected_hospital_ids=[4])  # 26,231 examples of hospital 4
-
-            _, part2 = self._split_wilds_train_val(
-                wilds_split='test',
-                train_ratio=0.8,
-            )  # 17,011 examples of hospital 2
-
-            joint = _concatenate_custom_wilds_subsets(part1, part2)
-
-            return Camelyon17SubsetExtracted(
-                custom_subset=joint,
+                custom_subset=ds,
                 reverse_task=self._reverse_task,
                 sp_vector_to_add=self._sp_vector_to_add,
             )
 
         if split == 'test':
             part1 = self._select_wilds_subset(
-                wilds_split='train',
-            )
-            part1 = _select_hospitals(
-                part1, selected_hospital_ids=[0])  # 53,425 examples of hospital 0
+                wilds_split='val',
+            )  # single hospital 1
 
             part2 = self._select_wilds_subset(
-                wilds_split='val',
-            )  # 34,904 examples of hospital 1
+                wilds_split='test',
+            )  # single hospital 2
 
             joint = _concatenate_custom_wilds_subsets(part1, part2)
 
