@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Tuple
 import dataclasses
 import logging
 import pandas as pd
@@ -8,63 +8,84 @@ import os.path
 from torch.utils.data import Dataset
 from operator import itemgetter
 import numpy as np
-from typing import Tuple
-
-Examples = np.ndarray  # shaped (num_examples, 3) with each row being a triplet (index, spurious_label, class_label)
-
-log = logging.getLogger(__name__)
-
 import zipfile
 import requests
 import tempfile
-
 from tqdm import tqdm
 
+# Define a type alias for example data structure
+Examples = np.ndarray  # shaped (num_examples, 3) with each row being a triplet (index, spurious_label, class_label)
+
+# Set up logging
+log = logging.getLogger(__name__)
 
 class MultiNLISubsetForEncodingExtraction(Dataset):
+    """
+    A subset of the MultiNLI dataset used for encoding extraction.
+
+    Args:
+        sentence_pairs (list of tuple): List of sentence pairs.
+        indices (list of int): List of indices corresponding to the dataset split.
+    """
     def __init__(self, sentence_pairs, indices):
         self.sentence_pairs = sentence_pairs
         self.indices = indices
 
     def __getitem__(self, idx):
+        """Retrieve a sentence pair and its corresponding index."""
         x = self.sentence_pairs[idx]
         return x, self.indices[idx]
 
     def __len__(self):
+        """Return the length of the dataset."""
         return len(self.sentence_pairs)
-
 
 class MultiNLIForEncodingExtraction(Dataset):
     """
-    A custom dataset class for the MultiNLI dataset.
+    A custom dataset class for handling the MultiNLI dataset, specifically designed for encoding extraction.
 
     Args:
-        root_dir (str): The file path to the dataset directory.
+        root_dir (str): Directory where the dataset is located.
+        download (bool): Whether to download the dataset if it does not exist locally.
     """
-
     def __init__(self, root_dir, download=False):
         super().__init__()
 
+        # Path to the dataset directory
         self.dataset_path = os.path.join(root_dir, "multinli_1.0")
         
+        # Check if the dataset exists, download if necessary
         if not os.path.exists(self.dataset_path):
             if download:
                 self.download_dataset(root_dir)
             else:
-                raise("Dataset not found.")
+                raise FileNotFoundError("Dataset not found.")
 
+        # Path to the prepared data file
         prepared_data_path = os.path.join(self.dataset_path, "prepared_data.csv")
 
+        # Prepare data if not already done
         if not os.path.exists(prepared_data_path):
             self.prepare_data_and_save(prepared_data_path)
 
+        # Load prepared data into a pandas DataFrame
         self.dataset = pd.read_csv(prepared_data_path)
 
+        # Create a list of sentence pairs
         self.sentence_pairs = list(zip(self.dataset['sentence1'], self.dataset['sentence2']))
 
     def get_subset(self, split):
+        """
+        Retrieve a subset of the dataset based on the specified split (train/val/test).
+
+        Args:
+            split (str): One of 'train', 'val', or 'test'.
+
+        Returns:
+            MultiNLISubsetForEncodingExtraction: Subset of the dataset.
+        """
         if split not in ['train', 'val', 'test']:
-            raise ValueError(f"Unexpected value {split=}")      
+            raise ValueError(f"Unexpected value {split=}")
 
         split_indices = np.where(self.dataset['split'] == split)[0]
 
@@ -74,6 +95,12 @@ class MultiNLIForEncodingExtraction(Dataset):
         )
 
     def prepare_data_and_save(self, prepared_data_path):
+        """
+        Prepare the MultiNLI dataset and save it as a CSV file.
+
+        Args:
+            prepared_data_path (str): Path to save the prepared data file.
+        """
         data_files = [
             "multinli_1.0_train.jsonl", 
             "multinli_1.0_dev_matched.jsonl", 
@@ -87,7 +114,7 @@ class MultiNLIForEncodingExtraction(Dataset):
 
         columns_to_collect = ['sentence1', 'sentence2', 'gold_label', 'split']
         dataset = pd.DataFrame()
-        
+
         for file_name in data_files:
             file_path = os.path.join(self.dataset_path, file_name)
 
@@ -96,28 +123,36 @@ class MultiNLIForEncodingExtraction(Dataset):
             if "train" in file_name:
                 split_array = np.array(["train"] * len(df))
 
+                # Assign a portion of training data to validation split
                 rng = np.random.default_rng(seed=42)
                 val_count = int(0.2 * len(df))
                 val_indices = rng.choice(np.arange(len(df)), val_count)
 
                 split_array[val_indices] = "val"
-
                 df['split'] = split_array
             else:
                 df['split'] = ["test"] * len(df)
 
             dataset = pd.concat([dataset, df[columns_to_collect]], ignore_index=True)
 
-        
-        dataset = dataset[dataset['gold_label'] != '-'] # remove unlabeled data
-        dataset = dataset[dataset['sentence2'] != 'n/a'] # remove n/a
+        # Remove unlabeled and invalid data
+        dataset = dataset[dataset['gold_label'] != '-']
+        dataset = dataset[dataset['sentence2'] != 'n/a']
 
+        # Add additional features
         dataset['sentence2_has_negation'] = dataset['sentence2'].apply(self._is_sentence_has_negation)
         dataset['y_array'] = dataset['gold_label'].map(labels_map)
 
+        # Save the prepared dataset to CSV
         dataset[['sentence1', 'sentence2', 'y_array', 'sentence2_has_negation', 'split']].to_csv(prepared_data_path, index=False)
 
     def download_dataset(self, root_dir):
+        """
+        Download the MultiNLI dataset and extract it.
+
+        Args:
+            root_dir (str): Directory to save the downloaded dataset.
+        """
         url = "https://cims.nyu.edu/~sbowman/multinli/multinli_1.0.zip"
 
         log.info(f"Downloading the MultiNLI from url: {url}")
@@ -135,21 +170,38 @@ class MultiNLIForEncodingExtraction(Dataset):
 
             with zipfile.ZipFile(tmp.name, 'r') as zip_ref:
                 zip_ref.extractall(root_dir)
-    
+
     def _is_sentence_has_negation(self, sentence):
-        def tokenize(s): # function inspired by groupDRO tokenization
-            s = s.translate(str.maketrans('', '', string.punctuation)) # remove punctuation
+        """
+        Check if a sentence contains negation words.
+
+        Args:
+            sentence (str): Input sentence.
+
+        Returns:
+            int: 1 if the sentence contains negation words, else 0.
+        """
+        def tokenize(s):
+            # Remove punctuation and convert to lowercase
+            s = s.translate(str.maketrans('', '', string.punctuation))
             s = s.lower()
             s = s.split(' ')
             return s
 
-        negation_words = ['nobody', 'no', 'never', 'nothing'] # Taken from https://arxiv.org/pdf/1803.02324.pdf
+        negation_words = ['nobody', 'no', 'never', 'nothing']
 
         return int(any(negation_word in tokenize(sentence) for negation_word in negation_words))
 
-
 @dataclasses.dataclass
 class CustomExtractedMultiNLISubset:
+    """
+    A data structure for holding extracted encodings and associated labels for the MultiNLI dataset.
+
+    Attributes:
+        encodings (np.ndarray): Encodings of the dataset.
+        y_array (np.ndarray): Labels of the dataset.
+        c_array (np.ndarray): Spurious labels of the dataset.
+    """
     encodings: np.ndarray
     y_array: np.ndarray
     c_array: np.ndarray
@@ -157,26 +209,31 @@ class CustomExtractedMultiNLISubset:
     def __len__(self):
         return len(self.y_array)
 
-
 class MultiNLISubsetExtracted(Dataset):
-    def __init__(self,
-                 ds: CustomExtractedMultiNLISubset,
-                 reverse_task: bool = False,
-                 sp_vector_to_add: Optional[np.ndarray] = None):
+    """
+    A subset of extracted encodings from the MultiNLI dataset.
+
+    Args:
+        ds (CustomExtractedMultiNLISubset): Extracted subset data.
+        reverse_task (bool): Whether to reverse the task (swap y and c).
+        sp_vector_to_add (np.ndarray, optional): Vector to add to encodings based on spurious labels.
+    """
+    def __init__(self, ds: CustomExtractedMultiNLISubset, reverse_task: bool = False, sp_vector_to_add: Optional[np.ndarray] = None):
         self.ds = ds
         self._reverse_task = reverse_task
         self._sp_vector_to_add = sp_vector_to_add
 
     def __getitem__(self, indices) -> Tuple[np.ndarray, Examples]:
+        """Retrieve encodings and examples by indices."""
         x = self.ds.encodings[indices].copy()
         y = self.ds.y_array[indices]
         c = self.ds.c_array[indices]
 
-        # add more negation information if specified
+        # Modify encodings if a spurious vector is provided
         if self._sp_vector_to_add is not None:
             x += np.outer(2 * c - 1, self._sp_vector_to_add)
 
-        # reverse the task if specified
+        # Create examples based on reverse task setting
         if not self._reverse_task:
             examples = np.stack([indices, c, y], axis=1)
         else:
@@ -187,28 +244,43 @@ class MultiNLISubsetExtracted(Dataset):
     def __len__(self):
         return len(self.ds)
 
-
 class MultiNLIExtracted:
-    def __init__(self,
-                 dataset_path: str,
-                 encoding_extractor: str,
-                 reverse_task: bool = False,
-                 sp_vector_to_add: Optional[np.ndarray] = None):
+    """
+    Handles loading and processing of extracted encodings for the MultiNLI dataset.
+
+    Args:
+        dataset_path (str): Path to the dataset directory.
+        encoding_extractor (str): Encoding extractor type.
+        reverse_task (bool): Whether to reverse the task.
+        sp_vector_to_add (np.ndarray, optional): Vector to add to encodings based on spurious labels.
+    """
+    def __init__(self, dataset_path: str, encoding_extractor: str, reverse_task: bool = False, sp_vector_to_add: Optional[np.ndarray] = None):
         self._dataset_path = dataset_path
         self._encoding_extractor = encoding_extractor
         self._reverse_task = reverse_task
         self._sp_vector_to_add = sp_vector_to_add
 
+        # Load labels and spurious labels
         prepared_data = pd.read_csv(os.path.join(dataset_path, 'multinli_1.0', 'prepared_data.csv'))
         self.y_array = prepared_data['y_array'].to_numpy()
         self.c_array = prepared_data['sentence2_has_negation'].to_numpy()
 
     def get_subset(self, split, *args, **kwargs) -> MultiNLISubsetExtracted:
+        """
+        Retrieve a subset of the dataset based on the specified split.
+
+        Args:
+            split (str): One of 'train', 'val', or 'test'.
+
+        Returns:
+            MultiNLISubsetExtracted: Subset of the dataset.
+        """
         assert split in ['train', 'val', 'test']
 
-        encodings_path = os.path.join(self._dataset_path, "multinli", self._encoding_extractor, 
+        encodings_path = os.path.join(self._dataset_path, "multinli", self._encoding_extractor, \
                                       split, "combined.npz")
 
+        # Load encodings and indices
         encodings, indices = np.load(encodings_path).values()
 
         split_indices = np.where(indices != -1)[0]
