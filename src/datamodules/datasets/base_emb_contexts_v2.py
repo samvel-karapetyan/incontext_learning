@@ -78,7 +78,7 @@ class BaseEmbContextsDatasetV2(Dataset, ABC):
         if self._encoding_extractor == "stroberta":
             token_data_path = os.path.join(
                 os.environ.get('DATA_ROOT_DIR'),
-                'multinli/avg_norms', # TODO: Change dynamically
+                'multinli/avg_norms',
                 f"{encoding_extractor}_l2.npz")
         else:
             token_data_path = os.path.join(
