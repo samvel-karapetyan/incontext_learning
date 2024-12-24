@@ -75,7 +75,7 @@ class BaseEmbContextsDatasetV2(Dataset, ABC):
         self._ask_context_prob = ask_context_prob
 
         # Loading tokens data
-        if self._encoding_extractor == "roberta":
+        if self._encoding_extractor == "stroberta":
             token_data_path = os.path.join(
                 os.environ.get('DATA_ROOT_DIR'),
                 'multinli/avg_norms', # TODO: Change dynamically
