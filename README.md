@@ -48,21 +48,10 @@ The dataset required for this process will be automatically downloaded during th
     ```commandline
     python run.py --config-name=compute_encodings_avg_norm_and_generate_tokens
     ```
-    
-3. **Generating and Saving Validation Sets**
-    
-    In this step, the script generates and saves validation sets.
-    
-    ```commandline
-    python run.py --config-name=generate_and_save_val_sets datamodule.inner_train_len=null datamodule.saved_val_sets_path=null
-    ```
-    
-    **Note**: The command line arguments provided are essential for overriding the default configurations of the `datamodule`. These default settings are tailored for training purposes and might cause errors if not adjusted for this script.
-
 
 ### ❗❗❗❗❗❗❗ Attention ❗❗❗❗❗❗❗
 
-- Points 2 and 3 should only be executed by one individual to ensure consistency in the validation sets.
+- Point 2 should only be executed by one individual to ensure consistency in the validation sets.
 - These steps have already been completed. The generated files (avg_norms and context_val_sets) are available. Team members can access their location via the Notion documentation.
 
 

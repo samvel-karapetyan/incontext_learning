@@ -16,7 +16,6 @@ def main(config: DictConfig) -> None:
     from src import (utils,
                      extract_encodings,
                      compute_encodings_avg_norm_and_generate_tokens,
-                     generate_and_save_val_sets,
                      train,
                      evaluate,
                      baseline)
@@ -35,9 +34,6 @@ def main(config: DictConfig) -> None:
 
     if config.name == "compute_encodings_avg_norm_and_generate_tokens":
         return compute_encodings_avg_norm_and_generate_tokens(config)
-
-    if config.name == "generate_and_save_val_sets":
-        return generate_and_save_val_sets(config)
 
     if config.name == "train":
         return train(config)
