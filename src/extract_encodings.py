@@ -43,9 +43,9 @@ def extract_encodings(config: DictConfig):
             encoding_extractor_and_savers[subset_name] = encoding_extractor_and_saver
 
         # Process each batch from the dataloader, extract encodings.
-        for (images, indices), _, dataloader_idx in tqdm(iter(dataloader), desc="Processing Images"):
+        for (images, indices), _, dataloader_idx in tqdm(iter(dataloader), desc="Processing"):
             subset_name = subset_names[dataloader_idx]
-            encoding_extractor_and_savers[subset_name].extract_encodings(images.to(config.device), indices)
+            encoding_extractor_and_savers[subset_name].extract_encodings(images.to(config.device) if type(images) == torch.Tensor else images, indices)
 
         # Save all extracted encodings after processing.
         for encoding_extractor_and_saver in encoding_extractor_and_savers.values():
@@ -57,8 +57,8 @@ def extract_encodings(config: DictConfig):
         encoding_extractor_and_saver = EncodingsExtractorAndSaver(save_path=config.save_path,
                                                                   encoding_extractor=encoding_extractor)
 
-        for images, indices in tqdm(dataloader, desc="Processing Images"):
-            encoding_extractor_and_saver.extract_encodings(images.to(config.device), indices)
+        for images, indices in tqdm(dataloader, desc="Processing"):
+            encoding_extractor_and_saver.extract_encodings(images.to(config.device) if type(images) == torch.Tensor else images, indices)
 
         encoding_extractor_and_saver.save_all()
 

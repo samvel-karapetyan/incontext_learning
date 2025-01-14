@@ -75,10 +75,18 @@ class BaseEmbContextsDatasetV2(Dataset, ABC):
         self._ask_context_prob = ask_context_prob
 
         # Loading tokens data
-        token_data_path = os.path.join(
-            os.environ.get('DATA_ROOT_DIR'),
-            'inaturalist2017/avg_norms',
-            f"{encoding_extractor}_l2.npz")
+        if self._encoding_extractor == "stroberta":
+            token_data_path = os.path.join(
+                os.environ.get('DATA_ROOT_DIR'),
+                'multinli/avg_norms',
+                f"{encoding_extractor}_l2.npz")
+        else:
+            token_data_path = os.path.join(
+                os.environ.get('DATA_ROOT_DIR'),
+                'inaturalist2017/avg_norms',
+                f"{encoding_extractor}_l2.npz")
+
+
         tokens_data = np.load(token_data_path)
         # Convert tokens_data to a dictionary to resolve "Bad CRC-32" error in multi-worker mode.
         self._tokens_data = {k: tokens_data[k] for k in tokens_data.keys()}

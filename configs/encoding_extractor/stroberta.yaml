@@ -1,0 +1,7 @@
+_target_: src.encoding_extractors.STRoBERTa
+
+name: stroberta
+
+model_name: cross-encoder/nli-roberta-base
+
+embedding_size: 768
