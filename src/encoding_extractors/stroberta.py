@@ -1,8 +1,5 @@
 import os
-import torch
 import torch.nn as nn
-
-import numpy as np
 
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
@@ -26,5 +23,4 @@ class STRoBERTa(nn.Module):
 
     def forward(self, x):
         emb = self.model.predict(x, convert_to_tensor=True, show_progress_bar=False)
-
         return emb
