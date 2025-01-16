@@ -4,7 +4,7 @@ name: multinli_emb_contexts
 context_class_size: 64
 
 context_group_proportions: [0.45, 0.05, 0.05, 0.45]
-train_query_group_proportions: [0.45, 0.05, 0.05, 0.45]
+train_query_group_proportions: [0.25, 0.25, 0.25, 0.25]
 eval_query_group_proportions: [0.25, 0.25, 0.25, 0.25]
 
 root_dir: ${oc.env:DATA_ROOT_DIR}
@@ -28,7 +28,6 @@ modified_scale: 1.0
 
 rotate_encodings: False
 n_rotation_matrices: 10000  # produces roughly 40m different examples
-allow_rotated_eval: False
 
 randomly_swap_labels: False
 
