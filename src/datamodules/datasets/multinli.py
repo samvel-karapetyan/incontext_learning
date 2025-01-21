@@ -19,6 +19,7 @@ Examples = np.ndarray  # shaped (num_examples, 3) with each row being a triplet 
 # Set up logging
 log = logging.getLogger(__name__)
 
+
 class MultiNLISubsetForEncodingExtraction(Dataset):
     """
     A subset of the MultiNLI dataset used for encoding extraction.
@@ -39,6 +40,7 @@ class MultiNLISubsetForEncodingExtraction(Dataset):
     def __len__(self):
         """Return the length of the dataset."""
         return len(self.sentence_pairs)
+
 
 class MultiNLIForEncodingExtraction(Dataset):
     """
@@ -192,6 +194,7 @@ class MultiNLIForEncodingExtraction(Dataset):
 
         return int(any(negation_word in tokenize(sentence) for negation_word in negation_words))
 
+
 @dataclasses.dataclass
 class CustomExtractedMultiNLISubset:
     """
@@ -208,6 +211,7 @@ class CustomExtractedMultiNLISubset:
 
     def __len__(self):
         return len(self.y_array)
+
 
 class MultiNLISubsetExtracted(Dataset):
     """
@@ -244,6 +248,7 @@ class MultiNLISubsetExtracted(Dataset):
     def __len__(self):
         return len(self.ds)
 
+
 class MultiNLIExtracted:
     """
     Handles loading and processing of extracted encodings for the MultiNLI dataset.
@@ -277,25 +282,25 @@ class MultiNLIExtracted:
         """
         assert split in ['train', 'val', 'test']
 
-        encodings_path = os.path.join(self._dataset_path, "multinli", self._encoding_extractor, \
+        encodings_path = os.path.join(self._dataset_path, "multinli", self._encoding_extractor,
                                       split, "combined.npz")
 
         # Load encodings and indices
-        encodings, indices = np.load(encodings_path).values()
+        encodings, indices_map = np.load(encodings_path).values()
 
-        split_indices = np.where(indices != -1)[0]
+        split_indices = np.where(indices_map != -1)[0]
 
         y_array = self.y_array[split_indices]
         c_array = self.c_array[split_indices]
 
         ds = CustomExtractedMultiNLISubset(
-                encodings=encodings,
-                y_array=y_array,
-                c_array=c_array,
+            encodings=encodings,
+            y_array=y_array,
+            c_array=c_array,
         )
 
         return MultiNLISubsetExtracted(
-                ds=ds,
-                reverse_task=self._reverse_task,
-                sp_vector_to_add=self._sp_vector_to_add,
-            )
+            ds=ds,
+            reverse_task=self._reverse_task,
+            sp_vector_to_add=self._sp_vector_to_add,
+        )

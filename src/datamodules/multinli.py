@@ -14,6 +14,7 @@ def custom_collate_fn(batch):
     x_values, indices = zip(*batch)
     return x_values, torch.tensor(indices)
 
+
 class MultiNLIDataModule(pl.LightningDataModule):
     """
         A PyTorch Lightning data module for the MultiNLI dataset.
@@ -47,35 +48,26 @@ class MultiNLIDataModule(pl.LightningDataModule):
         self._dataset = MultiNLIForEncodingExtraction(root_dir=self._root_dir, download=True)
 
     def train_dataloader(self) -> DataLoader:
-        """Returns a DataLoader for the training subset of the MultiNLI dataset."""
         train_data = self._dataset.get_subset("train")
 
-        train_loader = DataLoader(train_data,
-                                batch_size=self._batch_size,
-                                num_workers=self._num_workers,
-                                collate_fn=custom_collate_fn)
-
-        return train_loader
+        return DataLoader(train_data,
+                          batch_size=self._batch_size,
+                          num_workers=self._num_workers,
+                          collate_fn=custom_collate_fn)
 
     def val_dataloader(self) -> DataLoader:
-        """Returns a DataLoader for the validation subset of the MultiNLI dataset."""
         val_data = self._dataset.get_subset("val")
-        val_loader = DataLoader(val_data,
-                                     batch_size=self._batch_size,
-                                     num_workers=self._num_workers,
-                                     collate_fn=custom_collate_fn)
-
-        return val_loader
+        return DataLoader(val_data,
+                          batch_size=self._batch_size,
+                          num_workers=self._num_workers,
+                          collate_fn=custom_collate_fn)
 
     def test_dataloader(self) -> DataLoader:
-        """Returns a DataLoader for the test subset of the MultiNLI dataset."""
         test_data = self._dataset.get_subset("test")
-        test_loader = DataLoader(test_data,
-                                batch_size=self._batch_size,
-                                num_workers=self._num_workers,
-                                collate_fn=custom_collate_fn)
-
-        return test_loader
+        return DataLoader(test_data,
+                          batch_size=self._batch_size,
+                          num_workers=self._num_workers,
+                          collate_fn=custom_collate_fn)
 
     def get_combined_dataloader(self):
         sub_dataloaders = {"train": self.train_dataloader(),
@@ -88,18 +80,12 @@ class MultiNLIDataModule(pl.LightningDataModule):
 
     @property
     def train_dataset(self):
-        train_data = self._dataset.get_subset("train")
-
-        return train_data
+        return self._dataset.get_subset("train")
 
     @property
     def val_dataset(self):
-        train_data = self._dataset.get_subset("val")
-
-        return train_data
+        return self._dataset.get_subset("val")
 
     @property
     def test_dataset(self):
-        train_data = self._dataset.get_subset("test")
-
-        return train_data
+        return self._dataset.get_subset("test")
