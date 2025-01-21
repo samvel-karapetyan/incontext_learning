@@ -1,0 +1,7 @@
+_target_: src.encoding_extractors.BERT
+
+name: bert
+
+model_name: bert-base-uncased
+
+embedding_size: 768
