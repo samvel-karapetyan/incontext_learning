@@ -1,8 +1,9 @@
 import logging
 
-from hydra.utils import instantiate
+from hydra.utils import instantiate, get_class
 from pytorch_lightning.utilities import model_summary
-from omegaconf import DictConfig
+from omegaconf import DictConfig, OmegaConf
+
 
 from src.utils import log_hyperparameters, setup_aim_logger
 
@@ -11,10 +12,22 @@ log = logging.getLogger(__name__)
 
 def train(config: DictConfig):
     log.info(f"Instantiating model <{config.model._target_}>")
-    model = instantiate(config.model,
-                        optimizer_conf=config.optimizer,
-                        scheduler_conf=config.scheduler
-                        )
+
+    if config.checkpoint_path is None:
+        model = instantiate(config.model,
+                            optimizer_conf=config.optimizer,
+                            scheduler_conf=config.scheduler
+                            )
+    else:
+        # If provided, initialize from a checkpoint
+        model_class = get_class(config.model._target_)
+        del config.model._target_  # Remove _target_ key before instantiation
+        model = model_class.load_from_checkpoint(config.checkpoint_path,
+                                                 **instantiate(config.model),
+                                                 optimizer_conf=OmegaConf.to_container(config.optimizer, resolve=True),
+                                                 scheduler_conf=OmegaConf.to_container(config.scheduler, resolve=True),
+                                                 map_location='cpu')
+
     log.info(repr(model_summary.summarize(model)))
     log.info(f"Instantiating datamodule <{config.datamodule._target_}>")
     datamodule = instantiate(config.datamodule)

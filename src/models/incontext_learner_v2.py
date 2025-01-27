@@ -362,7 +362,7 @@ class InContextLearnerV2(LightningModule):
         optimizer_conf = dict(**self._optimizer_conf, params=self.parameters())
         optimizer = instantiate(optimizer_conf, _target_=target)
 
-        if self._scheduler_conf.target is None:
+        if self._scheduler_conf.get('target', None) is None:
             return optimizer
         else:
             monitor = self._scheduler_conf.pop('monitor', None)
