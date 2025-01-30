@@ -35,6 +35,7 @@ label_noise_ratio_interval: null  # [min_ratio, max_ratio], the label noise rati
 input_noise_norm_interval: null  # [min_norm, max_norm], the norm of the Gaussian noise will be uniformly sampled from this interval
 
 permute_input_dim: False
+allow_rotated_eval: False
 
 ask_context_prob: null
 

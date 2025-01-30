@@ -1,3 +1,4 @@
+import copy
 import logging
 
 import pytorch_lightning as pl
@@ -39,6 +40,7 @@ class MultiNLIEmbContextsDataModuleV2(pl.LightningDataModule):
                  permute_input_dim: bool,
                  ask_context_prob: float,
                  val_sets: list[str],
+                 allow_rotated_eval: bool,
                  **kwargs):
         super(MultiNLIEmbContextsDataModuleV2, self).__init__()
 
@@ -53,6 +55,10 @@ class MultiNLIEmbContextsDataModuleV2(pl.LightningDataModule):
             modified=modified,
             modified_scale=modified_scale,
         )
+        self._core_params_for_eval = copy.deepcopy(self._core_params)
+        if allow_rotated_eval:
+            self._core_params_for_eval['rotate_encodings'] = rotate_encodings
+            self._core_params_for_eval['n_rotation_matrices'] = n_rotation_matrices
 
         self.context_group_proportions = context_group_proportions
         self.train_query_group_proportions = train_query_group_proportions
@@ -97,7 +103,7 @@ class MultiNLIEmbContextsDataModuleV2(pl.LightningDataModule):
 
         # to measure training performance (includes example memorization)
         self._train_dataset_for_eval = MultiNLIEmbContextsDatasetV2(
-            **self._core_params,
+            **self._core_params_for_eval,
             context_group_proportions=self.context_group_proportions,
             query_group_proportions=self.eval_query_group_proportions,
             data_length=self._eval_len,
@@ -107,7 +113,7 @@ class MultiNLIEmbContextsDataModuleV2(pl.LightningDataModule):
 
         # to measure ID generalization performance (catches example memorization)
         self._train_val_dataset = MultiNLIEmbContextsDatasetV2(
-            **self._core_params,
+            **self._core_params_for_eval,
             context_group_proportions=self.context_group_proportions,
             query_group_proportions=self.eval_query_group_proportions,
             data_length=self._eval_len,
@@ -115,9 +121,8 @@ class MultiNLIEmbContextsDataModuleV2(pl.LightningDataModule):
             query_split='val',
         )
 
-        # sort of domain generalization
         self._train_test_dataset = MultiNLIEmbContextsDatasetV2(
-            **self._core_params,
+            **self._core_params_for_eval,
             context_group_proportions=self.context_group_proportions,
             query_group_proportions=self.eval_query_group_proportions,
             data_length=self._eval_len,
@@ -125,9 +130,8 @@ class MultiNLIEmbContextsDataModuleV2(pl.LightningDataModule):
             query_split='test',
         )
 
-        # sort of domain adaptation
         self._test_dataset = MultiNLIEmbContextsDatasetV2(
-            **self._core_params,
+            **self._core_params_for_eval,
             context_group_proportions=self.context_group_proportions,
             query_group_proportions=self.eval_query_group_proportions,
             data_length=self._eval_len,
