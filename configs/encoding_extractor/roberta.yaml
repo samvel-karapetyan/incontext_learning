@@ -1,0 +1,7 @@
+_target_: src.encoding_extractors.RoBERTa
+
+name: roberta
+
+model_name: roberta-base
+
+embedding_size: 768
