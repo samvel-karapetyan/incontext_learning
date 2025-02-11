@@ -18,9 +18,6 @@ network:
 
 loss_fn:
   _target_: torch.nn.BCEWithLogitsLoss
-#loss_fn:
-#  _target_: src.utils.custom_loss_functions.ContextBNEWithLogits
-#  query_loss_weight: 1
 
 val_sets: ${datamodule.val_sets} # null if there is a single val set, otherwise this is the list of names of val sets
 

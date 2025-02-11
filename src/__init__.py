@@ -2,4 +2,3 @@ from src.extract_encodings import extract_encodings
 from src.compute_encodings_avg_norm_and_generate_tokens import compute_encodings_avg_norm_and_generate_tokens
 from src.train import train
 from src.evaluate import evaluate
-from src.baseline import baseline

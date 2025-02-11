@@ -20,9 +20,6 @@ def log_hyperparameters(
     # choose which parts of hydra config will be saved to loggers
     if "seed" in config:
         hparams["seed"] = config["seed"]
-    hparams["spurious_setting"] = config["spurious_setting"]
-    hparams["sp_token_generation_mode"] = config["sp_token_generation_mode"]
-    hparams["use_context_as_intermediate_queries"] = config["use_context_as_intermediate_queries"]
     hparams["datamodule"] = config["datamodule"]
     hparams["model"] = config["model"]
     hparams["optimizer"] = config["optimizer"]

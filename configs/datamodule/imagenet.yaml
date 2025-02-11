@@ -1,8 +1,0 @@
-_target_: src.datamodules.ImagenetDataModule
-name: imagenet
-
-dataset_path: ${oc.env:IMAGENET_DIR}
-resize_size: 256
-crop_size: 224
-batch_size: 32
-num_workers: 4

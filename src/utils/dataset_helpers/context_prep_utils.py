@@ -47,32 +47,15 @@ def encode_query_x(token: np.ndarray) -> np.ndarray:
 
 def get_context_example_tokens(
         img_encoding: np.ndarray,
-        x_spurious_token: np.ndarray,
-        c_spurious_token: np.ndarray,
         class_token: np.ndarray,
-        spurious_setting: str,
 ) -> list[np.ndarray]:
-    if spurious_setting in ['inat_no_spurious', 'wb_erm', 'swap_erm']:
-        return [encode_context_x(img_encoding), encode_annotation(class_token)]
-    if spurious_setting == 'inat_sum_erm':
-        return [encode_context_x(img_encoding + x_spurious_token), encode_annotation(class_token)]
-    if spurious_setting in ['wb_dro', 'swap_dro']:
-        return [encode_context_x(img_encoding), encode_annotation(class_token + c_spurious_token)]
-    if spurious_setting == 'inat_sum_dro':
-        return [encode_context_x(img_encoding + x_spurious_token), encode_annotation(class_token + c_spurious_token)]
-    raise ValueError(f"Invalid spurious setting: '{spurious_setting}'.")
+    return [encode_context_x(img_encoding), encode_annotation(class_token)]
 
 
-def get_query_example_tokens(
+def get_query_example_token(
         img_encoding: np.ndarray,
-        x_spurious_token: np.ndarray,
-        spurious_setting: str,
 ) -> list[np.ndarray]:
-    if spurious_setting in ['wb_erm', 'wb_dro', 'inat_no_spurious', 'swap_erm', 'swap_dro']:
         return [encode_query_x(img_encoding)]
-    if spurious_setting in ['inat_sum_erm', 'inat_sum_dro']:
-        return [encode_query_x(img_encoding + x_spurious_token)]
-    raise ValueError(f"Invalid spurious setting: '{spurious_setting}'.")
 
 
 def get_group_counts_based_on_proportions(

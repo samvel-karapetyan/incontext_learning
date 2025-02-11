@@ -66,7 +66,7 @@ def generate_fixed_tokens(norm: float, token_len: int) -> dict:
     # Split into 3 types of tokens
     random_tokens = {
         "random_class_tokens": tokens[:2],
-        "random_spurious_tokens": tokens[2:4],
+        "random_spurious_tokens": tokens[2:4], # TODO: Modify
         "random_spurious_tokens_2": tokens[4:],
     }
 

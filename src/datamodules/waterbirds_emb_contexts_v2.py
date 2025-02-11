@@ -25,23 +25,11 @@ class WaterbirdsEmbContextsDataModuleV2(pl.LightningDataModule):
                  context_class_size: int,
                  context_group_proportions: list[float],
                  query_group_proportions: list[float],
-                 spurious_setting: str,
-                 sp_token_generation_mode: str,
-                 use_context_as_intermediate_queries: bool,
                  reverse_task: bool,
-                 modified: bool,
-                 modified_scale: float,
                  rotate_encodings: bool,
                  n_rotation_matrices: int,
-                 randomly_swap_labels: bool,
-                 label_noise_ratio_interval: list,
-                 input_noise_norm_interval: list,
                  permute_input_dim: bool,
-                 ask_context_prob: float,
                  val_sets: list[str],
-                 swapping_minority_proportion_context: float,
-                 swapping_minority_proportion_query: float,
-                 points_to_swap_range: list[int],
                  allow_rotated_eval: bool,
                  **kwargs):
         super(WaterbirdsEmbContextsDataModuleV2, self).__init__()
@@ -52,15 +40,7 @@ class WaterbirdsEmbContextsDataModuleV2(pl.LightningDataModule):
             context_class_size=context_class_size,
             context_group_proportions=context_group_proportions,
             query_group_proportions=query_group_proportions,
-            spurious_setting=spurious_setting,
-            sp_token_generation_mode=sp_token_generation_mode,
-            use_context_as_intermediate_queries=use_context_as_intermediate_queries,
             reverse_task=reverse_task,
-            modified=modified,
-            modified_scale=modified_scale,
-            swapping_minority_proportion_context=swapping_minority_proportion_context,
-            swapping_minority_proportion_query=swapping_minority_proportion_query,
-            points_to_swap_range=points_to_swap_range,
         )
 
         self._core_params_for_eval = copy.deepcopy(self._core_params)
@@ -71,11 +51,7 @@ class WaterbirdsEmbContextsDataModuleV2(pl.LightningDataModule):
         self._aug_params = dict(
             rotate_encodings=rotate_encodings,
             n_rotation_matrices=n_rotation_matrices,
-            randomly_swap_labels=randomly_swap_labels,
-            label_noise_ratio_interval=label_noise_ratio_interval,
-            input_noise_norm_interval=input_noise_norm_interval,
             permute_input_dim=permute_input_dim,
-            ask_context_prob=ask_context_prob,
         )
 
         # Initializing dataset parameters

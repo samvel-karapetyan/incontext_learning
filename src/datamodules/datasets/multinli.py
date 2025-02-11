@@ -220,22 +220,16 @@ class MultiNLISubsetExtracted(Dataset):
     Args:
         ds (CustomExtractedMultiNLISubset): Extracted subset data.
         reverse_task (bool): Whether to reverse the task (swap y and c).
-        sp_vector_to_add (np.ndarray, optional): Vector to add to encodings based on spurious labels.
     """
-    def __init__(self, ds: CustomExtractedMultiNLISubset, reverse_task: bool = False, sp_vector_to_add: Optional[np.ndarray] = None):
+    def __init__(self, ds: CustomExtractedMultiNLISubset, reverse_task: bool = False):
         self.ds = ds
         self._reverse_task = reverse_task
-        self._sp_vector_to_add = sp_vector_to_add
 
     def __getitem__(self, indices) -> Tuple[np.ndarray, Examples]:
         """Retrieve encodings and examples by indices."""
         x = self.ds.encodings[indices].copy()
         y = self.ds.y_array[indices]
         c = self.ds.c_array[indices]
-
-        # Modify encodings if a spurious vector is provided
-        if self._sp_vector_to_add is not None:
-            x += np.outer(2 * c - 1, self._sp_vector_to_add)
 
         # Create examples based on reverse task setting
         if not self._reverse_task:
@@ -257,13 +251,11 @@ class MultiNLIExtracted:
         dataset_path (str): Path to the dataset directory.
         encoding_extractor (str): Encoding extractor type.
         reverse_task (bool): Whether to reverse the task.
-        sp_vector_to_add (np.ndarray, optional): Vector to add to encodings based on spurious labels.
     """
-    def __init__(self, dataset_path: str, encoding_extractor: str, reverse_task: bool = False, sp_vector_to_add: Optional[np.ndarray] = None):
+    def __init__(self, dataset_path: str, encoding_extractor: str, reverse_task: bool = False):
         self._dataset_path = dataset_path
         self._encoding_extractor = encoding_extractor
         self._reverse_task = reverse_task
-        self._sp_vector_to_add = sp_vector_to_add
 
         # Load labels and spurious labels
         prepared_data = pd.read_csv(os.path.join(dataset_path, 'multinli_1.0', 'prepared_data.csv'))
@@ -302,5 +294,4 @@ class MultiNLIExtracted:
         return MultiNLISubsetExtracted(
             ds=ds,
             reverse_task=self._reverse_task,
-            sp_vector_to_add=self._sp_vector_to_add,
         )

@@ -1,7 +1,0 @@
-_target_: src.datamodules.CelebADataModule
-name: celeba
-
-root_dir: ${oc.env:DATA_ROOT_DIR}
-resize_size: 224
-batch_size: 32
-num_workers: 0

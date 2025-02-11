@@ -50,7 +50,7 @@ def evaluate(config: DictConfig):
                                           filename=f"{set_name}.csv")
 
         if len(context_class_sizes) > 1:
-            title = f"{config.datamodule.name}, {set_name} | {config.spurious_setting} | {config.aim_hash}"
+            title = f"{config.datamodule.name}, {set_name} | {config.aim_hash}"
             plot_results_and_save_figure(results_mean_sem,
                                          title=title,
                                          filename=f"{set_name}.png")

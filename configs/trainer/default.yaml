@@ -1,7 +1,7 @@
 _target_: pytorch_lightning.Trainer
 
 accelerator: gpu
-devices: [0]
+devices: [1]
 precision: 32  # can also be 16-mixed
 
 max_epochs: 1

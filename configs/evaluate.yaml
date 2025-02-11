@@ -3,19 +3,14 @@ seed: 0
 print_config: True
 ignore_warnings: False
 
-spurious_setting: wb_erm # Options: wb_erm, wb_dro, inat_no_spurious, inat_sum_erm, inat_sum_dro, swap_erm, swap_dro
-sp_token_generation_mode: opposite  # Options: opposite and random. Only relevant for iNaturalist settings.
-
-use_context_as_intermediate_queries: False  # True or False should have no effect, because we throw intermediate predictions
-
-aim_hash: ace21b98297c417ba97761c0
+aim_hash: 0cc1b78cc48149e8853333a4
 
 checkpoint_path: ${oc.env:OUTPUT_DIR}/runs/train/${aim_hash}/checkpoints/last.ckpt
 
 n_repeat: 5
 
 datamodule: # overriding default context_class_size
-  context_class_size: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 25, 30, 35, 40, 45, 50]
+  context_class_size: [1, 2, 4, 8, 16, 32, 50]
 
 defaults:
   - datamodule: waterbirds_emb_contexts # Options: 'inaturalist_emb_contexts', 'waterbirds_emb_contexts', 'cub_emb_contexts', 'imagenet_emb_contexts'

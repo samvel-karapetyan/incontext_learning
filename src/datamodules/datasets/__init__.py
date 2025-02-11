@@ -1,16 +1,4 @@
-from src.datamodules.datasets.inaturalist2017 import INaturalist2017Dataset
-from src.datamodules.datasets.inaturalist_emb_contexts_v2 import INaturalistEmbContextsDatasetV2
 from src.datamodules.datasets.waterbirds import WaterbirdsForEncodingExtraction, WaterbirdsExtracted
 from src.datamodules.datasets.waterbirds_emb_contexts_v2 import WaterbirdsEmbContextsDatasetV2
 from src.datamodules.datasets.multinli import MultiNLIForEncodingExtraction, MultiNLIExtracted
 from src.datamodules.datasets.multinli_emb_contexts_v2 import MultiNLIEmbContextsDatasetV2
-from src.datamodules.datasets.celeba import CelebAForEncodingExtraction, CelebAExtracted
-from src.datamodules.datasets.celeba_emb_contexts_v2 import CelebAEmbContextsDatasetV2
-from src.datamodules.datasets.cub import CUBDataset
-from src.datamodules.datasets.cub_emb_contexts_v2 import CUBEmbContextsDatasetV2
-from src.datamodules.datasets.imagenet import ImagenetDataset
-from src.datamodules.datasets.imagenet_emb_contexts_v2 import ImagenetEmbContextsDatasetV2
-from src.datamodules.datasets.camelyon17 import Camelyon17ForEncodingExtraction, Camelyon17Extracted
-from src.datamodules.datasets.camelyon17_emb_contexts_v2 import Camelyon17EmbContextsDatasetV2
-from src.datamodules.datasets.spawrious import SpawriousForEncodingExtraction, SpawriousExtracted
-from src.datamodules.datasets.spawrious_emb_contexts_v2 import SpawriousEmbContextsDatasetV2

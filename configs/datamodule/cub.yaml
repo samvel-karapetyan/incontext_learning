@@ -1,8 +1,0 @@
-_target_: src.datamodules.CUBDataModule
-name: cub
-
-dataset_path: ${oc.env:DATA_ROOT_DIR}/cub
-resize_size: 256
-crop_size: 224
-batch_size: 32
-num_workers: 4
