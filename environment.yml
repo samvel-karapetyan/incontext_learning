@@ -1,4 +1,4 @@
-name: incontext_spurious
+name: incontext_learning
 channels:
   - defaults
   - pytorch
