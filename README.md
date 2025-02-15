@@ -5,8 +5,8 @@ These instructions will guide you through the process of setting up the project 
 
 1. **Clone the Repository**: Start by cloning the repository to your local machine. 
    ```commandline
-   git clone git@github.com:YerevaNN/incontext_spurious.git
-   cd incontext_spurious
+   git clone git@github.com:samvel-karapetyan/incontext_learning.git
+   cd incontext_learning
    ```
 2. **Configure Environment Variables:**
    - Copy the sample environment file:	
@@ -21,7 +21,7 @@ These instructions will guide you through the process of setting up the project 
      ```
    - Activate the new environment:
      ```commandline
-     conda activate incontext_spurious
+     conda activate incontext_learning
      ```
 4. **Initialize Aim logger:**
    ```commandline
