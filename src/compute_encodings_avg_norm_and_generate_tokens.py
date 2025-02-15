@@ -24,7 +24,7 @@ def compute_encodings_avg_norm_and_generate_tokens(config: DictConfig) -> None:
         encodings_path = os.path.join(encodings_path, config.split)
 
     # Load the encoding from the file
-    enc = np.load(os.path.join(encodings_path, "combined.npz"))['encodings']
+    enc = np.load(os.path.join(encodings_path, "train", "combined.npz"))['encodings']
 
     # Calculate the average of all norms
     avg_norm = np.linalg.norm(enc, axis=1).mean()

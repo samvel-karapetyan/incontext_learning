@@ -1,4 +1,3 @@
-from typing import Optional
 import logging
 import os.path
 
@@ -55,7 +54,7 @@ class WaterbirdsSubsetExtracted(Dataset):
             row_indices[idx] = encoding_row_index
         self._encodings = encodings[row_indices]
 
-    def __getitem__(self, indices) -> [np.ndarray, Examples]:
+    def __getitem__(self, indices) -> list[np.ndarray, Examples]:
         x = self._encodings[indices].copy()
         y = self._wilds_waterbirds_subset.y_array[indices].numpy()
         c = self._wilds_waterbirds_subset.metadata_array[indices, 0].numpy()

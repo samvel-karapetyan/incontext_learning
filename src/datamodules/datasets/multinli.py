@@ -1,4 +1,3 @@
-from typing import Optional, Tuple
 import dataclasses
 import logging
 import pandas as pd
@@ -225,7 +224,7 @@ class MultiNLISubsetExtracted(Dataset):
         self.ds = ds
         self._reverse_task = reverse_task
 
-    def __getitem__(self, indices) -> Tuple[np.ndarray, Examples]:
+    def __getitem__(self, indices) -> tuple[np.ndarray, Examples]:
         """Retrieve encodings and examples by indices."""
         x = self.ds.encodings[indices].copy()
         y = self.ds.y_array[indices]
