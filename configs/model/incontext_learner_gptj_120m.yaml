@@ -1,9 +1,9 @@
-_target_: src.models.InContextLearnerV2
+_target_: src.models.InContextLearner
 
 embedding_size: ${encoding_extractor.embedding_size}
 
 network:
-  _target_: src.models.incontext_learner_v2.GPTJModelV2
+  _target_: transformers.GPTJModel
   config:
     _target_: transformers.GPTJConfig
     n_positions: 4096  # can fit context_class_size = 2048 / 3 ~= 682

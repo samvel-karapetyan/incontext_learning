@@ -11,7 +11,7 @@ load_dotenv()
 log = logging.getLogger(__name__)
 
 
-@hydra.main(config_path="configs", config_name="train", version_base="1.2")
+@hydra.main(config_path="configs", config_name="train", version_base="1.1")
 def main(config: DictConfig) -> None:
     from src import (utils,
                      extract_encodings,

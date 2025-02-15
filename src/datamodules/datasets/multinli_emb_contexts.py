@@ -3,7 +3,7 @@ import logging
 
 import numpy as np
 
-from src.datamodules.datasets.base_emb_contexts_v2 import BaseEmbContextsDatasetV2
+from src.datamodules.datasets.base_emb_contexts import BaseEmbContextsDataset
 from src.datamodules.datasets.multinli import MultiNLIExtracted
 from src.utils.dataset_helpers.context_prep_utils import get_group_counts_based_on_proportions
 
@@ -39,12 +39,13 @@ def _sample(
     return np.random.permutation(examples)
 
 
-class MultiNLIEmbContextsDatasetV2(BaseEmbContextsDatasetV2):
+class MultiNLIEmbContextsDataset(BaseEmbContextsDataset):
     """A dataset class for MultiNLI in-context learning instances."""
 
     def __init__(self,
                  root_dir: str,
                  encoding_extractor: str,
+                 place_query_first: bool,
                  data_length: int,
                  context_split: str,
                  query_split: str,
@@ -60,6 +61,9 @@ class MultiNLIEmbContextsDatasetV2(BaseEmbContextsDatasetV2):
 
         root_dir (str): The root directory of the dataset.
         encoding_extractor (str): The name of the encoding extractor used.
+        place_query_first (bool): Determines the ordering of the query instance in the icl instance.  
+            - If `True`, the query token appears at the beginning: (xq, x1, y1, x2, y2, ..., xn, yn).  
+            - If `False`, the query token appears at the end: (x1, y1, x2, y2, ..., xn, yn, xq).  
         data_length (int): The length of the dataset.
         context_split (str): The split where context examples are selected from.
         query_split (str): The split where query examples are selected from.
@@ -73,8 +77,9 @@ class MultiNLIEmbContextsDatasetV2(BaseEmbContextsDatasetV2):
         permute_input_dim (bool): Determines if image encodings are permuted.
                                 True enables permutation, while False bypasses it.
         """
-        super(MultiNLIEmbContextsDatasetV2, self).__init__(
+        super(MultiNLIEmbContextsDataset, self).__init__(
             encoding_extractor=encoding_extractor,
+            place_query_first=place_query_first,
             data_length=data_length,
             context_class_size=context_class_size,
             rotate_encodings=rotate_encodings,
@@ -117,7 +122,7 @@ class MultiNLIEmbContextsDatasetV2(BaseEmbContextsDatasetV2):
             self,
             num_context_examples: int,
             num_query_examples: int,
-    ) -> list[Examples, Examples]:
+    ) -> tuple[Examples, Examples]:
         """Samples context and query examples.
 
         Returns:

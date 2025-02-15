@@ -3,17 +3,19 @@ seed: 0
 print_config: True
 ignore_warnings: False
 
-aim_hash: 0cc1b78cc48149e8853333a4
+aim_hash: adacc1ff5cac45ca9f6e56cc
 
 checkpoint_path: ${oc.env:OUTPUT_DIR}/runs/train/${aim_hash}/checkpoints/last.ckpt
 
 n_repeat: 5
 
+place_query_first: False
+
 datamodule: # overriding default context_class_size
-  context_class_size: [1, 2, 4, 8, 16, 32, 50]
+  context_class_size: [1, 2, 4, 8, 16, 32, 64]
 
 defaults:
-  - datamodule: waterbirds_emb_contexts # Options: 'inaturalist_emb_contexts', 'waterbirds_emb_contexts', 'cub_emb_contexts', 'imagenet_emb_contexts'
+  - datamodule: waterbirds_emb_contexts # Options: 'waterbirds_emb_contexts', 'multinli_emb_contexts'
   - encoding_extractor: dinov2_vitb14 # Options: dinov2_vitb14, resnet50, resnet18
   - model: incontext_learner_gptj_80m
   - trainer: default

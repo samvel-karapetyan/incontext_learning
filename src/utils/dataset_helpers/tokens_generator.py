@@ -18,13 +18,7 @@ class TokenGenerator:
         Returns: A tuple containing 2 generators: query, class.
         """
 
-        def fixed_query_tokens_fn():
-            return self.tokens_data["opposite_spurious_tokens_2"]
-
         def fixed_class_tokens_fn():
             return self.tokens_data["opposite_class_tokens"]
 
-        query_token_fn = fixed_query_tokens_fn
-        class_tokens_fn = fixed_class_tokens_fn
-
-        return query_token_fn, class_tokens_fn
+        return fixed_class_tokens_fn

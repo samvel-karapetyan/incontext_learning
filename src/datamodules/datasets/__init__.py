@@ -1,4 +1,4 @@
 from src.datamodules.datasets.waterbirds import WaterbirdsForEncodingExtraction, WaterbirdsExtracted
-from src.datamodules.datasets.waterbirds_emb_contexts_v2 import WaterbirdsEmbContextsDatasetV2
+from src.datamodules.datasets.waterbirds_emb_contexts import WaterbirdsEmbContextsDataset
 from src.datamodules.datasets.multinli import MultiNLIForEncodingExtraction, MultiNLIExtracted
-from src.datamodules.datasets.multinli_emb_contexts_v2 import MultiNLIEmbContextsDatasetV2
+from src.datamodules.datasets.multinli_emb_contexts import MultiNLIEmbContextsDataset

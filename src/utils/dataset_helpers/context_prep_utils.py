@@ -19,17 +19,6 @@ def prepare_context_or_query(
     return np.random.permutation(examples)
 
 
-def generate_spurious_labels(
-        majority_sp_label: int,
-        minority_sp_label: int,
-        class_size: int,
-        minority_proportion: float) -> np.ndarray:
-    """Generates spurious labels based on given spurious labels and proportions."""
-    return np.random.choice([majority_sp_label, minority_sp_label],
-                            size=(class_size,),
-                            p=(1 - minority_proportion, minority_proportion))
-
-
 def encode_context_x(token: np.ndarray) -> np.ndarray:
     token[:3] = np.array([1.0, 0.0, 0.0], dtype=token.dtype)
     return token

@@ -1,25 +1,27 @@
-_target_: src.datamodules.WaterbirdsEmbContextsDataModuleV2
+_target_: src.datamodules.WaterbirdsEmbContextsDataModule
 name: waterbirds_emb_contexts
 
-context_class_size: 50
+context_class_size: 64
 
 # train set proportions are [0.7295, 0.03837, 0.0116, 0.2204]
-context_group_proportions: [0.45, 0.05, 0.05, 0.45]
+context_group_proportions: [0.25, 0.25, 0.25, 0.25]
 query_group_proportions: [0.25, 0.25, 0.25, 0.25]
 
 root_dir: ${oc.env:DATA_ROOT_DIR}
 encoding_extractor: ${encoding_extractor.name}
 
+place_query_first: ${place_query_first}
+
 train_len: 2000000
 eval_len: 1024 # 2^n, because CombinedDataloader removes the last non-full batch
 
-batch_size: 32
+batch_size: 64
 num_workers: 4
 
 reverse_task: False
 
 rotate_encodings: False
-n_rotation_matrices: 10000  # produces roughly 40m different examples
+n_rotation_matrices: 200000  # produces roughly 40m different examples
 allow_rotated_eval: False
 
 permute_input_dim: True

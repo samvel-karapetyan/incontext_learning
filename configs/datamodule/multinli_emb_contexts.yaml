@@ -1,4 +1,4 @@
-_target_: src.datamodules.MultiNLIEmbContextsDataModuleV2
+_target_: src.datamodules.MultiNLIEmbContextsDataModule
 name: multinli_emb_contexts
 
 context_class_size: 64

@@ -3,9 +3,9 @@ seed: 0
 print_config: True
 ignore_warnings: False
 
-dataset: inaturalist2017
+dataset: waterbirds
 data_path: ${oc.env:DATA_ROOT_DIR}/${dataset}
-encoding_extractor: scratch_resnet18
+encoding_extractor: dinov2_vitb14
 split: null
 
 hydra:

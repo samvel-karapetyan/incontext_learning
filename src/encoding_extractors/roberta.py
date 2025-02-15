@@ -1,5 +1,3 @@
-from typing import List, Tuple
-
 import torch
 import torch.nn as nn
 from transformers import RobertaTokenizer, RobertaModel
@@ -16,7 +14,7 @@ class RoBERTa(nn.Module):
         self.tokenizer = RobertaTokenizer.from_pretrained(model_name)
         self.model = RobertaModel.from_pretrained(model_name)
 
-    def forward(self, x: List[Tuple[str, str]]):
+    def forward(self, x: list[tuple[str, str]]):
 
         premises, hypotheses = zip(*x)
         inputs = self.tokenizer(premises, hypotheses, return_tensors="pt", padding=True, truncation=True)
